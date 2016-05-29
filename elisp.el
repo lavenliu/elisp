@@ -915,3 +915,28 @@ user-init-file ;; "e:/home/.emacs"
 ;; （global variable），是在任何地方都可视的。
 
 ;; 可以使用defparameter来定义一个全局变量，
+(defparameter *glob* 99)
+
+;; 全局变量在任何地方都可以存取，除了在定义了相同名字的区域变量的表达式
+;; 里。为了避免这种情形发生，通常我们在给全局变量命名时，以星号作开始与
+;; 结束。刚才我们创造的变量可以念作 “星-glob-星” (star-glob-star)。
+
+;; 你也可以用 defconstant 来定义一个全局的常量：
+(defconstant limit (+ *glob* 1))
+
+(defun show-squares (start end)
+  (do ((i start (+ i 1)))
+      ((> i end) 'done)
+    (format t "~A ~A~%" i (* i i))))
+
+(show-squares 2 5)
+;; 
+
+
+
+(function +)
+;; equals
+#'+
+;; +
+;; ' -- quote 等价
+;; #' -- function 等价
