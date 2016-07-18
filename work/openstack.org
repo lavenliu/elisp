@@ -1,0 +1,490 @@
+#+TITLE: OpenStack
+#+AUTHOR: LavenLiu
+#+DATE: 2016-01-01
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+实验前准备：
+1. 主机名是FQDN格式
+2. 安装NTP
+3. SELinux关闭
+4. 安装EPEL源
+5. 安装rdo源
+   #+BEGIN_SRC sh
+   # 官网原来的RPM地址修改了，
+   # yum install http://repos.fedorapeople.org/repos/openstack/openstack-icehouse/rdo-release-icehouse-4.noarch.rpm
+   # 修改为了如下地址
+   # yum install https://repos.fedorapeople.org/repos/openstack/EOL/openstack-icehouse/rdo-release-icehouse-4.noarch.rpm
+   #+END_SRC
+
+   | 服务名称         | 项目名称   | 描述 |
+   |------------------+------------+------|
+   | Dashboard        | Horizon    |      |
+   | Compute          | Nova       |      |
+   | Networking       | Neutron    |      |
+   |------------------+------------+------|
+   |                  |            |      |
+   | Object Stroage   | Swift      |      |
+   | Block Storage    | Cinder     |      |
+   |------------------+------------+------|
+   |                  |            |      |
+   | Identity Service | Keystone   |      |
+   | Image Service    | Glance     |      |
+   | Telemetry        | Ceilometer |      |
+
+   测试环境：
+   | Hostname                | IP                               | 备注     |
+   |-------------------------+----------------------------------+----------|
+   | linux-node1.example.com | 192.168.20.133 (eth0) - HostOnly | 控制节点 |
+   |                         | 192.168.19.132 (eth1)            |          |
+   | linux-node2.example.com | 192.168.20.134 (eth0) - HostOnly | 计算节点 |
+   |                         | 192.168.19.133 (eth1)            |          |
+
+   pip install -r openstack.txt -i --trusted-host http://pypi.v2ex.com/simple/
+
+[keystone]
+# 创建PKI证书
+keystone-manage pki_setup --keystone-user root --keystone-group root
+
+chown -R root:root /etc/keystone/ssl
+chmod -R o-rwx /etc/keystone/ssl
+
+# mysql配置
+#+BEGIN_EXAMPLE
+default-storage-engine = innodb
+innodb_file_per_table
+collation-server = utf8_general_ci
+init-connect = 'SET NAMES utf8'
+character-set-server = utf8
+#+END_EXAMPLE
+
+# 建库并测试
+#+BEGIN_SRC sql
+mysql> create database keystone;
+mysql> grant all on keystone.* to keystone@'192.168.20.0/255.255.255.0' identified by 'keystone';
+mysql> create database glance;
+mysql> grant all on glance.* to glance@'192.168.20.0/255.255.255.0' identified by 'glance';
+mysql> create database nova;
+mysql> grant all on nova.* to nova@'192.168.20.0/255.255.255.0' identified by 'nova';
+mysql> create database neutron;
+mysql> grant all on neutron.* to neutron@'192.168.20.0/255.255.255.0' identified by 'neutron';
+mysql> create database cinder;
+mysql> grant all on cinder.* to cinder@'192.168.20.0/255.255.255.0' identified by 'cinder';
+mysql> flush privileges;
+#+END_SRC
+
+# 验证已创建的5个数据库是否可用
+for i in keystone glance neutron cinder nova ; do mysql
+-h192.168.20.133 -u${i} -p${i} -e "show databases;" ; done
+
+
+# 安装消息队列包rabbitmq-server
+
+rabbitmq-server带有一个web界面
+
+yum install -y rabbitmq-server
+
+# 查看rabbitmq的插件，并启用management插件，该插件会启用一个web界面
+#+BEGIN_SRC sh
+
+
+/usr/lib/rabbitmq/bin/rabbitmq-plugins list
+[ ] amqp_client                       3.1.5
+[ ] cowboy                            0.5.0-rmq3.1.5-git4b93c2d
+[ ] eldap                             3.1.5-gite309de4
+[ ] mochiweb                          2.7.0-rmq3.1.5-git680dba8
+[ ] rabbitmq_amqp1_0                  3.1.5
+[ ] rabbitmq_auth_backend_ldap        3.1.5
+[ ] rabbitmq_auth_mechanism_ssl       3.1.5
+[ ] rabbitmq_consistent_hash_exchange 3.1.5
+[ ] rabbitmq_federation               3.1.5
+[ ] rabbitmq_federation_management    3.1.5
+[ ] rabbitmq_jsonrpc                  3.1.5
+[ ] rabbitmq_jsonrpc_channel          3.1.5
+[ ] rabbitmq_jsonrpc_channel_examples 3.1.5
+[ ] rabbitmq_management               3.1.5  <----- 启用此插件
+[ ] rabbitmq_management_agent         3.1.5
+[ ] rabbitmq_management_visualiser    3.1.5
+[ ] rabbitmq_mqtt                     3.1.5
+[ ] rabbitmq_shovel                   3.1.5
+[ ] rabbitmq_shovel_management        3.1.5
+[ ] rabbitmq_stomp                    3.1.5
+[ ] rabbitmq_tracing                  3.1.5
+[ ] rabbitmq_web_dispatch             3.1.5
+[ ] rabbitmq_web_stomp                3.1.5
+[ ] rabbitmq_web_stomp_examples       3.1.5
+[ ] rfc4627_jsonrpc                   3.1.5-git5e67120
+[ ] sockjs                            0.3.4-rmq3.1.5-git3132eb9
+[ ] webmachine                        1.10.3-rmq3.1.5-gite9359c7
+-------------------------------------------------------------------------
+
+/usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
+service rabbitmq-server restart
+#+END_SRC
+
+# 再次查看已启用的插件
+#+BEGIN_SRC sh
+
+
+/usr/lib/rabbitmq/bin/rabbitmq-plugins list
+[e] amqp_client                       3.1.5
+[ ] cowboy                            0.5.0-rmq3.1.5-git4b93c2d
+[ ] eldap                             3.1.5-gite309de4
+[e] mochiweb                          2.7.0-rmq3.1.5-git680dba8
+[ ] rabbitmq_amqp1_0                  3.1.5
+[ ] rabbitmq_auth_backend_ldap        3.1.5
+[ ] rabbitmq_auth_mechanism_ssl       3.1.5
+[ ] rabbitmq_consistent_hash_exchange 3.1.5
+[ ] rabbitmq_federation               3.1.5
+[ ] rabbitmq_federation_management    3.1.5
+[ ] rabbitmq_jsonrpc                  3.1.5
+[ ] rabbitmq_jsonrpc_channel          3.1.5
+[ ] rabbitmq_jsonrpc_channel_examples 3.1.5
+[E] rabbitmq_management               3.1.5
+[e] rabbitmq_management_agent         3.1.5
+[ ] rabbitmq_management_visualiser    3.1.5
+[ ] rabbitmq_mqtt                     3.1.5
+[ ] rabbitmq_shovel                   3.1.5
+[ ] rabbitmq_shovel_management        3.1.5
+[ ] rabbitmq_stomp                    3.1.5
+[ ] rabbitmq_tracing                  3.1.5
+[e] rabbitmq_web_dispatch             3.1.5
+[ ] rabbitmq_web_stomp                3.1.5
+[ ] rabbitmq_web_stomp_examples       3.1.5
+[ ] rfc4627_jsonrpc                   3.1.5-git5e67120
+[ ] sockjs                            0.3.4-rmq3.1.5-git3132eb9
+[e] webmachine                        1.10.3-rmq3.1.5-gite9359c7
+#+END_SRC
+
+查看rabbitmq-server监听的端口，
+#+BEGIN_SRC sh
+netstat -antup |grep 567
+tcp        0      0 0.0.0.0:15672               0.0.0.0:*                   LISTEN      12033/beam          
+tcp        0      0 0.0.0.0:55672               0.0.0.0:*                   LISTEN      12033/beam          
+tcp        0      0 :::5672                     :::*                        LISTEN      12033/beam  
+#+END_SRC
+
+5672   rabbitmq-server
+15672  web界面
+55672  web界面
+
+web界面的用户名/密码为：guest/guest
+
+
+chkconfig mysqld on
+chkconfig rabbitmq-server on
+
+OpenStack组件
+# 1. keystone  -- OpenStack验证服务
+用户与认证：用户权限与用户行为跟踪
+服务目录：提供一个服务目录，包括所有服务项与相关API的端点
+
+名词解释：
+User：     用户
+Tenant：   租户 
+Token：    令牌
+Role：     角色
+
+
+Service：  服务
+Endpoint： 端点
+
+
+# 安装keystone
+yum install -y openstack-keystone python-keystoneclient
+
+
+#+BEGIN_EXAMPLE
+vim keystone.sls
+keystone-install:
+  pkg.installed:
+    - names:
+      - openstack-keystone
+      - python-keystoneclient
+#+END_EXAMPLE
+
+# 创建keystone令牌
+#+BEGIN_EXAMPLE
+# keystone-manage pki_setup --keystone-user keystone --keystone-group keystone
+Generating RSA private key, 2048 bit long modulus
+.....................+++
+.............................................................+++
+e is 65537 (0x10001)
+Generating RSA private key, 2048 bit long modulus
+.................................................................................................+++
+..+++
+e is 65537 (0x10001)
+Using configuration from /etc/keystone/ssl/certs/openssl.conf
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+countryName           :PRINTABLE:'US'
+stateOrProvinceName   :ASN.1 12:'Unset'
+localityName          :ASN.1 12:'Unset'
+organizationName      :ASN.1 12:'Unset'
+commonName            :ASN.1 12:'www.example.com'
+Certificate is to be certified until Jan 10 03:43:18 2026 GMT (3650 days)
+
+Write out database with 1 new entries
+Data Base Updated
+#+END_EXAMPLE
+
+# 修改权限
+#+BEGIN_EXAMPLE
+chown -R keystone:keystone /etc/keystone/ssl/
+chmod -R o-rwx /etc/keystone/ssl/
+#+END_EXAMPLE
+
+# 修改keystone配置文件
+#+BEGIN_SRC sh
+/etc/keystone/keystone.conf
+admin_token=ADMIN  # 去掉注释
+connection=mysql://keystone:keystone@192.168.20.133/keystone # 去掉注释并修改IP
+#+END_SRC
+
+# 修改完毕，同步数据库
+keystone-manage db_sync
+
+
+mysql -h192.168.20.133 -ukeystone -pkeystone -e "use keystone;show tables;"
+
+# 继续修改keystone.conf配置
+debug=true # 去掉注释
+log_file=/var/log/keystone/keystone.log # 去掉注释
+
+# 查看已配置的配置文件，
+#+BEGIN_SRC sh
+grep -n '^[a-z]' /etc/keystone/keystone.conf
+13:admin_token=ADMIN
+374:debug=true
+439:log_file=/var/log/keystone/keystone.log
+619:connection=mysql://keystone:keystone@192.168.20.133/keystone
+#+END_SRC
+
+# 启动keystone服务
+service openstack-keystone start
+
+如果keystone启动报错，可以查看日志文件。
+
+keystone监听的两个端口为：35357，5000
+35357: 管理端口
+5000： 
+
+nova监听的端口：8774
+# keystone命令行帮助
+keystone --help |grep list
+keystone --help |grep create
+
+# 设置keystone环境变量
+export OS_SERVICE_TOKEN=ADMIN
+export OS_SERVICE_ENDPOINT=http://192.168.20.133:35357/v2.0
+
+keystone user-list
+#+BEGIN_EXAMPLE
++----------------------------------+-------+---------+---------------------+
+|                id                |  name | enabled |        email        |
++----------------------------------+-------+---------+---------------------+
+| f00728b0075c4adcab4599e34a1d736c | admin |   True  | admin@openstack.com |
++----------------------------------+-------+---------+---------------------+
+#+END_EXAMPLE
+
+#+BEGIN_SRC sh
+cat keystone-demo
+export OS_TENANT_NAME=demo
+export OS_USERNAME=demo
+export OS_PASSWORD=demo
+export OS_AUTH_URL=http://192.168.20.133:35357/v2.0
+
+source keystone-demo
+#+END_SRC
+
+# glance的安装配置
+glance主要由三个部分组成：glance-api, glance-registry以及image store
+
+glance-api:接受云系统镜像的创建、删除、读取请求
+glance-registry：云系统的镜像注册服务
+
+
+
+# 修改glance-api.conf配置文件
+connection=mysql://glance:glance@192.168.20.133/glance # 去掉注释
+log_file=/var/log/glance/api.log
+debug=True
+
+
+# 修改registry配置文件
+vim /etc/glance/glance-registry.conf
+debug=True
+log_file=/var/log/glance/registry.log
+connection=mysql://glance:glance@192.168.20.133/glance
+
+
+# 同步glance数据库
+#+BEGIN_EXAMPLE
+glance-manage db_sync
+mysql -h192.168.20.133 -uglance -pglance -e "use glance; show tables;"
++------------------+
+| Tables_in_glance |
++------------------+
+| image_locations  |
+| image_members    |
+| image_properties |
+| image_tags       |
+| images           |
+| migrate_version  |
+| task_info        |
+| tasks            |
++------------------+
+#+END_EXAMPLE
+
+# Nova计算组件
+
+#+BEGIN_SRC ditaa
+					  +------------+
+					  |	 User	   |				   
+					  |			   |				   
+					  +-----+------+				   
+							|						   
+	  +---------------------+----------------------+   
+	  v						v					   v   
++-----+-------+		  +-----+-------+		 +-----+-------+
+|			  |		  |				|		 |			   |
+|			  |		  |				|		 |			   |
+|	Horizon	  |		  |	  Nova		|		 |	 EC2-Tools |
+|	 (GUI)	  |		  |	  (CLI)		|		 |	  (CLI)	   |
+|			  |		  |				|		 |			   |
+|			  |		  |				|		 |			   |
++-----+-------+		  +------+------+		 +------+------+
+	  ^						 ^						^  
+	  +----------------------+----------------------+  
+							 v						   
+				 +-----------+------------+			   
+				 |						  |			   
+				 |		   nova-api		  |
+				 +------------------------+
+#+END_SRC
+
+
+
+
+=======================
+源码安装方式
+=======================
+
+# 连接MySQL数据库
+vim +625 /etc/keystone/keystone.conf
+connection=mysql://keystone:keystone@192.168.56.120/keystone
+
+# 同步数据库
+keystone-manage db_sync
+
+
+# 打开keystone的debug模式
+vim +381 /etc/keystone/keystone.conf
+debug=true
+
+
+# 设置keystone的log_file
+#+BEGIN_SRC sh
+vim +445 +450
+log_file=keystone.log
+log_dir=/var/log/keystone
+#+END_SRC
+
+# 创建keystone日志目录
+mkdir /var/log/keystone
+
+
+# 设置admin token
+openssl rand -hex 10
+xxxxyyyyyzzzz
+
+admin_tokey=xxxxyyyyyzzzz
+
+
+# 启动keystone
+#+BEGIN_SRC sh
+keystone-all --config-file=/etc/keystone/keystone.conf
+
+
+chkconfig --add /etc/init.d/openstack-keystone
+chkconfig openstack-keystone on
+mkdir /var/run/keystone
+
+keystone role-list
+keystone user-list
+
+export OS_SERVICE_TOKEN=xxxxyyyyyzzzz
+export OS_SERVICE_ENDPOINT=http://192.168.56.xx/35357/v2.0
+keystone role-list
+keystone user-list
+
+keystone --help |grep list
+#+END_SRC
+
+# 创建admin用户
+keystone user-create --name=admin --pass=admin --email=admin@openstack.com
+keystone user-list
+
+# 创建admin角色
+keystone role-create --name=admin
+
+
+# 创建租户
+keystone tenant-create --name=admin --description="Admin Tenant"
+
+
+# 建立用户关联
+keystone user-role-add --user=admin --tenant=admin --role=admin
+
+-----------------------------------------------
+# 创建demo用户
+keystone user-create --name=demo --pass=demo --email=demo@openstack.com
+keystone user-list
+
+
+# 创建租户
+keystone tenant-create --name=demo --description="Demo Tenant"
+
+
+# 建立用户关联
+keystone user-role-add --user=demo --tenant=demo --role=_member_
+
+
+# 创建服务
+keystone service-create --name=keystone --type=identify --description="OpenStack Identify"
+
+
+# 创建endpoint
+#+BEGIN_SRC sh
+keystone endpoint-create \
+--service-id=上面的service ID \
+--publicurl=http://192.168.56.xx:5000/v2.0 \
+--internalurl=http://192.168.56.xx:5000/v2.0 \
+--adminurl=http://192.168.56.xx:35357/v2.0
+#+END_SRC

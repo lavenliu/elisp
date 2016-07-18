@@ -1,0 +1,404 @@
+#+TITLE: ZooKeeper
+#+AUTHOR: LavenLiu
+#+DATE: 2010-08-20
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* Zookeeper
+* Zookeeper简介
+  Zookeeper 分布式服务框架是 Apache Hadoop 的一个子项目，它主要是用来
+  解决分布式应用中经常遇到的一些数据管理问题，如：统一命名服务、状态
+  同步服务、集群管理、分布式应用配置项的管理等。本文将从使用者角度详
+  细介绍 Zookeeper 的安装和配置文件中各个配置项的意义，以及分析
+  Zookeeper 的典型的应用场景（配置文件的管理、集群管理、同步锁、
+  Leader 选举、队列管理等），用 Java 实现它们并给出示例代码。
+* 测试环境
+   以下测试是在CentOS6U5 64位系统上进行测试，每台机器均安装JDK环境，
+   | 主机名                |         IP地址 | 备注        |
+   |-----------------------+----------------+-------------|
+   | master01.lavenliu.com | 192.168.20.134 | Zookeeper 1 |
+   | minion01.lavenliu.com | 192.168.20.135 | Zookeeper 2 |
+   | minion02.lavenliu.com | 192.168.20.136 | Zookeeper 3 |
+
+   最好配置奇数台机器。
+* 安装Zookeeper
+   Zookeeper的安装非常简单，Zookeeper支持单机模式与集群模式运行。
+   Zookeeper还支持另外一种伪集群的方式，也就是可以在一台机器上运行多个
+   Zookeeper实例。
+
+   从官方的镜像站点下载zookeeper包，
+   #+BEGIN_SRC sh
+wget http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
+tar -xf zookeeper-3.4.6.tar.gz -C /usr/local
+ln -s /usr/local/zookeeper-3.4.6 /usr/local/zookeeper
+   #+END_SRC
+** Zookeeper伪集群模式安装（单机多实例）
+	#+BEGIN_SRC sh
+cp /usr/local/zookeeper/conf/zoo_sample.cfg /opt/zoo.cfg
+
+cp /opt/zoo.cfg /opt/zk1/zk1.cfg
+cp /opt/zoo.cfg /opt/zk2/zk2.cfg
+cp /opt/zoo.cfg /opt/zk3/zk3.cfg
+vim /opt/zk1/zk1.cfg
+dataDir=/opt/zk1
+clientPort=2181
+server.1=192.168.20.160:2887:3887
+server.2=192.168.20.160:2888:3888
+server.3=192.168.20.160:2889:3889
+
+vim /opt/zk2/zk2.cfg
+dataDir=/opt/zk2
+clientPort=2182
+server.1=192.168.20.160:2887:3887
+server.2=192.168.20.160:2888:3888
+server.3=192.168.20.160:2889:3889
+
+vim /opt/zk3/zk3.cfg
+dataDir=/opt/zk3
+clientPort=2183
+server.1=192.168.20.160:2887:3887
+server.2=192.168.20.160:2888:3888
+server.3=192.168.20.160:2889:3889
+
+# grep "^[a-z]" /opt/zk1/zk1.cfg 
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/opt/zk1
+clientPort=2181
+server.1=192.168.20.160:2887:3887
+server.2=192.168.20.160:2888:3888
+server.3=192.168.20.160:2889:3889
+
+# grep "^[a-z]" /opt/zk2/zk2.cfg 
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/opt/zk2
+clientPort=2182
+server.1=192.168.20.160:2887:3887
+server.2=192.168.20.160:2888:3888
+server.3=192.168.20.160:2889:3889
+
+# grep "^[a-z]" /opt/zk3/zk3.cfg 
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/opt/zk3
+clientPort=2183
+server.1=192.168.20.160:2887:3887
+server.2=192.168.20.160:2888:3888
+server.3=192.168.20.160:2889:3889
+	 #+END_SRC
+
+	 在一台机器上启动3个zookeeper服务，
+	 #+BEGIN_SRC sh
+cd /opt
+mkdir zk1 zk2 zk3
+echo "1" > zk1/myid
+echo "2" > zk2/myid
+echo "3" > zk3/myid
+
+[root@rsync01 ~]# /usr/local/zookeeper/bin/zkServer.sh start /opt/zk1/zk1.cfg 
+JMX enabled by default
+Using config: /opt/zk1/zk1.cfg
+Starting zookeeper ... STARTED
+[root@rsync01 ~]# /usr/local/zookeeper/bin/zkServer.sh start /opt/zk2/zk2.cfg 
+JMX enabled by default
+Using config: /opt/zk2/zk2.cfg
+Starting zookeeper ... STARTED
+[root@rsync01 ~]# /usr/local/zookeeper/bin/zkServer.sh start /opt/zk3/zk3.cfg 
+JMX enabled by default
+Using config: /opt/zk3/zk3.cfg
+Starting zookeeper ... STARTED
+	 #+END_SRC
+
+	 查看zookeeper集群状态，
+	 #+BEGIN_SRC sh
+[root@rsync01 zk1]# /usr/local/zookeeper-3.4.6/bin/zkServer.sh status /opt/zk2/zk2.cfg 
+JMX enabled by default
+Using config: /opt/zk2/zk2.cfg
+Mode: leader
+[root@rsync01 zk1]# /usr/local/zookeeper-3.4.6/bin/zkServer.sh status /opt/zk3/zk3.cfg 
+JMX enabled by default
+Using config: /opt/zk3/zk3.cfg
+Mode: follower
+[root@rsync01 zk1]# /usr/local/zookeeper-3.4.6/bin/zkServer.sh status /opt/zk1/zk1.cfg 
+JMX enabled by default
+Using config: /opt/zk1/zk1.cfg
+Mode: follower
+	 #+END_SRC
+
+	 可以使用zookeeper的命令行工具查看，
+	 #+BEGIN_SRC sh
+/usr/local/zookeeper/bin/zkCli.sh -server 192.168.20.160:2181
+[zk: 192.168.20.160:2181(CONNECTED) 0] ls
+[zk: 192.168.20.160:2181(CONNECTED) 1] ls /
+[zookeeper]
+[zk: 192.168.20.160:2181(CONNECTED) 2] help
+ZooKeeper -server host:port cmd args
+	stat path [watch]
+	set path data [version]
+	ls path [watch]
+	delquota [-n|-b] path
+	ls2 path [watch]
+	setAcl path acl
+	setquota -n|-b val path
+	history 
+	redo cmdno
+	printwatches on|off
+	delete path [version]
+	sync path
+	listquota path
+	rmr path
+	get path [watch]
+	create [-s] [-e] path data acl
+	addauth scheme auth
+	quit 
+	getAcl path
+	close 
+	connect host:port
+[zk: 192.168.20.160:2181(CONNECTED) 3] quit
+Quitting...
+	 #+END_SRC
+** Zookeeper集群模式安装
+	Zookeeper集群模式的安装和配置并不是很复杂，所要做的就是增加几个配
+	置项。配置如下：
+	#+BEGIN_SRC sh
+[root@minion01 conf]# grep -E -v "^#|^$" zoo.cfg 
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/opt/zk
+clientPort=2181
+server.1=192.168.20.134:2888:3888
+server.2=192.168.20.135:2888:3888
+server.3=192.168.20.136:2888:3888
+	#+END_SRC
+
+	配置说明：
+	#+BEGIN_EXAMPLE
+tickTime：这个时间是作为 Zookeeper 服务器之间或客户端与服务器之间维持心跳的时间间隔，
+也就是每个 tickTime 时间就会发送一个心跳。
+
+dataDir：顾名思义就是 Zookeeper 保存数据的目录，默认情况下，
+Zookeeper 将写数据的日志文件也保存在这个目录里。
+
+clientPort：这个端口就是客户端连接 Zookeeper 服务器的端口，Zookeeper 会监听这个端口，
+接受客户端的访问请求。
+
+#####
+当这些配置项配置好后，我们就可以启动 Zookeeper 了，启动后要检查 Zookeeper 是否已经在服务，
+可以通过 netstat – ano 命令查看是否有我们配置的 clientPort 端口号在监听服务。
+#####
+
+initLimit：这个配置项是用来配置Zookeeper接受客户端（这里所说的客户端不是用户连接Zookeeper
+服务器的客户端，而是 Zookeeper 服务器集群中连接到 Leader 的 Follower 服务器）
+初始化连接时最长能忍受多少个心跳时间间隔数。当已经超过 10 个心跳的时间（也就是 tickTime）
+长度后 Zookeeper 服务器还没有收到客户端的返回信息，那么表明这个客户端连接失败。
+总的时间长度就是 5*2000=10 秒
+
+syncLimit：这个配置项标识 Leader 与 Follower 之间发送消息，请求和应答时间长度，
+最长不能超过多少个 tickTime 的时间长度，总的时间长度就是 2*2000=4 秒
+server.A=B：C：D：其中 A 是一个数字，表示这个是第几号服务器；B 是这个服务器的 ip 地址；
+C 表示的是这个服务器与集群中的 Leader 服务器交换信息的端口；
+D 表示的是万一集群中的 Leader 服务器挂了，需要一个端口来重新进行选举，选出一个新的 Leader，
+而这个端口就是用来执行选举时服务器相互通信的端口。如果是伪集群的配置方式，由于 B 都是一样，
+所以不同的 Zookeeper 实例通信端口号不能一样，所以要给它们分配不同的端口号。
+	#+END_EXAMPLE
+
+	除了修改zoo.cfg配置文件，集群模式下还要配置一个文件myid，这个文件
+	在dataDir目录下，这个文件里面就有一个数据就是A的值，Zookeeper启动
+	时会读取这个文件，拿到里面的数据与zoo.cfg里面的配置信息比较从而判
+	断到底是那个server。
+	#+BEGIN_SRC sh
+mkdir /opt/zk
+134# echo "1" > /opt/zk/myid
+135# echo "2" > /opt/zk/myid
+136# echo "3" > /opt/zk/myid
+	#+END_SRC
+
+	启动Zookeeper，
+	#+BEGIN_SRC sh
+134# /usr/local/zookeeper/bin/zkServer.sh start
+135# /usr/local/zookeeper/bin/zkServer.sh start
+136# /usr/local/zookeeper/bin/zkServer.sh start
+	#+END_SRC
+
+	启动之后，查看其状态，
+	#+BEGIN_SRC sh
+134# /usr/local/zookeeper/bin/zkServer.sh status
+ZooKeeper JMX enabled by default
+Using config: /usr/local/zookeeper/bin/../conf/zoo.cfg
+Mode: leader
+
+135# /usr/local/zookeeper/bin/zkServer.sh status
+ZooKeeper JMX enabled by default
+Using config: /usr/local/zookeeper/bin/../conf/zoo.cfg
+Mode: follower
+
+136# /usr/local/zookeeper/bin/zkServer.sh status
+ZooKeeper JMX enabled by default
+Using config: /usr/local/zookeeper/bin/../conf/zoo.cfg
+Mode: follower
+	#+END_SRC
+** Zookeeper简单使用
+	如何连接到ZooKeeper呢？可以使用ZooKeeper安装目录中的bin/zkCli.sh脚
+	本进行连接。如下：
+	#+BEGIN_SRC sh
+bin/zkCli.sh -server 127.0.0.1:2181
+	#+END_SRC
+	进入之后，该界面是一个简单的Shell命令行界面，输入help可以查看帮助
+	信息，
+	#+BEGIN_SRC sh
+[zk: 127.0.0.1:2181(CONNECTED) 0] help
+ZooKeeper -server host:port cmd args
+	stat path [watch]
+	set path data [version]
+	ls path [watch]
+	delquota [-n|-b] path
+	ls2 path [watch]
+	setAcl path acl
+	setquota -n|-b val path
+	history 
+	redo cmdno
+	printwatches on|off
+	delete path [version]
+	sync path
+	listquota path
+	rmr path
+	get path [watch]
+	create [-s] [-e] path data acl
+	addauth scheme auth
+	quit 
+	getAcl path
+	close 
+	connect host:port
+[zk: 127.0.0.1:2181(CONNECTED) 1] 
+	#+END_SRC
+
+	使用ls命令进行查看根目录下有哪些znode，
+	#+BEGIN_SRC sh
+[zk: 127.0.0.1:2181(CONNECTED) 1] ls /
+[zookeeper]
+	#+END_SRC
+
+	接着我们在根下面新建一个名为zk_test的znode，并与字符串"my_data"相
+	关联，操作如下：
+	#+BEGIN_SRC sh
+create /zk_test my_data
+Created /zk_test
+[zk: 127.0.0.1:2181(CONNECTED) 3] ls /
+[zookeeper, zk_test]
+	#+END_SRC
+	由上面的输出，可以得知zk_test目录已经创建，接下来验证与zk_test相关
+	联的数据，使用get命令，操作如下：
+	#+BEGIN_SRC sh
+[zk: 127.0.0.1:2181(CONNECTED) 2] get /zk_test
+my_data
+cZxid = 0x100000004
+ctime = Fri Jun 03 15:30:50 CST 2016
+mZxid = 0x100000004
+mtime = Fri Jun 03 15:30:50 CST 2016
+pZxid = 0x100000004
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 7
+numChildren = 0
+[zk: 127.0.0.1:2181(CONNECTED) 3]
+	#+END_SRC
+
+	我们可以使用set命令来改变zk_test的数据，
+	#+BEGIN_SRC sh
+[zk: 127.0.0.1:2181(CONNECTED) 3] set /zk_test junk
+cZxid = 0x100000004
+ctime = Fri Jun 03 15:30:50 CST 2016
+mZxid = 0x10000000b
+mtime = Fri Jun 03 15:44:52 CST 2016
+pZxid = 0x100000004
+cversion = 0
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 4
+numChildren = 0
+[zk: 127.0.0.1:2181(CONNECTED) 4] get /zk_test
+junk
+cZxid = 0x100000004
+ctime = Fri Jun 03 15:30:50 CST 2016
+mZxid = 0x10000000b
+mtime = Fri Jun 03 15:44:52 CST 2016
+pZxid = 0x100000004
+cversion = 0
+dataVersion = 1
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 4
+numChildren = 0
+[zk: 127.0.0.1:2181(CONNECTED) 5]
+	#+END_SRC
+
+	最后我们使用delete命令来删除/zk_test，
+	#+BEGIN_SRC sh
+[zk: 127.0.0.1:2181(CONNECTED) 5] delete /zk_test
+[zk: 127.0.0.1:2181(CONNECTED) 6] ls /
+[zookeeper]
+[zk: 127.0.0.1:2181(CONNECTED) 7]
+	#+END_SRC
+* 数据模型
+  Zookeeper会维护一个具有层次关系的数据结构，它非常类似于一个标准的文件系统，
+
+  Zookeeper 这种数据结构有如下这些特点：
+  1. 每个子目录项如NameService都被称作为znode，这个 znode 是被它所在
+	 的路径唯一标识，如 Server1 这个 znode 的标识为
+	 /NameService/Server1
+  2. znode可以有子节点目录，并且每个 znode 可以存储数据，注意
+	 EPHEMERAL 类型的目录节点不能有子节点目录
+  3. znode是有版本的，每个 znode 中存储的数据可以有多个版本，也就是一
+	 个访问路径中可以存储多份数据
+  4. znode可以是临时节点，一旦创建这个znode的客户端与服务器失去联系，
+	 这个 znode 也将自动删除，Zookeeper的客户端和服务器通信采用长连接
+	 方式，每个客户端和服务器通过心跳来保持连接，这个连接状态称为
+	 session，如果znode是临时节点，这个session失效，znode也就删除了
+  5. znode的目录名可以自动编号，如 App1 已经存在，再创建的话，将会自
+	 动命名为 App2
+  6. znode可以被监控，包括这个目录节点中存储的数据的修改，子节点目录
+	 的变化等，一旦变化可以通知设置监控的客户端，这个是 Zookeeper 的
+	 核心特性，Zookeeper 的很多功能都是基于这个特性实现的，后面在典型
+	 的应用场景中会有实例介绍
+* Zookeeper典型的应用场景
+** 统一命名服务
+** 配置管理
+** 集群管理
+** 共享锁
+** 队列管理
+* 参考文档
+  https://www.ibm.com/developerworks/cn/opensource/os-cn-zookeeper/

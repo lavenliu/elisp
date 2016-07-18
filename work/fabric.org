@@ -1,0 +1,335 @@
+#+TITLE: Fabric自动化部署
+#+AUTHOR: LavenLiu
+#+DATE: 2015-09-27
+#+EMAIL: ldczz2008@163.com 
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+#+LaTeX_HEADER: \renewcommand{\baselinestretch}{1.38}
+#+LaTeX_HEADER: \setlength{\baselineskip}{20pt}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+* Fabric
+  #+BEGIN_SRC python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from fabric.api import *
+from fabric.colors import red, green
+from fabric.contrib.files import *
+
+env.colorize_errors=True
+env.parallel=True
+env.pool_size=30
+env.password="test"
+
+initip='10.10.7.200'
+initroot='/app/LKOS/www'
+JAVA_HOME='/usr/local/jdk'
+relayhost='10.11.1.16'
+
+env.roledefs = {
+    'nginx': ['10.10.7.101', '10.10.7.105', '10.10.7.109', '10.10.7.110', '10.10.7.113', '10.10.7.114'],
+    'java': ['10.10.7.109', '10.10.7.110', '10.10.7.113'],
+    'redis': ['10.10.7.102'],
+    'varnish': ['10.10.7.106'],
+    'db': ['10.10.7.201'],
+    'mysql': ['10.10.7.16', '10.10.7.17'],
+    'consul-server': ['10.10.7.101','10.10.7.105','10.10.7.110'],
+    'consul-client': ['10.10.7.101','10.10.7.105','10.10.7.110','10.10.7.102','10.10.7.106','10.10.7.109','10.10.7.113','10.10.7.114']
+}
+
+def chg_data():
+    run('umount /data && rm -rf /data && sed -i "s#/data#/app#" /etc/fstab && [ ! -d /app ] && mkdir /app && [ -d /app ] && mount -o noatime /dev/vdb1 /app')
+
+'''
+def reboot():
+    run('reboot')
+'''
+
+def chk_version():
+    run('df -h |grep vdb')
+
+# check the cluster's date
+def chk_date():
+	run('date +"%Y-%m-%d %H-%M-%S"')
+ 
+def start_tomcat():
+    with cd('/opt/sh'):
+	run('set -m;/apps/sh/tomcat.sh start')
+
+def openssh_clients():
+    with quiet():
+        run('yum -y -q install openssh-clients')
+
+def _hosts():
+    with quiet():
+    	result_info = local('''cat vm_list''',capture=True)
+    info_list = result_info.splitlines()
+    return info_list
+
+def sshkey(user="root"):
+    if user=="root":
+        if not exists('/root/.ssh/authorized_keys'):
+            with lcd('/root/.ssh'):
+                put('id_rsa.pub','/root')
+            with cd('/root'):
+                run('mkdir .ssh && mv id_rsa.pub .ssh/authorized_keys && chmod 700 .ssh && chmod 600 .ssh/authorized_keys')
+
+def lksh():
+    with cd('/tmp'):
+        if not exists('/bin/lksh'):
+            with lcd(initroot):
+                put('lksh','/tmp')
+            run('mv lksh /bin && chmod a+x /bin/lksh')
+    if not exists('/bin/rbash'):
+        run('ln -s /bin/lksh /bin/rbash')
+    if not contains('/etc/bashrc','BASH_EXECUTION_STRING'):
+        with lcd(initroot):
+            put('ldap/BASH_EXECUTION_STRING','/tmp')
+        run('cat /tmp/BASH_EXECUTION_STRING >> /etc/bashrc')
+        run('rm -f /tmp/BASH_EXECUTION_STRING')
+    if not contains('/etc/profile','REAL_USER'):
+        with lcd(initroot):
+            put('ldap/REAL','/tmp')
+        run('sh /tmp/REAL')
+        run('rm -f /tmp/REAL')
+
+def usergroup():
+    #if not contains('/etc/passwd', '%s:x:' % (username)):
+    if not contains('/etc/passwd', 'work:x:'):
+        run('useradd -u 500 -s /bin/lksh work')
+    if not contains('/etc/passwd', 'rd:x:'):
+        run('useradd -u 501 -s /bin/lksh rd')
+    if not contains('/etc/group', 'OP:x:'):
+        run('groupadd -g 10000 OP')
+    if not contains('/etc/group', 'RD:x:'):
+        run('groupadd -g 10001 RD')
+    if not contains('/etc/group', 'SA:x:'):
+        run('groupadd -g 10002 SA')
+
+def yumrepo():
+    with lcd(initroot):
+        put ('lan.repo','/etc/yum.repos.d')
+    if exists('/etc/yum.repos.d/CentOS-Base.repo'):
+        run('mv /etc/yum.repos.d/CentOS-Base.repo{,.bak}')
+
+def aaaa_yumbase():
+    run('yum -y -q install openldap-clients krb5-workstation krb5-libs pam_krb5 nss-pam-ldapd')
+
+def aaaa_conf():
+    with lcd(initroot):
+        put('ldap/ldap-c6.tgz','/tmp')
+    with cd('/tmp'):
+        run('tar zxf ldap-c6.tgz')
+        run('rm -f ldap-c6.tgz')
+
+    if exists('/etc/ldap.conf'):
+        if not contains('/etc/ldap.conf',relayhost):
+            run('cp /etc/ldap.conf{,.bak} && mv -f /tmp/ldap.conf /etc/ldap.conf')
+    else:
+        run('mv -f /tmp/ldap.conf /etc/ldap.conf')
+    
+    if not contains('/etc/nsswitch.conf','ldap'):
+        run('cp /etc/nsswitch.conf{,.bak} && mv -f /tmp/nsswitch.conf /etc/nsswitch.conf')
+    if not contains('/etc/krb5.conf',relayhost):
+        run('cp /etc/krb5.conf{,.bak} && mv -f /tmp/krb5.conf /etc/krb5.conf')
+    if not contains('/etc/pam.d/password-auth','pam_krb5'):
+        run('cp /etc/pam.d/password-auth{,.bak} && mv -f /tmp/password-auth /etc/pam.d/password-auth')
+    if not contains('/etc/nslcd.conf',relayhost):
+        run('cp /etc/nslcd.conf{,.bak} && mv -f /tmp/nslcd.conf /etc/nslcd.conf')
+        run('chkconfig nslcd on && /sbin/service nslcd restart')
+    run('sed -i "/^USELOCAUTHORIZE/s/no/yes/" /etc/sysconfig/authconfig')
+    #for rd
+    if exists('/home/rd') and exists('/tmp/.bashrc-rd'):
+        run('mv -f /tmp/.bashrc-rd /home/rd/.bashrc && chmod 444 /home/rd/.bashrc && chown root.root /home/rd/.bashrc')
+
+def aaaa_env():
+    if not exists('/home/rbin'):
+        run('mkdir /home/rbin && ln -s /usr/bin/sudo /home/rbin/sudo && ln -s /bin/su /home/rbin/su')
+        if exists('/tmp/.bashrc'):
+            run('mv /tmp/.bashrc /home/.bashrc && chown root.root /home/.bashrc && chmod 444 /home/.bashrc')
+        if exists('/tmp/.bash_profile'):
+            run('mv /tmp/.bash_profile /home/.bash_profile && chown root.root /home/.bash_profile && chmod 444 /home/.bash_profile')
+
+def aaaa_sudo():
+    if not contains('/etc/sudoers','%SA ALL=NOPASSWD'):
+        run('echo -e "%SA ALL=NOPASSWD:/home/rbin/su -,/home/rbin/su - root,/home/rbin/su - work,/home/rbin/su - rd" >> /etc/sudoers')
+    if not contains('/etc/sudoers','%OP ALL=NOPASSWD'):
+        run('echo -e "%OP ALL=NOPASSWD:/home/rbin/su - work,/home/rbin/su - rd" >> /etc/sudoers')
+    if not contains('/etc/sudoers','%RD ALL=NOPASSWD'):
+        run('echo -e "%RD ALL=NOPASSWD:/home/rbin/su - rd" >> /etc/sudoers')
+    if not contains('/etc/sudoers','rd ALL=(work)'):
+        run('echo -e "rd ALL=(work) NOPASSWD:/usr/local/jdk/bin/jstack,/usr/local/jdk/bin/jmap,/usr/local/jdk/bin/jstat" >> /etc/sudoers')
+
+def aaaa_sshconf():
+    run('sed -i "/^GSSAPIAuthentication/s/no/yes/;/^#KerberosAuthentication/s/no/yes/;/^#KerberosAuthentication/s/#//;/^#KerberosOrLocalPasswd/s/#//;/^#KerberosTicketCleanup/s/#//;/^#UseDNS/s/yes/no/;/^#UseDNS/s/#//" /etc/ssh/sshd_config')
+
+def aaaa_hosts():
+    with quiet():
+        _HOSTNAME = run('grep ^HOSTNAME /etc/sysconfig/network|awk -F"=" \'{print $2}\'')
+    if not contains('/etc/hosts',relayhost):
+        run('echo "%s relay01.lk" >> /etc/hosts' % relayhost)
+    if not contains('/etc/hosts',env.host):
+        run('echo "%s %s" >> /etc/hosts' %(env.host,_HOSTNAME))
+
+def aaaa_check():
+    with settings(warn_only=True):
+        if run('getent passwd | grep -c rbash').failed:
+            print red('AAAA check FAIL')
+        else:
+            run('service sshd reload')
+
+def aaaa():
+    host_list = _hosts()
+    execute(lksh, hosts=host_list)
+    execute(yumrepo, hosts=host_list)
+    execute(aaaa_yumbase, hosts=host_list)
+    execute(aaaa_conf, hosts=host_list)
+    execute(aaaa_env, hosts=host_list)
+    execute(aaaa_sudo, hosts=host_list)
+    execute(aaaa_sshconf, hosts=host_list)
+    execute(aaaa_hosts, hosts=host_list)
+    execute(aaaa_check, hosts=host_list)
+
+def aaaa_one():
+    execute(lksh)
+    execute(yumrepo)
+    execute(aaaa_yumbase)
+    execute(aaaa_conf)
+    execute(aaaa_env)
+    execute(aaaa_sudo)
+    execute(aaaa_sshconf)
+    execute(aaaa_hosts)
+    execute(aaaa_check)
+
+def vimrc():
+    with lcd(initroot):
+        put('.vimrc','/root')
+        run('cp /root/.vimrc /home/work && chown work:work /home/work/.vimrc')
+        run('cp /root/.vimrc /home/rd && chown rd:rd /home/rd/.vimrc')
+
+def sys_config():
+    with lcd(initroot):
+        put('ulimit/limits.conf','/etc/security/limits.conf')
+        put('ulimit/90-nproc.conf','/etc/security/limits.d/90-nproc.conf')
+        put('sysctl.conf','/etc/sysctl.conf')
+    run('sed -i "s#SELINUX=enforcing#SELINUX=disabled#g" /etc/selinux/config')
+    run('sysctl -p')
+
+def jdk_env():
+    with settings(
+        hide('warnings', 'running', 'stdout', 'stderr'),
+        warn_only=True
+    ):
+        if run('grep ^JAVA_HOME /etc/profile'):
+            pass
+        else:    
+            run('sed -i \'/done/ a\JAVA_HOME="/usr/local/jdk"\' /etc/profile')
+            run('sed -i \'/JAVA_HOME/ a\CLASS_PATH="$JAVA_HOME/lib:$JAVA_HOME/jre/lib"\' /etc/profile')
+            run('sed -i \'/CLASS_PATH/ a\PATH=".:$PATH:$JAVA_HOME/bin:/sbin"\' /etc/profile')
+            run('sed -i \'/PATH=".:$PATH/ a\export JAVA_HOME\' /etc/profile')
+
+def jdk():
+    with cd('/tmp'):
+        if not exists(JAVA_HOME):
+            with lcd(initroot):
+                put('jdk-7u80-ea-bin-b03-linux-x64-19_nov_2014.tar.gz','/tmp')
+            run('tar zxf jdk-7u80-ea-bin-b03-linux-x64-19_nov_2014.tar.gz')
+            run('mv jdk1.7.0_80 /usr/local/jdk')
+            run('rm -f jdk-7u80-ea-bin-b03-linux-x64-19_nov_2014.tar.gz')
+
+def nginx(cmd):
+    if cmd=="install":
+        with lcd(initroot):
+            put('nginx_6.tgz','/tmp')
+            put('nginx.service','/etc/init.d/nginx')
+        with cd('/tmp'):
+            if exists('/app/nginx'):
+                pass
+            else:
+                run('chmod a+x /etc/init.d/nginx')
+                run('tar zxf /tmp/nginx_6.tgz -C /app && rm -rf /tmp/nginx_6.tgz')
+                run('chkconfig nginx on && chown -R work.work /app/nginx && service nginx start')
+    elif cmd=="reload":
+        run('/app/nginx/sbin/nginx -t')
+        run('/app/nginx/sbin/nginx -s reload')
+    elif cmd=="start":
+        run('/app/nginx/sbin/nginx -t')
+        run('service nginx start')
+    elif cmd=="stop":
+        run('service nginx stop')
+
+def mysql():
+    if not contains('/etc/passwd', 'mysql:x:'):
+        run('useradd -u 502 -s /bin/lksh mysql')
+    if not exists('/usr/bin/xz'):
+        run('yum -y -q install xz')
+    if not exists('/usr/local/mysql'):
+        with lcd(initroot):
+            put('mysql/mysqlinit.sh','/tmp')
+        with cd('/tmp'):
+            run('sh mysqlinit.sh %s' % initip )
+
+def php():
+    if exists('/usr/local/php'):
+        print green('%s php is installed!' % env.host)
+    else:
+        with lcd(initroot):
+            put('php/php_5.3.18_6.tgz','/tmp')
+        with cd('/tmp'):
+            run('tar zxf php_5.3.18_6.tgz && tar Jxf php_5.3.18_6.tar.xz -C /usr/local')
+            run('yum -y -q localinstall gd-devel-2.0.35-11.el6.x86_64.rpm libc-client-devel-2007e-11.el6.x86_64.rpm libc-client-2007e-11.el6.x86_64.rpm')
+            with quiet():
+                run('tar zxf libiconv-1.14.tar.gz && cd libiconv-1.14 && ./configure --prefix=/usr/local && make -j8 && make install')
+                run('yum -y -q install gcc gcc-c++ zlib-devel ncurses-devel xz cmake curl-devel bison lsof openssl-devel libxml2-devel libjpeg-devel libpng-devel freetype-devel autoconf libtool libtool-ltdl-devel bzip2-devel gmp-devel openldap-devel mysql-devel readline-devel libxslt-devel.x86_64')
+        if not exists('/etc/ld.so.conf.d/php.conf'):
+            with cd('/etc/ld.so.conf.d'):
+                run('echo "/usr/local/php/lib" > php.conf')
+                run('echo "/usr/local/lib" >> php.conf')
+                run('ldconfig')
+        if not exists('/etc/init.d/php-fpm'):
+            run('mv /usr/local/php/php-fpm.service /etc/init.d/php-fpm')
+            run('chmod a+x /etc/init.d/php-fpm && chkconfig php-fpm on')
+        run('rm -rf /tmp/{*.rpm,php_*,libiconv-1.14*}')
+
+def consul(cmd):
+    if exists('/app/consul'):
+        print green('%s consul is installed!' % env.host)
+    else:
+        with lcd(initroot):
+            put('consul/consul.tgz','/tmp')
+        with cd('/tmp'):
+            run('tar zxf consul.tgz -C /app')
+    if cmd=="server":
+        with lcd(initroot):
+            put('consul/server.server.json','/app/consul/conf')
+    elif cmd=="client":
+        with lcd(initroot):
+            put('consul/server.client.json','/app/consul/conf')
+
+    with quiet():
+        run('chown -R work:work /app/consul')
+
+def tmp(cmd):
+    host_list = _hosts()
+    execute(cmd, hosts=host_list)  
+  #+END_SRC
+** 实例1
+

@@ -1,0 +1,82 @@
+https://github.com/happyfish100
+
+* FastDFS介绍
+  FastDFS是一款开源的轻量级分布式文件系统，
+  + 纯C实现，支持Linux、FreeBSD等类UNIX系统；
+  + 类Google FS，不是通用的文件系统，只能通过专有的API访问，目前提供了
+    C、Java和PHP API；
+  + 为互联网应用量身定做，追求高性能和高扩展型；
+  + FastDFS可以看做是基于文件系统的key value pair存储系统，称作分布式
+    文件存储服务更为合适；
+  + 更倾向于存储中小型文件（4KB~500MB）；
+** FastDFS组成
+*** Tracker Server
+	跟踪服务器，主要做调度工作，在访问时起负载均衡的作用。在内存中记录
+	集群中group和storage服务器的状态信息，是连接客户端和Storage服务端
+	的枢纽。因为相关信息全部在内存中，Tracker服务器的性能非常高，一个
+	较大的集群（比如上百个group）中有3台就足够了。
+*** Storage Server
+	存储服务器，文件和文件属性（meta data）都保存到存储服务器上。
+** FastDFS上传机制
+   #+BEGIN_SRC plantuml :file images/fastdfs_upload.png
+title FastDFS上传机制
+participant Client
+participant Tracker_Server
+participant Storage_Server
+
+Storage_Server -> Tracker_Server: 1. 定时向Tracker上传状态信息
+Client -> Tracker_Server: 2. 上传连接请求
+Tracker_Server -> Tracker_Server: 3. 查询可用storage
+Client <- Tracker_Server: 4. 返回信息(storage的IP和端口)
+Client -> Storage_Server: 5. 上传文件(file content和meta data)
+Storage_Server -> Storage_Server: 6. 生成file_id
+Storage_Server -> Storage_Server: 7. 将上传内容写入硬盘
+Client <- Storage_Server: 8. 返回file_id(路径信息和文件名)
+Client -> Client: 9. 存储文件信息
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/fastdfs_upload.png]]
+
+* FastDFS使用场景
+* FastDFS架构
+* 实验环境
+  | 主机名                 |         IP地址 | 说明         |
+  |------------------------+----------------+--------------|
+  | tracker01.lavenliu.com | 192.168.20.160 | 追踪服务器01 |
+  | tracker02.lavenliu.com | 192.168.20.161 | 追踪服务器02 |
+  | storage01.lavenliu.com | 192.168.20.162 | 存储服务器01 |
+  | storage02.lavenliu.com | 192.168.20.163 | 存储服务器02 |
+  | client01.lavenliu.com  | 192.168.20.164 | 客户端01     |
+* 部署FastDFS
+** 安装依赖
+** 安装服务端
+   #+BEGIN_SRC sh
+cd /usr/local/src
+wget https://github.com/happyfish100/
+   #+END_SRC
+
+   安装完毕，配置文件在/etc/fdfs目录下；二进制程序在/usr/bin目录下；启
+   动脚本在/etc/init.d/目录下。启动脚本要做一些修改，
+   #+BEGIN_SRC sh
+sed -i 's#/usr/local/bin/#/usr/bin/#g' /etc/init.d/fdfs_storaged
+sed -i 's#/usr/local/bin/#/usr/bin/#g' /etc/init.d/fdfs_trackerd
+   #+END_SRC
+
+   设置完毕，还不能启动服务，因为我们还没有进行配置tracker服务器和
+   storage服务器。所以接下来的工作就是配置tracker和storage服务。
+** 配置Tracker服务端
+   在tracker01及tracker02服务器上进行如下操作，
+   #+BEGIN_SRC sh
+cat /etc/fdfs/tracker.conf
+# the base path to store data and log files
+base_path=/data/fdfs_tracker
+   #+END_SRC
+
+   启动trackerd进程，
+   #+BEGIN_SRC sh
+/etc/init.d/fdfs_trackerd start
+   #+END_SRC
+** 配置Storage服务端
+** 安装客户端
+* FastDFS生产实践

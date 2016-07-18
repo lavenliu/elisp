@@ -1,0 +1,38 @@
+#+TITLE: Bash
+#+AUTHOR: LavenLiu
+#+DATE: 2010-05-04
+#+EMAIL: ldczz2008@163.com 
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+* 建立一个规范的shell脚本
+
+* 执行shell脚本的多种办法及重要区别
+
+* shell脚本开发的9点基本规范和习惯
+* shell的变量
+** 局部变量
+** 全局变量
+** 位置变量
+** 内部变量及shift
+** 变量的字串应用技术
+** 批量修改文件名及扩展名
+** 计算变量长度的不同方法及不同方法耗时对比

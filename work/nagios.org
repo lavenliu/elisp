@@ -1,0 +1,1292 @@
+#+TITLE: Nagios
+#+AUTHOR: LavenLiu
+#+DATE: 2010-05-04
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* 企业工作中为什么要部署监控系统
+  监控系统都需要监控什么：
+  1. 本地资源：负载uptime、CPU（top,sar），磁盘（df），内存（free），
+     IO（iostat），RAID，温度，passwd文件的变化，本地所有文件指纹识别。
+  2. 网络服务：端口，URL，丢包，进程数，网络流量。
+  3. 其他设备：路由器、交换机端口流量，打印机，Windows等。
+  4. 业务数据：用户登录失败次数，用户登录网站次数，输入验证码失败的次
+     数，某个API接口流量并发，电商网站订单，支付交易的数量。
+  5. 监控软件本身仅仅是一个平台，我们想监控的内容，理论上只要在服务器
+     命令行可以获取到就可以被监控软件监控。
+* Nagios监控工具介绍及原理
+** Nagios监控工具介绍及与优势
+   Nagios是一款开源的网络及服务的监控工具，其功能强大，灵活性强。能有效监控
+   Windows、Linux和Unix等系统的主机各种状态信息，交换机、路由器等网络设备，主机
+   端口及URL服务等，根据不同业务故障级别发出告警信息（邮件、微信、短信、语言报警、
+   飞信、MSN）给管理员，当故障恢复时也会发出恢复消息给管理员。
+
+   Nagios服务端可以运行在Linux系统和类Unix系统上运行，目前无法在Windows上运行，
+   Windows可以作为被监控的主机，但是不能被作为监控服务器。
+
+   官方网站地址：http://www.nagios.org
+
+   Nagios的特点：
+   1. 监控网络服务（SMTP，POP3，HTTP，TCP，PING等）；
+   2. 监控主机资源（CPU、负载、IO状况，内存及磁盘利用率等）；
+   3. 简单地插件设计模式使得用户可以方便定制符合自己的服务的检测方法；
+   4. 并行服务检查机制；
+   5. 具备定义网络分层结构的能力，用“parent”主机定义来表达网络主机间的
+      关系，这种关系可被用来发现和明晰主机宕机或不可达状态；
+   6. 当服务或主机问题产生与解决后将告警发送给联系人（mail/im/sms/sound）；
+   7. 具备定义事件句柄功能，它可以在主机或服务的事件发生时获取更多问题定位；
+   8. 自动的日志回滚；
+   9. 可以支持并实现对主机的冗余监控（支持分布式监控）；
+   10. 可选的WEB界面用于查看当前的网络状态、通知和故障历史、日志文件等；
+** Nagios监控系统家族成员的构成
+   Nagios监控一般又一个主程序（Nagios）、一个插件程序（Nagios-plugins）
+   和一些可选的附加程序（NRPE、NSClient++、NSCA和NDOUtils）等。
+
+   Nagios本身就是一个监控的平台而已，其具体的监控工作都是通过插件（Nagios-plugins，
+   也可以自己编写）来实现，因此，Nagios主程序和Nagios-plugins插件都是Nagios服务端必须
+   要安装的程序组件，Nagios-plugins一般也要安装于被监控端。几个附加程序的描述如下：
+   1. NRPE：半被动模式
+	  #+BEGIN_EXAMPLE
+	  存在位置：NRPE软件工作于被监控端，操作系统为Linux/Unix系统。
+	  NRPE作用：主要用于在被监控的远程Linux/Unix主机上执行脚本插件获取数据回传给服务器端，
+	  以实现对这些主机资源的监控。
+	  存在形式：守护进程（agent）模式，开启的端口5666。
+	  本地资源：负载uptime、CPU（top，sar），磁盘（df -hi），内存（free swap），IO（iostat），RAID级别，
+	  CPU温度，passwd文件的变化，本地所有文件指纹识别监控。
+	  #+END_EXAMPLE
+   2. NSClient++：半被动模式
+	  #+BEGIN_EXAMPLE
+	  存在位置：用于被监控端为Windows系统的服务器。
+	  作用：功能相当于Linux的NRPE。
+	  用于监控Windows主机时，安装在Windows主机上的组件。
+	  #+END_EXAMPLE
+   3. NDOUtils（不推荐使用）
+	  #+BEGIN_EXAMPLE
+	  存在位置：NDOUtils工作于Nagios服务器端。
+	  作用：用于将Nagios的配置信息和各event产生的数据存入数据库以实现对这些数据的检索和处理。
+	  #+END_EXAMPLE
+   4. NSCA：纯被动模式的监控
+	  #+BEGIN_EXAMPLE
+	  位置：NSCA需要同时安装在Nagios的服务器端和客户端（被监控端）。
+	  作用：用于让监控的远程Linux/Unix主机主动将监控到的信息发送给
+	  Nagios服务器（在分布式监控集群模式中要用到，300台服务器以内，可以不用）。
+
+	  分布式监控外部构件简介：为完成从远程主机主动提交强制检测结果，于是就开发了NSCA外部构件。
+	  该外部构件包括两部分，第一部分是客户端程序（send_data），运行于远程主机上并负责将强制
+	  检测结果送到指定的Nagios服务端；另一部分是NSCA守护进程（nsca），它既可以独立地运行于
+	  守护服务也可以注册到inetd里作为一个inetd客户程序来提供监听连接。从客户端收到服务检测
+	  结果信息之后，守护进程将结果提交给在中心服务器的Nagios，方式是通过在外部命令文件里
+	  插入一条PROCESS_SVC_CHECK_RESULT命令，之后跟上检测结果。在Nagios服务端下一次处理
+	  外部命令时将会找到这条由分布式服务器送来的强制检测信息并处理它。
+	  #+END_EXAMPLE
+** Nagios监控系统家族成员（外部构件）的简单原理
+*** NRPE运行原理图
+	[[./images/NRPE_topo.png]]
+*** NSClient++运行原理图
+	[[./images/NSClient_topo.png]]
+* 服务端与客户端环境准备
+  | 主机名               | 操作系统        |         IP地址 | 说明                 |
+  |----------------------+-----------------+----------------+----------------------|
+  | monitor.lavenliu.com | CentOS6U5 64bit | 192.168.20.170 | Nagios监控服务器     |
+  | bbs.lavenliu.com     | CentOS6U5 64bit | 192.168.20.128 | 被监控的客户端服务器 |
+  | lnmp01.lavenliu.com  | CentOS6U5 64bit | 192.168.20.129 | 被监控的客户端服务器 |
+
+  在Nagios客户端及服务端进行如下的设置：
+** 设置yum安装源
+	使用国外yum源速度比较慢。替换为国内的阿里yum源。
+    #+BEGIN_SRC sh
+mv 
+wget -O 
+	#+END_SRC
+** 操作系统字符集相关设置
+    #+BEGIN_SRC sh
+echo "export LC_ALL=C" >> /etc/profile
+source /etc/profile
+	#+END_SRC
+** 关闭iptables及selinux
+	#+BEGIN_SRC sh
+/etc/init.d/iptables stop
+chkconfig iptables off
+setenforce 0
+	#+END_SRC
+** 设置时间同步
+	如果时间不同步，监控时会出现莫名的问题。
+	#+BEGIN_SRC sh
+echo "#time sync by lavenliu at 2016-03-20" >> /var/spool/cron/root
+echo "*/5 * * * * /usr/sbin/ntpdate pool.ntp.org > /dev/null 2>&1" >> /var/spool/cron/root
+crontab -l
+	#+END_SRC
+** 安装gcc和lamp环境
+	#+BEGIN_SRC sh
+yum install -y gcc glibc glibc-common
+yum install -y gd gd-devel 
+yum install -y httpd php php-gd
+yum install -y mysql* 
+	#+END_SRC
+** 增加nagios用户和组
+	#+BEGIN_SRC sh
+# 服务端的操作
+/usr/sbin/useradd -m nagios
+/usr/sbin/groupadd nagcmd
+/usr/sbin/usermod -a -G nagcmd nagios
+/usr/sbin/usermod -a -G nagcmd apache
+# 客户端的操作
+/usr/sbin/useradd -m nagios -s /sbin/nologin
+	#+END_SRC
+* Nagios服务端安装
+** 下载并安装Nagios
+	下载文件列表
+	#+BEGIN_EXAMPLE
+	check_memory.pl
+	check_mysql
+	Class-Accessor-0.31.tar.gz
+	Config-Tiny-2.12.tar.gz
+	libart_lgpl-2.3.17.tar.gz
+	Math-Calc-Utils-1.07.tar.gz
+	Nagios-Plugin-0.34.tar.gz
+	nrpe-2.12.tar.gz
+	Params-Validate-0.91.tar.gz
+	pnp-0.4.14.tar.gz
+	Regexp-Common-2010010201.tar.gz
+	rrdtool-1.2.14.tar.gz
+	check_iostat
+	nagios-3.5.1.tar.gz
+	nagios-plugins-1.4.16.tar.gz
+	#+END_EXAMPLE
+
+	编译安装nagios主程序，解压nagios-3.5.1.tar.gz
+	#+BEGIN_SRC sh
+tar -xf nagios-3.5.1.tar.gz
+cd nagios-3.5.1
+./configure --with-command-group=nagcmd
+make all
+make install
+make install-init
+make install-config
+make install-commandmode
+make install-webconf # 生成一个Apache下的nagios配置文件
+	#+END_SRC
+*** WEB认证配置
+	#+BEGIN_SRC sh
+htpasswd -cb /usr/local/nagios/etc/htpasswd.users lavenliu 123456 # 配置文件里的路径
+	#+END_SRC
+*** 安装nagios-plugins
+	#+BEGIN_SRC sh
+yum install -y perl-devel openssl-devel
+tar xf nagios-plugins-1.4.16.tar.gz
+cd nagios-plugins-1.4.16
+./configure --with-nagios-user=nagios --with-nagios-group=nagios \
+--enable-perl-modules
+make && make install
+cd ..
+ls /usr/local/nagios/libexec |wc -l
+	#+END_SRC
+*** 安装NRPE
+	客户端软件，服务端需要check_nrpe环境，如果不安装nrpe环境，服务端不
+	会有check_nrpe环境；另外，如果要想监控服务端的机器，也需要安装nrpe
+	环境。
+	#+BEGIN_SRC sh
+tar -xf nrpe-2.12.tar.gz
+cd nrpe-2.12
+./configure
+make all
+make install-plugin
+make install-daemon
+make install-daemon-config
+	#+END_SRC
+*** 启动服务并检查
+	#+BEGIN_SRC sh
+/etc/init.d/nagios start
+/etc/init.d/httpd start
+lsof -i:80
+ps -ef |grep nagios
+	#+END_SRC
+* Nagios客户端安装
+  和Nagios服务端相比，Nagios客户端不需要安装如下内容：
+  1. Nagios客户端无需安装lamp环境
+  2. Nagios客户端无需安装Nagios服务端软件包
+  
+  Nagios客户端需要多安装如下软件包：
+  #+BEGIN_EXAMPLE
+  Class-Accessor-0.31.tar.gz
+  Config-Tiny-2.12.tar.gz
+  Math-Calc-Units-1.07.tar.gz
+  Nagios-Plugin-0.34.tar.gz
+  Params-Validate-0.91.tar.gz
+  Regexp-Common-2010010201.tar.gz
+  check_iostat
+  check_memory.pl
+  nrpe-2.12.tar.gz
+  #+END_EXAMPLE
+** 安装如下软件包
+   #+BEGIN_SRC sh
+yum install -y mysql* # 有待商榷
+   #+END_SRC
+** 安装nagios-plugins
+   #+BEGIN_SRC sh
+yum install -y perl-devel openssl-devel
+tar xf nagios-plugins-1.4.16.tar.gz
+cd nagios-plugins-1.4.16
+./configure --prefix=/usr/local/nagios --enable-perl-modules \
+--enable-redhat-pthread-workaround
+make && make install
+cd ..
+ls /usr/local/nagios/libexec |wc -l
+   #+END_SRC
+** 安装NRPE
+   #+BEGIN_SRC sh
+tar -xf nrpe-2.12.tar.gz
+cd nrpe-2.12
+./configure
+make all
+make install-plugin
+make install-daemon
+make install-daemon-config
+cd ..
+   #+END_SRC
+** 安装Perl的软件包（iostat工具依赖这些perl的依赖包）
+   1. Params-Validate
+	  #+BEGIN_SRC sh
+tar -xf Params-Validate-0.91.tar.gz
+cd Params-Validate-0.91
+perl Makefile.PL
+make
+make install
+cd ..
+	  #+END_SRC
+   2. Regexp-Common
+	  #+BEGIN_SRC sh
+tar -xf Regexp-Common-2010010201.tar.gz
+cd Regexp-Common-2010010201
+perl Makefile.PL
+make
+make install
+cd ..
+	  #+END_SRC
+   3. Class-Accessor
+	  #+BEGIN_SRC sh
+tar -xf Class-Accessor-0.31.tar.gz
+cd Class-Accessor-0.31
+perl Makefile.PL
+make 
+make install
+cd ..
+	  #+END_SRC
+   4. 安装Config-Tiny
+	  #+BEGIN_SRC sh
+tar -xf Config-Tiny-2.12.tar.gz
+cd Config-Tiny-2.12
+perl Makefile.PL
+make
+make install
+cd ..
+	  #+END_SRC
+   5. 安装Math-Calc-Utils
+	  #+BEGIN_SRC sh
+tar -xf Math-Calc-Units-1.07.tar.gz
+cd Math-Calc-Units-1.07
+perl Makefile.PL
+make
+make install
+cd ..
+	  #+END_SRC
+   6. 安装Nagios-Plugin
+	  #+BEGIN_SRC sh
+tar -xf Nagios-Plugin-0.34.tar.gz
+cd Nagios-Plugin-0.34
+perl Makefile.PL
+make 
+make install
+cd ..
+	  #+END_SRC
+   7. 安装sysstat
+	  #+BEGIN_SRC sh
+yum install -y sysstat
+/bin/cp /home/lavenliu/tools/check_memory.pl /usr/local/nagios/libexec
+/bin/cp /home/lavenliu/tools/check_iostat /usr/local/nagios/libexec
+
+chmod 755 /usr/local/nagios/libexec/check_memory.pl
+chmod 755 /usr/local/nagios/libexec/check_iostat
+
+dos2unix /usr/local/nagios/libexec/check_memory.pl
+dos2unix /usr/local/nagios/libexec/check_iostat
+	  #+END_SRC
+   8. 修改客户端配置文件,
+	  #+BEGIN_SRC sh
+vi /usr/local/nagios/etc/nrpe.cfg
+allowed_hosts=127.0.0.1,192.168.56.101
+# 199,203这几行删除 
+perl -pi -e 's/allowed_hosts=127.0.0.1/allowed_hosts=127.0.0.1,192.168.56.101/g' /usr/local/nagios/etc/nrpe.cfg
+sed -i '199,203d' /usr/local/nagios/etc/nrpe.cfg
+echo "command[check_load]=/usr/local/nagios/libexec/check_load -w 15,10,6 -c 30,25,20" >> /usr/local/nagios/etc/nrpe.cfg
+echo "command[check_mem]=/usr/local/nagios/libexec/check_memory.pl -w 6% -c 3%" >> /usr/local/nagios/etc/nrpe.cfg
+echo "command[check_disk]=/usr/local/nagios/libexec/check_disk -w 20% -c 8% -p /" >> /usr/local/nagios/etc/nrpe.cfg
+echo "command[check_swap]=/usr/local/nagios/libexec/check_swap -w 20% -c 10%" >> /usr/local/nagios/etc/nrpe.cfg
+echo "command[check_iostat]=/usr/local/nagios/libexec/check_iostat -w 6 -c 10" >> /usr/local/nagios/etc/nrpe.cfg
+	  #+END_SRC
+   9. 启动Nagios客户端
+	  #+BEGIN_SRC sh
+pkill nrpe
+sleep 2
+/usr/local/nagios/bin/nrpe -c /usr/local/nagios/etc/nrpe.cfg -d
+echo "#nagios nrpe process cmd by lavenliu 2016-03-20" >> /etc/rc.local
+echo "/usr/local/nagios/bin/nrpe -c /usr/local/nagios/etc/nrpe.cfg -d" >> /etc/rc.local
+netstat -antup |grep 5666
+	  #+END_SRC
+* Nagios服务端目录及配置文件介绍
+** Nagios服务端目录结构
+   #+BEGIN_SRC sh
+[root@monitor nagios]# ll
+total 32
+drwxrwxr-x  2 nagios nagios 4096 Mar 21 10:50 bin
+drwxrwxr-x  3 nagios nagios 4096 Mar 21 10:50 etc
+drwxr-xr-x  2 root   root   4096 Mar 21 10:49 include
+drwxrwxr-x  2 nagios nagios 4096 Mar 21 10:57 libexec
+drwxr-xr-x  5 root   root   4096 Mar 21 10:49 perl
+drwxrwxr-x  2 nagios nagios 4096 Mar 21 10:26 sbin
+drwxrwxr-x 11 nagios nagios 4096 Mar 21 10:49 share
+drwxrwxr-x  5 nagios nagios 4096 Mar 21 18:19 var
+[root@monitor nagios]# pwd
+/usr/local/nagios
+   #+END_SRC
+   Nagios目录结构说明：
+   | 目录名称 | 说明                                |
+   |----------+-------------------------------------|
+   | bin      | nagios相关命令：                    |
+   |          | nagios                              |
+   |          | nagiostats                          |
+   |          | nrpe                                |
+   |----------+-------------------------------------|
+   | etc      | nagios的配置文件及目录信息：        |
+   |          | nagios.cfg - nagios的主配置文件     |
+   |          | nrpe.cfg - 客户端的配置文件         |
+   |          | objects - 相当于apache的extra目录   |
+   |----------+-------------------------------------|
+   | libexec  | 所有插件的目录路径                  |
+   |----------+-------------------------------------|
+   | sbin     | 主要包含一些CGI的程序               |
+   |----------+-------------------------------------|
+   | share    | nagios界面展示的php程序等内容的目录 |
+   |----------+-------------------------------------|
+   | var      | nagios数据及日志的目录              | 
+
+
+   | 目录名称     | 作用                                                           |
+   |--------------+----------------------------------------------------------------|
+   | bin          | Nagios可执行程序所在目录                                       |
+   |--------------+----------------------------------------------------------------|
+   | etc          | Nagios配置文件目录                                             |
+   |--------------+----------------------------------------------------------------|
+   | sbin         | Nagios cgi文件所在目录，也就是执行外部命令所需要文件所在的目录 |
+   |--------------+----------------------------------------------------------------|
+   | share        | Nagios网页存放路径                                             |
+   |--------------+----------------------------------------------------------------|
+   | libexec      | Nagios外部插件存放目录                                         |
+   |--------------+----------------------------------------------------------------|
+   | var          | Nagios日志文件、Lock等文件所在的目录                           |
+   |--------------+----------------------------------------------------------------|
+   | var/archives | Nagios日志自动归档目录                                         |
+   |--------------+----------------------------------------------------------------|
+   | var/rw       | 用来存放外部命令文件的目录                                     |
+
+   | 配置文件                | 说明                                                                                |
+   |-------------------------+-------------------------------------------------------------------------------------|
+   | cgi.cfg                 | 控制CGI访问的配置文件                                                               |
+   |-------------------------+-------------------------------------------------------------------------------------|
+   | nagios.cfg              | Nagios主配置文件                                                                    |
+   |-------------------------+-------------------------------------------------------------------------------------|
+   | resource.cfg            | 变量定义文件，又称为资源文件，在此文件中定义变量，以便由其他配置文件引用，如$USER1$ |
+   |-------------------------+-------------------------------------------------------------------------------------|
+   | objects                 | objects是一个目录，在此目录下有很多配置文件模板，用于定义 Nagios 对象               |
+   | objects/commands.cfg    | 命令定义配置文件，其中定义的命令可以被其他配置文件引用                              |
+   | objects/contacts.cfg    | 定义联系人和联系人组的配置文件                                                      |
+   | objects/localhost.cfg   | 定义监控本地主机的配置文件                                                          |
+   | objects/printer.cfg     | 定义监控打印机的一个配置文件模板，默认没有启用此文件                                |
+   | objects/switch.cfg      | 监控路由器的一个配置文件模板，默认没有启用此文件                                    |
+   | objects/templates.cfg   | 定义主机和服务的一个模板配置文件，可以在其他配置文件中引用                          |
+   | objects/timeperiods.cfg | 定义Nagios监控时间段的配置文件                                                      |
+   | objects/windows.cfg     | 监控 Windows 主机的一个配置文件模板，默认没有启用此文件                             |
+   |-------------------------+-------------------------------------------------------------------------------------|
+   | 备注:                   | Nagios在配置方面非常灵活，默认的配置文件并不是必需的。可以使用这些默认的配置文件，  |
+   |                         | 也可以创建自己的配置文件，然后在主配置文件 nagios.cfg 中引用即可。                  |
+
+   所有客户端本地服务的监控都是通过执行libexec目录下的插件来实现的，当然，如果开启
+   了snmp，nagios服务端也可主动抓取。
+
+   Nagios主配置文件为nagios.cfg，默认在/usr/local/nagios/etc/目录下，
+   /usr/local/nagios/etc/目录下objects（类似apache的extra目录）的目录
+   里存放的是主配置文件nagios.cfg包含的其他nagios配置文件，
+   #+BEGIN_SRC sh
+ll etc/objects/
+total 48
+-rw-rw-r-- 1 nagios nagios  7716 Mar 21 10:27 commands.cfg
+-rw-rw-r-- 1 nagios nagios  2166 Mar 21 10:27 contacts.cfg
+-rw-rw-r-- 1 nagios nagios  5403 Mar 21 10:27 localhost.cfg
+-rw-rw-r-- 1 nagios nagios  3124 Mar 21 10:27 printer.cfg
+-rw-rw-r-- 1 nagios nagios  3293 Mar 21 10:27 switch.cfg
+-rw-rw-r-- 1 nagios nagios 10812 Mar 21 10:27 templates.cfg
+-rw-rw-r-- 1 nagios nagios  3208 Mar 21 10:27 timeperiods.cfg
+-rw-rw-r-- 1 nagios nagios  4019 Mar 21 10:27 windows.cfg
+   #+END_SRC
+
+   在nagios.cfg中既可以指定单独包含一个cfg文件，也可指定包含一个目录，即该目录下的
+   所有cfg文件都会包含进来。
+
+   为了目录结构看起来清晰和批量部署服务的需要，这里把主配置文件包含的配置文件如下，
+   | 配置文件名称    | 说明                                                                  |
+   |-----------------+-----------------------------------------------------------------------|
+   | command.cfg     | 存放nagios命令相关配置（也可指定commands目录），这里的                |
+   |                 | 命令不是系统命令，而是实现把nagios里定义的命令和Linux系统里的         |
+   |                 | 插件关联的一个文件。                                                  |
+   |-----------------+-----------------------------------------------------------------------|
+   | services.cfg    | 存放具体被监控的服务相关配置内容（上百台以上可以指定services目录），  |
+   |                 | 默认不存在。                                                          |
+   |-----------------+-----------------------------------------------------------------------|
+   | hosts.cfg       | 存放具体被监控的主机相关配置（上百台以上可以指定hosts目录），         |
+   |                 | 默认不存在。                                                          |
+   |-----------------+-----------------------------------------------------------------------|
+   | contacts.cfg    | 存放报警联系人相关配置的文件。                                        |
+   |-----------------+-----------------------------------------------------------------------|
+   | timeperiods.cfg | 存放报警周期时间等相关配置。                                          |
+   |-----------------+-----------------------------------------------------------------------|
+   | templates.cfg   | 模板配置文件，模板的存在是为了方便服务的配置。类似shell里的函数功能。 | 
+*** Nagios配置文件间的关联
+	Nagios 的配置过程涉及几个定义有:主机、主机组、服务、服务组、联系人、
+	联系人组、监控时间和监控命令等，从这些定义可以看出，Nagios 的各个
+	配置文件之间是互为关联、彼此引用的。成功配置一台 Nagios 监控系统，
+	需要掌握每个配置文件之间依赖与被依赖的关系，可从下面四个步骤来入手，
+	1. 定义哪些主机、主机组、服务和服务组；
+    2. 要定义这个监控要通过什么命令实现；
+	3. 要定义监控的时间段；
+	4. 要定义主机或服务出现问题时要通知的联系人和 联系人组；强烈建议依据以上顺序对Nagios系统进行相关配置。
+** 配置主配置文件nagios.cfg
+   在nagios.cfg文件中找到cfg_file部分，进行如下配置：
+   #+BEGIN_SRC sh
+vi /usr/local/nagios/etc/nagios.cfg +34
+# 增加如下主机和服务的配置文件
+cfg_file=/usr/local/nagios/etc/objects/hosts.cfg
+cfg_file=/usr/local/nagios/etc/objects/services.cfg
+# 新添加的services目录，后续需要手工创建
+cfg_dir=/usr/local/nagios/etc/objects/services
+# 作为备用增加一个services目录，使用目录的优点很多，在目录下的文件只要符合*.cfg就可以
+# 被nagios加载。使用脚本批量部署时非常方便的随机命名配置文件。
+# 注释如下的行
+# cfg_file=/usr/local/nagios/etc/objects/localhost.cfg
+   #+END_SRC
+
+   操作文本，保存nagios.cfg，并建立目录且授权，
+   #+BEGIN_SRC sh
+mkdir /usr/local/nagios/etc/services
+chown -R nagios.nagios /usr/local/nagios/etc/services
+   #+END_SRC
+
+   *生成hosts.cfg文件，*
+   #+BEGIN_SRC sh
+cd /usr/local/nagios/etc/objects/
+head -51 localhost.cfg > hosts.cfg
+chown nagios.nagios /usr/local/nagios/etc/objects/hosts.cfg
+   #+END_SRC
+
+   *生成services.cfg文件，*
+   #+BEGIN_SRC sh
+touch services.cfg
+chown nagios.nagios services.cfg
+   #+END_SRC
+* Nagios监控模式的定义及监控模式选择
+  按照监控的行为来看，Nagios的监控分为主动监控和被动监控（nrpe半被动和nsca全被动）。
+
+  主动监控：我们把对于像URL监控这样的一般由nagios服务器端发出请求主动探测就可以
+  得到数据的监控方式，定义为主动监控方式，也就是说不需要在客户端安装任何插件。当然，
+  主动监控模式也可以配置成被动模式。
+
+  半被动监控：我们把对负载、内存、硬盘、虚拟内存、磁盘IO、温度、风扇转速等的监控，
+  这些都是本地的资源，而非系统对外提供的服务，这种资源的监控一般是由nagios服务器端
+  通过nrpe插件定时去连接client的nrpe服务定期获取信息发回到nagios服务端。这样的监控我们
+  称之为半被动监控，只要安装了类似nrpe的插件方式的监控，我们都可以认为是半被动监控。
+
+  如何选择主动模式和半被动模式（从监控端的角度看）？
+  1. 对于本地资源性能等的监控，一般用被动模式，例如，对负载、内存、硬
+     盘、虚拟内存、磁盘IO，温度、风扇等的监控（我们也可以通过snmp实现
+     监控部分系统资源）。
+  2. 对于WEB服务，数据库服务这种能对外提供服务的监控，一般用主动模式，
+     例如：监控http、ssh、mysql、rsync等的服务。
+  3. 主动模式和被动模式是相对的，并且是可以相互转换的，即主动模式的服
+     务，可以改成被动模式；被动模式的服务有时也可以改为主动模式。
+
+  主动模式：和nrpe无关了，就是利用服务端本地插件直接获取信息。
+  被动模式：主程序通过check_nrpe插件，和客户端nrpe进程沟通，调用本地插件获取数据。
+* 实战配置Nagios主机及服务实战（被动模式）
+  1. 添加主机与组
+  2. 增加主机上要监控的服务
+  3. 设置被监控端上的监控命令
+** 配置hosts.cfg文件
+   接下来配置hosts.cfg配置文件，在里面加入需要监控的客户端机器，配置如下，
+   #+BEGIN_SRC sh
+# egrep -v "#|^$" hosts.cfg 
+define host{
+        use                     linux-server
+        host_name               lnmp01.lavenliu.com
+        alias                   lnmp01
+        address                 192.168.20.152
+        }
+define host{
+        use                     linux-server
+        host_name               monitor.lavenliu.com
+        alias                   monitor
+        address                 192.168.20.170
+        }
+define hostgroup{
+        hostgroup_name  linux-servers ; The name of the hostgroup
+        alias           Linux Servers ; Long name of the group
+        members         lnmp01.lavenliu.com,monitor.lavenliu.com     ; Comma separated list of hosts that belong to this group
+        }
+   #+END_SRC
+
+** 配置services.cfg文件
+   #+BEGIN_SRC sh
+[root@monitor objects]# pwd
+/usr/local/nagios/etc/objects
+[root@monitor objects]# cat services.cfg 
+define service {
+	   use					generic-service
+	   host_name			lnmp01.lavenliu.com
+	   service_description	Disk Partition
+	   check_command		check_nrpe!check_disk
+}
+   #+END_SRC
+
+** 配置commands.cfg文件
+   #+BEGIN_SRC sh
+# 把下面配置添加到commands.cfg文件末尾，
+# 'check_nrpe' command definition
+define command{
+	command_name	check_nrpe
+	command_line	$USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$
+}
+   #+END_SRC
+
+   检查配置文件语法是否正确并启动服务，
+   #+BEGIN_SRC sh
+/etc/init.d/nagios checkconfig
+   #+END_SRC
+** 两个被动监控实例
+*** 使用NRPE的方式监控80端口
+	1. 首先在nagios的客户端使用命令行的方式检测80端口状态
+	   #+BEGIN_SRC sh
+[root@lamp libexec]# ./check_http -I 127.0.0.1 -p 80
+HTTP OK: HTTP/1.1 200 OK - 9209 bytes in 0.041 second response time |time=0.041061s;;;0.000000 size=9209B;;;0
+	   #+END_SRC
+	2. 如果第一步没问题，接下来修改nagios客户端的nrpe.cfg文件，添加检测命令
+	   #+BEGIN_SRC sh
+echo "command[check_iostat]=/usr/local/nagios/libexec/check_tcp -H 192.168.20.128 -p 80 -w 5 -c 10" >> /usr/local/nagios/etc/nrpe.cfg
+# 重启客户端的nrpe进程
+[root@lamp libexec]# pkill nrpe
+[root@lamp libexec]# /usr/local/nagios/bin/nrpe -d -c /usr/local/nagios/etc/nrpe.cfg 
+[root@lamp libexec]# ps -ef |grep nrpe
+nagios    71408      1  0 14:48 ?        00:00:00 /usr/local/nagios/bin/nrpe -d -c /usr/local/nagios/etc/nrpe.cfg
+root      71411  17942  0 14:48 pts/3    00:00:00 grep nrpe
+	   #+END_SRC
+	3. 到nagios服务端的命令行进行验证
+	   #+BEGIN_SRC sh
+[root@monitor nagios]# cd /usr/local/nagios/libexec/
+[root@monitor libexec]# ./check_nrpe -H 192.168.20.128 -c check_port80
+TCP OK - 0.000 second response time on port 80|time=0.000126s;5.000000;10.000000;0.000000;10.000000
+	   #+END_SRC
+	4. 最后把配置写到nagios服务端的配置文件里
+	   #+BEGIN_SRC sh
+
+	   #+END_SRC
+*** 监控MySQL的主从同步（使用check_mysql插件）
+* 实战配置Nagios主机及服务实战（主动模式）
+  由Nagios监控端主动发起的请求。
+
+  这里定义一个check_weburl的命令，把该命令写到commands.cfg配置文件中，
+  #+BEGIN_SRC sh
+# 'check_weburl' command definition
+# 使用的是check_http的插件
+define command{
+        command_name    check_weburl
+        command_line    $USER1$/check_http $ARG1$ -w 10 -c 30
+        }
+  #+END_SRC
+
+  在/usr/local/nagios/etc/services目录下创建检测WEB服务的httpd.cfg配置
+  文件，
+  #+BEGIN_SRC sh
+cat /usr/local/nagios/etc/services/httpd.cfg
+define service {
+	   use							generic-service
+	   host_name					lnmp01.lavenliu.com
+	   service_description			blog url
+	   check_command				check_weburl!-I 192.168.20.128
+	   max_check_attempts			3
+	   normal_check_interval		2
+	   retry_check_interval			1
+	   check_period					24x7
+	   notification_interval		30
+	   notification_period			24x7
+	   notification_options			w,u,c,r
+	   contact_groups				admins
+}
+  #+END_SRC
+
+  然后，检查nagios配置语法并重新加载nagios配置文件，
+  #+BEGIN_SRC sh
+/etc/init.d/nagios checkconfig
+/etc/init.d/nagios reload
+  #+END_SRC
+
+  下面监控lnmp01上的SSHD服务，
+  增加commands，这里的我的command为check_myssh，
+  #+BEGIN_SRC sh
+cat >> /usr/local/nagios/etc/objects/commands.cfg <<EOF
+# 'check_myssh' command definition
+define command{
+	command_name	check_myssh
+	command_line	$USER1$/check_tcp $ARG1$ $ARG2$ -w 20 -c 10
+}
+EOF
+  #+END_SRC
+
+  增加sshd.cfg配置文件，
+  #+BEGIN_SRC sh
+cat > /usr/local/nagios/etc/services/sshd.cfg <<EOF
+define service {
+	   use							generic-service
+	   host_name					lnmp01.lavenliu.com
+	   service_description			SSH Status
+	   check_command				check_myssh!-H 192.168.20.128 -p 22
+	   max_check_attempts			3
+	   normal_check_interval		2
+	   retry_check_interval			1
+	   check_period					24x7
+	   notification_interval		30
+	   notification_period			24x7
+	   notification_options			w,u,c,r
+	   contact_groups				admins
+}
+EOF
+  #+END_SRC
+
+  检查nagios的配置语法及重新加载nagios主配置文件，
+  #+BEGIN_SRC sh
+/etc/init.d/nagios checkconfig
+/etc/init.d/nagios reload
+  #+END_SRC
+** URL及URI详解及实战
+   如果是测试域名URL监控，需要在nagios的服务端设置/etc/hosts文件进行解析。
+   #+BEGIN_SRC sh
+echo "192.168.20.128 bbs.lavenliu.com" >> /etc/hosts
+   #+END_SRC
+   
+   使用域名的方式对bbs.lavenliu.com进行监控。然后对URL "archiver"进行
+   监控。
+   #+BEGIN_SRC sh
+[root@monitor services]# ../../libexec/check_http -H bbs.lavenliu.com
+HTTP OK: HTTP/1.1 301 Moved Permanently - 216 bytes in 0.013 second response time |time=0.013169s;;;0.000000 size=216B;;;0
+[root@monitor services]# ../../libexec/check_http -H bbs.lavenliu.com -u /archiver/
+HTTP OK: HTTP/1.1 200 OK - 2452 bytes in 0.041 second response time |time=0.041355s;;;0.000000 size=2452B;;;0
+   #+END_SRC
+** 对特殊带传参的URL地址的监控
+   例如下面的URL，如何设置监控呢？
+   #+BEGIN_EXAMPLE
+# http://bbs.lavenliu.com/article/index.php?m=article&a=list&id=888
+   #+END_EXAMPLE
+   在配置文件里的写法是用双引号把URI给引起来，
+   #+BEGIN_SRC sh
+define service {
+    use xxx
+    host_name xxx
+    service_description xxx
+    check_command check_weburl!-H bbs.lavenliu.com -u "/article/index.php?m=article&a=list&id=888" 
+    max_check_attempts 2
+    normal_check_interval 2
+    retry_check_interval 2
+    check_period 24x7
+    notification_options w,u,c,r
+    contact_groups admins
+}
+   #+END_SRC
+** 使用check_tcp检测MySQL的3306端口
+   #+BEGIN_SRC sh
+define service {
+	   use							generic-service
+	   host_name					lnmp01.lavenliu.com
+	   service_description			MySQL Status
+	   check_command				check_tcp!3306
+	   max_check_attempts			3
+	   normal_check_interval		2
+	   retry_check_interval			1
+	   check_period					24x7
+	   notification_interval		30
+	   notification_period			24x7
+	   notification_options			w,u,c,r
+	   contact_groups				admins
+}
+   #+END_SRC
+** 小结
+   一般nagios客户端对外开启的服务，用主动模式监控，例如：port，url。
+   主动模式的监控配置过程：
+   1. 在服务端的命令行把要监控的命令先调试好。
+   2. 在commands.cfg里定义nagios命令，同时调用命令行的插件。
+   3. 在服务的配置文件里定义要监控的服务，调用commands.cfg里定义的nagios的监控命令。
+* Nagios监控内部配置及调用NRPE工作原理详解
+* 集群节点监控-服务分组实例-被动监控实战详解
+* 服务分组实战
+  服务分组的写法，把相同的业务进行分组。
+  #+BEGIN_SRC sh
+define servicegroup {
+    servicegroup_name Swap Usage ; 这里的描述，要和service标签里的servcie_description描述一致
+    alias             Liunx Servers
+    members           bbs.lavenliu.com,Swap Usage,monitor.lavenliu.com, Swap Usage
+}
+  #+END_SRC
+  如果nagios在service标签里没有找到“Swap Usage”这样的描述，检查语法时会报错，
+  #+BEGIN_SRC sh
+Error: Could not find a service matching host name 'bbs.lavenliu.com' and description 'Swap Usage' (config file '/usr/local/nagios/etc/services/servicegroup.cfg', starting on line 1)
+  #+END_SRC
+
+  修改/usr/local/nagios/etc/objects/servcies.cfg，
+  #+BEGIN_SRC sh
+define service {
+       use                  generic-service
+       host_name            lnmp01.lavenliu.com
+       service_description  Swap ; 这一行需要修改成"Swap Usage"，不带双引号
+       check_command        check_nrpe!check_swap
+}
+# 改成
+define service {
+       use                  generic-service
+       host_name            lnmp01.lavenliu.com
+       service_description  Swap Usage
+       check_command        check_nrpe!check_swap
+}
+  #+END_SRC
+* 主机分组实战
+  主机分组，
+  #+BEGIN_SRC sh
+define hostgroup {
+    hostgroup_name linux-servers
+    alias          Linux Servers
+    members        bbs.lavenliu.com, monitor.lavenliu.com
+}
+  #+END_SRC
+** 根据不同管理员显示不同的主机和服务
+   分用户与分类显示主机和服务。
+* Nagios主机和服务监控的重要参数详解
+** 主机定义部分参数解释
+   hosts.cfg中的主机定义部分配置参数解释，
+   #+BEGIN_SRC sh
+define host{
+        use                     linux-server ; 定义主机使用的模板，具体参见templates.cfg
+        host_name               bbs.lavenliu.com ; 定义主机名称，根据服务功能可随意定义
+        alias                   bbs ; 定义主机别名，同上
+        address                 192.168.20.128 ; 定义被监控服务器的IP
+        check_command           check-host-alive ; 检测主机存活命令，来自commands.cfg文件
+        max_check_attempts      3 ; 故障后，最大尝试检测次数
+        normal_check_interval   2 ; 正常的检测间隔，默认单位为分钟
+        retry_check_interval    2 ; 故障后重试的检测间隔，默认单位为分钟
+        check_period            24x7 ; 检测周期24x7，具体参见timeperiods.cfg
+        notification_interval   300 ; 故障后，两次报警的通知间隔，默认单位为分钟
+        notification_period     24x7 ; 一天之内通知的周期。比如全天还是半天等，具体参见timeperiods.cfg
+        notification_options    d,u,r ; 主机通知选项：u-down, u-unreachable, r-recovery
+        contact_group           admins ; 由admins用户组接收报警。在contacts.cfg里定义
+        }
+   #+END_SRC
+
+   主机的配置也可以只配置关键选项，多数选项可采取linux-server模板的默
+   认值，如果有需要可以先调整linux-server模板，然后所有机器统一采用这
+   种默认值，看起来更加简单方便，如，
+   #+BEGIN_SRC sh
+# bbs
+define host {
+    use           linux-server
+    host_name     bbs
+    alias         128-bbs
+    address       192.168.20.128
+}
+   #+END_SRC
+
+   也可以使用图形化的配置界面，如Centreon，NagiosQL，这里不推荐使用图
+   形化界面配置。
+** 服务定义部分参数解释
+   services.cfg文件是配置监控服务的，是nagios最重要的配置文件之一，对于
+   服务器数量比较少（50台以内）大部分需要监控的服务配置都可以在这里面添
+   加。这个配置文件默认是不存在的，可以手工添加。
+
+   下面具体说明一个service标签的具体参数含义，
+   #+BEGIN_SRC sh
+define service { ; define service为关键字，意思是定义一个服务，服务内容用一对大括号括起来
+	   use							generic-service ; 定义该服务使用的模板，具体参见templates.cfg
+	   host_name					lnmp01.lavenliu.com ; 被监控的主机名，来自hosts.cfg，可在hosts.cfg中自定义
+	   service_description			passive mode 80 ; 报警服务描述，根据内容取有意义的名称
+	   check_command				check_nrpe!check_port80 ; 检查服务的命令，这个很关键，注意被动服务的监控均由check_nrpe调用
+	   max_check_attempts			2 ; 尝试检测的最大次数
+	   normal_check_interval		4 ; 正常状态检测时间间隔，每4分钟去检查一次是否正常
+	   retry_check_interval			4 ; 重复检查时间间隔，默认单位为分钟
+	   check_period					24x7 ; 检查的周期，24x7仅仅是个字符串而已
+	   notification_interval		30 ; 通知的间隔，即30分钟通知一次
+	   notification_period			24x7 ; 通知的周期，这个参数来自timeperiods.cfg中的配置，例如可以定义半夜不报警到手机短信
+	   notification_options			w,u,c,r ; 要通知的服务状态选项warning,unknown,critical,recovery
+	   contact_groups				admins ; 要通知的用户组，其定义来自于contacts.cfg
+       process_perf_data            1 ; PNP出图记录数据相关
+}
+   #+END_SRC
+** 联系人定义部分参数解释
+   #+BEGIN_SRC sh
+define contact{
+    name generic-contact #联系人名称
+    service_notification_period 24x7 #当服务出现异常时，发送通知的时间段，时间段是 7x24 小时
+    host_notification_period 24x7 #当主机出现异常时，发送通知的时间段，时间段是 7x24 小时
+    service_notification_options w,u,c,r #这个定义的是“通知可以被发出的情况”。
+                                         #w 即 warning，表示警告状态，
+                                         #u 即 unknown，表示不明状态，
+                                         #c 即 criticle，表示紧急状态，
+                                         #r 即 recover，表示恢复状态
+    host_notification_options d,u,r #定义主机在什么状态下需要发送通知给使用者，
+                                    #d 即 down，表示宕机状态，
+                                    #u 即 unreachable，表示不可到达状态，
+                                    #r 即 recovery，表示重新恢复状态。
+    service_notification_commands notify-service-by-email #服务故障时，发送通知的方式，可以是邮件和短信，这里发送的方式是邮件，
+                                                          #其中“notify-service-by-email”在 commands.cfg 文件中定义。
+    host_notification_commands notify-host-by-email #主机故障时，发送通知的方式，可以是邮件和短信，这里发送的方式是邮件，
+                                                    #其中“notify-host-by-email”在 commands.cfg 文件中定义。
+} 
+   #+END_SRC
+* Nagios模板-周期-所有配置文件关系画图详解
+* 自定义插件开发规范及案例实战
+  在前面部署Nagios服务时安装了nagios-plugins-1.4.16.tar.gz这个软件包，
+  该软件包就是nagios的插件安装包，安装后，插件存放于
+  /usr/local/nagios/libexec目录下。
+
+  其实Nagios软件本身仅仅是一个监控的平台，如果要监控具体的主机及服务的
+  状态和数据信息，还必须要配置或调用插件或程序文件才能完成任务，因此，
+  如果没有nagios插件，nagios就是一个空壳。
+** 为什么要开发Nagios插件
+   首先说生产环境中常用的大部分服务，都是不需要编写插件就可以完成监控
+   的，如check_http，check_tcp，check_nrpe，这些自带的插件已经很强大了。
+   但是，仍然有部分我们想要监控的服务，Nagios没有自带的插件，如：监控
+   LVS RS的lo网卡的VIP，如监控NFS的状态，再比如监控iostat、mem、sar系
+   统指标及相关app应用（MQ队列）等，这个时候，我们可以自己动手开发满足
+   自己需求的插件。
+** 编写Nagios插件规则
+   Nagios插件是Nagios提供的一种通过可扩展的方式部署的程序组件，该插件
+   可通过Java、C\C++、PHP等多种语言开发，运维或系统架构人员只要通过修
+   改Nagios配置文件和相应参数，就能很方便地将该插件集成到Nagios中，实
+   现对目标系统的监控。
+
+   Nagios插件程序提供两个返回值：一个是插件的退出状态码，另一个是插件
+   在控制台打印的第一行数据。退出状态码可以被Nagios主程序作为判断被监
+   控系统服务状态的依据，控制台打印的第一行数据可以被Nagios主程序作为
+   被监控系统服务状态的补充说明，会显示在管理页面上。
+
+   为了管理Nagios插件，Nagios每查询一个服务的状态时，就会产生一个子进
+   程，并且它使用来自该命令的输出和退出状态码来确定具体的状态。Nagios
+   主程序可识别的状态码说明如下：
+   #+BEGIN_EXAMPLE
+   OK       - 退出状态码0：表示服务正常的工作
+   WARNING  - 退出状态码1：表示服务处于警告状态
+   CRITICAL - 退出状态码2：表示服务处于紧急、严重状态
+   UNKNOWN  - 退出状态码3：表示服务处于未知状态
+   #+END_EXAMPLE
+
+   最后一种状态通常表示插件无法确定服务的状态。例如，可能出现了网络或
+   内部错误。
+
+   相关的状态我们可以从如下文件中看到：
+   #+BEGIN_SRC sh
+[root@monitor libexec]# pwd
+/usr/local/nagios/libexec
+[root@monitor libexec]# head -7 utils.sh 
+#! /bin/sh
+
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+   #+END_SRC
+
+   Nagios插件的输出，
+   | Verbosity level | Type of output                                                    |
+   |-----------------+-------------------------------------------------------------------|
+   |               0 | Single line, minimal output. Summary                              |
+   |               1 | Single line, additional information (eg list processes that fail) |
+   |               2 | Multi line, configuration debug output (eg ps command used)       |
+   |               3 | Lots of detail for plugin problem diagnosis                       | 
+
+   Performance data,
+   #+BEGIN_SRC sh
+'label'=value[UOM];[warn];[crit];[min];[max]
+   #+END_SRC
+** Nagios插件开发原理
+   Nagios插件程序中需要调用监控服务规定的操作序列，并根据预先定义的规
+   则，对返回结果进行分析，判断服务的当前状态，并以指定的状态码退出程
+   序，同时将对该状态的说明不换行输出到控制台。
+
+   Nagios插件程序提供两个返回值：一个是插件的退出状态码，另一个是插件
+   在控制台打印的第一行数据。
+   
+   不同语言的系统退出函数示例如下：
+   #+BEGIN_EXAMPLE
+Java   System.exit(int status)
+php    exit(status)
+python sys.exit(int status)
+c/c++  return int status
+bash   exit int status
+   #+END_EXAMPLE
+
+   另一个是插件在控制台打印的第一行数据。
+   控制台打印函数示例如下：
+   #+BEGIN_EXAMPLE
+Java   System.out.println(String msg)
+php    echo msg
+python print msg
+c/c++  printf("%s", msg);
+bash   echo msg(printf)
+   #+END_EXAMPLE
+** Nagios插件开发语言
+   Nagios的插件开发不限制任何开发语言，只要该插件能被Nagios调用获取到
+   相应服务数据就可以了，如果能在命令行执行输出结果也可以，常用的插件
+   开发语言有shell、Perl、Python、PHP、C/C++。
+** 使用Shell开发插件
+   本用例中使用shell脚本开发Nagios插件并监控本地的/etc/passwd文件的变化。
+   由于本次是使用nrpe的被动模式，所以在Nagios客户端上进行本次脚本的开发，
+   #+BEGIN_SRC sh
+md5sum /etc/passwd > /etc/lavenliu.md5
+   #+END_SRC
+
+   开始在nagios客户端书写插件，
+   #+BEGIN_SRC sh
+cat /usr/local/nagios/libexec/check_passwd
+#!/bin/sh
+char=`md5sum -c /etc/lavenliu.md5 2> /dev/null | grep "OK" | wc -l`
+if [ $char -eq 1 ] ; then
+    echo "passwd is ok"
+    exit 0
+else
+    echo "passwd is changed"
+    exit 2
+fi
+############################
+chmod 755 /usr/local/nagios/libexec/check_passwd
+   #+END_SRC
+
+   之后，配置nrpe.cfg文件，添加上面的脚本，
+   #+BEGIN_SRC sh
+command[check_passwd]=/usr/local/nagios/libexec/check_passwd
+   #+END_SRC
+
+   最后到Nagios服务端，在命令行测试check_passwd命令是否可以使用，
+   #+BEGIN_SRC sh
+[root@monitor ~]# /usr/local/nagios/libexec/check_nrpe -H 192.168.20.128 -c check_passwd
+passwd is ok
+   #+END_SRC
+*** 使用shell开发监控内存free值
+	#+BEGIN_SRC sh
+[root@lamp libexec]# cat check_mymem 
+#!/bin/sh
+
+FREE_MEM=`free -m |grep Mem |awk '{ print $4 }'`
+
+if [ ${FREE_MEM} -lt 50 ]; then
+    echo "Freed memory is so less"
+    exit 2
+else
+    echo "memory is ok"
+    exit 0
+fi
+#################
+# 
+	#+END_SRC
+
+	把该脚本添加到nrpe.cfg文件里，这里省略。
+
+	然后，在Nagios的服务端命令行进行测试，测试没有问题，可以写到配置文
+	件里，
+	#+BEGIN_SRC sh
+define service {
+       use              generic-service
+       host_name            lnmp01.lavenliu.com
+       service_description  Check My Memory
+       check_command        check_nrpe!check_mymem
+}
+	#+END_SRC
+* Nagios图形显示介绍及实战安装详解
+  企业工作中需要一个历史趋势图。
+** PNP安装图形监控曲线（服务器端）
+   先执行yum方式安装下面基础pnp软件依赖包，
+   #+BEGIN_SRC sh
+yum install -y cairo pango zlib zlib-devel freetype freetype-devel gd gd-devel
+   #+END_SRC
+
+   安装rrdtool的依赖包libart_lgpl，
+   #+BEGIN_SRC sh
+yum install -y libart_lgpl libart_lgpl-devel
+   #+END_SRC
+
+   安装rrdtool，
+   #+BEGIN_SRC sh
+tar -xf rrdtool-1.2.14.tar.gz
+cd rrdtool-1.2.14
+./configure --prefix=/usr/local/rrdtool --disable-python --disable-tcl
+make
+make install
+# ls /usr/local/rrdtool/bin/
+rrdcgi  rrdtool  rrdupdate
+   #+END_SRC
+
+   开始安装PNP软件包，
+   #+BEGIN_SRC sh
+tar -xf pnp-0.4.14.tar.gz
+cd pnp-0.4.14
+./configure --with-rrdtool=/usr/local/rrdtool/bin/rrdtool \
+--with-perfdata-dir=/usr/local/nagios/share/perfdata
+make all
+make install
+make install-config
+make install-init
+ll /usr/local/nagios/libexec |grep process
+-rwxr-xr-x 1 nagios nagios  31826 Mar 29 14:45 process_perfdata.pl
+   #+END_SRC
+** Nagios趋势图配置实战
+*** 修改Nagios主配置文件
+	修改nagios主配置文件，修改如下：
+    #+BEGIN_SRC sh
+vi +835 /usr/local/nagios/etc/nagios.cfg 
+# 取消下面几行的注释
+process_performance_data=1
+host_perfdata_command=process-host-perfdata
+service_perfdata_command=process-service-perfdata
+	#+END_SRC
+*** 修改commands.cfg文件
+	#+BEGIN_SRC sh
+vi /usr/local/nagios/etc/objects/commands.cfg +233 +245 #删除，重新定义；或者直接注释掉
+#添加如下的命令：
+define command{
+    command_name    process-host-perfdata
+    command_line    /usr/local/nagios/libexec/process_perfdata.pl
+}
+
+define command{
+    command_name    process-service-perfdata
+    command_line    /usr/local/nagios/libexec/process_perfdata.pl
+}、
+	#+END_SRC
+*** 重新启动nagios
+	配置完毕，检查nagios配置语法，没有报错可以重新启动Nagios进程。
+	#+BEGIN_SRC sh
+/etc/init.d/nagios checkconfig
+/etc/init.d/nagios reload
+	#+END_SRC
+
+	在浏览器输入 "http://192.168.20.170/nagios/pnp/index.php" 来访问
+** 整合PNP URL超链接到Nagios图形显示界面里
+   整合完毕，会在主机或对应服务前面，出现一个红太阳图标，点击就是对应
+   的服务图形监控状态趋势。
+*** 给主机添加红太阳超链接图标
+	默认情况PNP的URL为http://192.168.20.170/nagios/pnp/index.php 和
+	nagios不在一个界面里，所以查看服务对应的趋势图很费劲。
+
+	修改hosts.cfg文件，在host定义内添加action_url参数，
+	#+BEGIN_SRC sh
+# 方法1：在hosts.cfg文件中添加，局部生效
+define host{
+        use                     linux-server
+        host_name               lnmp01.lavenliu.com
+        alias                   lnmp01
+        address                 192.168.20.128
+        action_url              /nagios/pnp/index.php?host=$HOSTNAME$
+        }
+	#+END_SRC
+
+	或者在主机的模板中添加，这个比较狠（全局生效）。主机使用的哪个模板
+	就在那个模板下添加"action_url	/nagios/pnp/index.php?host=$HOSTNAME$"。
+*** 给服务添加红太阳超链接图标
+	同样的道理，给服务添加图形设置，只是传入不同的参数而已。在配置文件
+	中需要添加如下参数，
+	#+BEGIN_SRC sh
+action_url /nagios/pnp/index.php?host=$HOSTNAME$&srv=$SERVICEDESC$
+	#+END_SRC
+*** 自定义插件的出图
+	默认自定义的插件是不出图的。系统自带的插件会出图的。
+** 出图的数据路径
+   出图的数据路径在：/usr/local/nagios/share/perfdata
+* Nagios的报警方式及生产选择方案
+** 报警的种类
+   尽量选择邮件报警、HTTP短信网关报警两种方式。
+
+   最好选用HTTP短信网关报警（收取发送短信费用）。
+*** 邮件报警
+	在生产环境应尽量使用自己公司的邮箱作为报警邮箱，或者建立一个邮件组
+	（邮件列表），如sadmin@lavenliu.com。尽量不用非公司邮箱作为报警邮
+	箱，如126、QQ等邮箱，因为这些邮箱是免费的，对报警的频率等都会有限
+	制。很可能会拒收或当垃圾邮件处理，导致收到报警延误或无法收到。
+	*重要且不紧急的业务报警。*
+*** 飞信转短信报警
+	需要先在Windows上安装飞信客户端，把对方手机加为好友（需要对方确认），
+	然后就可以给对方发短信了。我们可以在nagios服务器上安装一个飞信的客
+	户端，然后通过这个客户端给账号里的好友发短信。 *不推荐使用。*
+*** 邮件转短信报警
+	如139、126、189邮箱：邮箱里邮件达到后，通过手机通知收件人是邮箱提
+	供商提供的一个功能。报警内容长度有限制。
+*** HTTP短信网关
+	使用如下地址：
+	#+BEGIN_SRC sh
+http://s.ccme.cc/qxt/send.jsp?circle=lavenliu&pwd=lavenliu123&mobile=$CONTACT&service=gg30-3gg0524c1f88d&msgid=2020&message=$TITLE[${alert_date} sa]
+	#+END_SRC
+	有专门的公司提供直接发给信息到手机的短信网关，常用的报警就是一个
+	URL地址携带信息。收短信费。 *推荐的方式*
+*** 购买短信猫
+	类似手机终端一样的客户端硬件设备，实现报警，早期报警就是选用的一种
+	方式。 *收短信费*
+*** 电话语音报警
+	在报警是直接电话给报警负责人。
+*** MSN、QQ、微信及时通讯报警
+	模拟QQ、MSN发消息的功能，网友们开发了程序，从命令行执行程序利用MSN、
+	QQ协议，直接发给MSN和QQ好友。
+** 生产环境如何选择报警方式
+   在生产环境中，一般会根据业务的紧急程度不同，多个报警策略结合使用，
+   对应不需要紧急处理的业务一般选择邮件报警，如：内存、磁盘空间的剩余
+   率等。对于重要且紧急的业务，会使用邮件加上短信同时报警，使用邮件报
+   警便于记录故障详细信息，短信报警是及时提醒。短信的优点是及时，而邮
+   件报警如果人员不在PC旁边就无法知晓了。
+
+   短信报警的缺点是报警内容有限，所以，在工作中如果接到严重报警时，我
+   们在紧急处理之前也会开启邮件系统先查看邮件细节。
+
+   邮件和手机报警时当前监控报警的两个主题。
+
+   其中HTTP短信网关是最优推荐使用的短信报警方式，原因：
+   1. 简单、易用；
+   2. 稳定、可靠；
+   3. 收费合理，类似个人手机一样，收取发送费用。
+
+   花一定的费用，把业务做到最好，是正常工作的思维。如果总想着免费，那
+   么如果业务报警报不出来，损失可能更大，而且，领导会责怪。所以，选择
+   报警产品，要和领导说清楚利弊，交给领导评判，这样，即使没选，出问题，
+   也不都是自己的问题。
+
+   正规公司的业务报警应尽量选择可靠的报警方式。最可靠的报警方式是值班
+   人员7*24 3班轮班。
+** 故障报警分级
+   运维工程师值班职责（摘录）
+
+   第1条值班报警（故障）分类：
+   A类：磁盘空间、CPU、内存报警等为一般报警，运维内部采取常规处理方式。
+   B类：网站域名不能打开为严重报警，需要协同技术部相关人员会诊处理。
+
+   第2条值班配有两部值班手机，遇到运维问题将报警。
+   1. 若收到A类报警，原则上不限制处理时间，但以不影响服务为前提，进行及时处理。
+   2. 若收到B类报警，值班人员需在10分钟内邮件周知运维全体同事及相关技术人员并解决。
+	  纯值班人员可能没有处理权限，只能电话及邮件周知运维人员。有的公司根据业务分配好报警的人。
+** 重要的报警思想
+   工作中的报警需要遵循一个原则：该报的一定要报出来，不该报的就一定不要报出来。
+* 报警的配置过程原理讲解
+  配置短信网关报警的步骤：
+  1. 添加联系人到联系人组contacts.cfg
+	 #+BEGIN_SRC sh
+define contact{
+    contact_name    lavenliu-pager
+    use             generic-contact
+    alias           Nagios users
+    pager           13166089229
+}
+	 #+END_SRC
+  2. 添加报警的命令commands.cfg
+	 #+BEGIN_SRC sh
+# commands.cfg
+# 'notify-host-by-pager' command definition
+define command{
+    command_name    notify-host-by-pager
+    command_line    $USER1$/sms_send "Host $HOSTNAME$ alert for $HOSTNAME$" $CONTACTPAGER$
+}
+
+# 'notify-service-by-pager' command definition
+define command{
+    command_name    notify-service-by-pager
+    command_line    $USER1$/sms_send "$HOSTALLIAS$/$SERVICEDESC$ is $SERVICESTATE$" $CONTACTPAGER$
+}
+	 #+END_SRC
+  3. 在templates.cfg中增加刚自定义的命令
+	 #+BEGIN_SRC sh
+define contact{
+    service_notification_commands notify-service-by-email,notify-service-by-pager
+    host_notification_commands notify-host-by-email,notify-host-by-pager
+}
+	 #+END_SRC
+  4. 在hosts.cfg或services.cfg中添加报警联系人及组，或者对应模板中添加
+* 短信报警的脚本开发及实战配置
+* 开发脚本批量生成Nagios配置文件实战讲解
+  使用bash脚本批量生成配置文件。
+* 遇到的问题
+** SSL handshake error
+   客户端nrpe的配置文件里要添加allowed_hosts里。
+** WEB界面报错
+   在WEB界面遇到如下的报错信息，
+   #+BEGIN_EXAMPLE
+It appears as though you do not have permission to view information for any of the services you requested...
+If you believe this is an error, check the HTTP server authentication requirements for accessing this CGI
+and check the authorization options in your CGI configuration file.
+   #+END_EXAMPLE
+
+   出现以上问题的主要是由于权限设置问题，修改/usr/local/nagios/etc/cgi.cfg
+   #+BEGIN_SRC sh
+grep authorized cgi.cfg
+authorized_for_system_information=nagiosadmin
+authorized_for_configuration_information=nagiosadmin
+authorized_for_system_commands=nagiosadmin
+authorized_for_all_services=nagiosadmin
+authorized_for_all_hosts=nagiosadmin
+authorized_for_all_service_commands=nagiosadmin
+authorized_for_all_host_commands=nagiosadmin
+#authorized_for_read_only=user1,user2
+# 把nagiosadmin替换为lavenliu
+sed -i 's#nagiosadmin#lavenliu#g' /usr/local/nagios/etc/cgi.cfg
+[root@monitor etc]# grep authorized cgi.cfg
+authorized_for_system_information=lavenliu
+authorized_for_configuration_information=lavenliu
+authorized_for_system_commands=lavenliu
+authorized_for_all_services=lavenliu
+authorized_for_all_hosts=lavenliu
+authorized_for_all_service_commands=lavenliu
+authorized_for_all_host_commands=lavenliu
+#authorized_for_read_only=user1,user2
+[root@monitor etc]# /etc/init.d/nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+   #+END_SRC
+** check_xxx报错
+   1. 最大的原因是脚本权限，或者所依赖的Perl额外包没有安装导致的。可
+	  以到单独的监控服务器或者被监控服务器上，单独地执行check_xxx脚本，
+	  看看具体的报错信息。
+   2. 是不是监控服务器或者被监控服务器上的配置文件是否写的有问题。
+   3. 根据原理图进行排查问题。
+** 自定义插件出图问题
+** Nagios与Cacti整合

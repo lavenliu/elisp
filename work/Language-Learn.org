@@ -1,0 +1,1142 @@
+#+TITLE: 编程语言学习
+#+AUTHOR: LavenLiu
+#+DATE: 2010-05-04
+#+EMAIL: ldczz2008@163.com 
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+* IDE
+** PyCharm
+   PyCharm社区版的基本使用，选用模式为Emacs。
+
+   编程风格：
+   1. 在类的定义前面，留有两个空行。 -- 可选
+   2. 在文件的末尾，留有一个空行。   -- 可选
+   3. 方法与方法之间，留有一个空行。 -- 可选
+   4. 函数参数名称，小写。           -- 可选
+
+   快捷键：
+   这里的说明C表示Ctrl，S表示Shift，M表示Alt
+
+   1. 浏览最近打开的文件：C-S-E
+   
+
+   注释：
+   1. 注释：M-; （光标位于当前要注释的行）
+   2. 取消注释：M-; （光标位于当前要注释的行）
+
+   移动光标：
+   1. 向右移动一个字符：
+   2. 向右移动一个单词：
+   3. 向左移动一个字符：
+   4. 向左移动一个单词：
+   5. 向下移动一行：
+   6. 向上移动一行：
+
+   编译调试：
+   1. 编译：
+   2. 设置断点：
+   3. 调试：
+
+* Vim
+  Vim配置文件，在用户家目录创建.vimrc文件
+  #+BEGIN_EXAMPLE
+  # cat ~/.vimrc
+set nocompatible
+filetype indent on
+filetype plugin on
+set tabstop=4
+set shiftwidth=4
+set autoindent
+set cindent
+set smartindent
+set hlsearch
+syntax enable
+set dict=/usr/share/dict/words
+if has('statusline')
+  set laststatus=2
+  "Broken down into easily includeable segments
+  set statusline=%<%f\ " Filename
+  set statusline+=%w%h%m%r " Options
+  set statusline+=\ [%{&ff}/%Y] " filetype
+  "ASCII/Hexadecimal value of under current cursor
+  set statusline+=\ [ASCII=\%03.3b/HEX=\%02.2B]
+  "Right aligned file nav info
+  set statusline+=%=%-14.(%l,%c%V%)\ %p%%
+endif
+  #+END_EXAMPLE
+* Bash
+  内容来源于Bash高级编程一书。
+** 清空日志的几种方法
+   1. echo " " > test.log
+   2. > test.log
+   3. cat /dev/null > test.log
+* BootStrap
+  Bootstrap designs the web pages based on the grid system, and there
+  are three main components of this grid, as follows:
+  + *Container*: A container is used for giving a base to the whole
+	web page, that is, generally, all the components of the bootstrap
+	will be direct or nested child objects of the container. In other
+	words, containers provide the width constrains on responsive
+	widths. When the screen resolution changes, it's the container
+	which is changing its width across the device screen. The rows
+	and columns are percentage based so they get automatically
+	modified.
+  + *Row*: A row is placed inside the container and contains the
+	column. The hierarchy is container  row  column for bootstrap's
+	basic degign. The row also acts like a wrapper for the columns,
+	so in situations where columns are getting weird due to their
+	default float left property, keep them separately grouped so that
+	this problem is not reflected outside the row.
+  #+BEGIN_EXAMPLE
+  Designed for everyone, everywhere.
+
+  不管技术层次如何的程序员，都能适应BootStrap
+
+  导航栏的高度默认是50px，
+  #+END_EXAMPLE
+** Bootstrap网格系统工作原理
+   网格系统（Grid System）通过一系列包含内容的行和列来创建页面布局。下
+   面列出了Bootstrap网格系统是如何工作的：
+   + 行必须放置在.container class内，以便获得适当的对齐（alignment）和
+     内边距（padding）
+   + 使用行来创建列的水平组
+   + 内容应该放置在列内，且唯有列可以是行的直接子元素
+   + 预定义的网格类，比如.row和.col-md-4，可用于快速创建网络布局。LESS
+     混合类可以用于更多语义布局
+   + 列通过内边距（padding）来创建列内容之间的间隙。该内边距是通过.rows上
+     的外边距（margin）取负，表示第一列和最后一列的行偏移
+   + 网格系统是通过指定我们想要横跨的十二个可用的列来创建的。例如，要
+     创建三个相等的列，则使用三个.col-xs-4
+
+   #+BEGIN_EXAMPLE
+   <div class="row">
+       <div class="col-sm-3 col-md-6 col-lg-4">
+           ....
+       </div>
+       <div class="col-sm-9 col-md-6 col-lg-8">
+           ....
+       </div>
+   </div>
+
+   我们提供了3中不同的列布局，分别适用于三种设备。在手机上，它将是左边
+   25%右边75%的布局。在平板电脑上，它将是50%/50%的布局。在大型视口的设
+   备上，它将是33%/66%的布局。
+   #+END_EXAMPLE
+
+** 文本属性
+   #+BEGIN_EXAMPLE
+   class="text-left"
+   class="text-center"
+   class="text-right"
+   class="text-muted"
+   class="text-primary"
+   class="text-success"
+   class="text-info"
+   class="text-warning"
+   class="text-danger"
+   #+END_EXAMPLE
+** 导航栏
+** 表格
+   Bootstrap提供了一个清晰的创建表格的布局。列出Bootstrap支持的一些表
+   格元素：
+   | 标签      | 描述                                                                          |
+   |-----------+-------------------------------------------------------------------------------|
+   | <table>   | 为表格添加基础样式。                                                          |
+   | <thead>   | 表格标题行的容器元素（<tr>），用来标识表格列。                                |
+   | <tbody>   | 表格主体中的表格行的容器元素（<tr>）。                                        |
+   | <tr>      | 一组出现在单行上的表格单元格的容器元素（<td>或<th>）。                        |
+   | <td>      | 默认的表格单元格。                                                            |
+   | <th>      | 特殊的表格单元格，用来标识列或行（取决于范围和位置）。必须在<thead>内使用。   |
+   | <caption> | 关于表格存储内容的描述或总结。                                                |
+
+   表格类：
+   | 类               | 描述                                       |
+   |------------------+--------------------------------------------|
+   | .table           | 为任意<table>添加基本样式(只有横向分隔线)  |
+   | .table-striped   | 在<tbody>内添加斑马线形式的条纹(IE8不支持) |
+   | .table-bordered  | 为所有表格的单元格添加边框                 |
+   | .table-hover     | 在<tbody>内的任一行启用鼠标悬停状态        |
+   | .table-condensed | 让表格更加紧凑                             | 
+
+   <tr>,<th>和<td>类：
+   | 类       | 描述                             |
+   |----------+----------------------------------|
+   | .active  | 将悬停的颜色应用在行或者单元格上 |
+   | .success | 表示成功的操作                   |
+   | .info    | 表示信息变化的操作               |
+   | .warning | 表示一个警告的操作               |
+   | .danger  | 表示一个危险的操作               |
+
+   一个例子：
+   #+BEGIN_EXAMPLE
+	<table class="table table-bordered">
+		<caption>表格2</caption>
+		<thead>
+			<tr>
+				<td>产品</td>
+				<td>状态</td>
+			</tr>
+		</thead>
+		
+		<tbody>
+			<tr class="info">
+				<td>产品1</td>
+				<td>已发货</td>
+			</tr>
+			<tr class="danger">
+				<td>产品2</td>
+				<td>未发货</td>
+			</tr>
+			<tr class="warning">
+				<td>产品3</td>
+				<td>配送中</td>
+			</tr>
+			<tr class="success">
+				<td>产品4</td>
+				<td>已送到</td>
+			</tr>
+		</tbody>
+	</table>
+   #+END_EXAMPLE
+** 表单
+   Bootstrap提供了3种类型的表单布局：
+   + 垂直表单（默认）
+   + 内联表单
+   + 水平表单
+
+*** 创建默认表单的基本步骤：
+    + 向父<form>元素添加role="form"
+    + 把标签和控件放在一个带有class .form-group的<div>中。这是获得最佳
+      间距所必须的
+    + 向所有的文本元素<input>,<textarea>和<select>添加class
+      .form-control
+
+	一个例子：
+	#+BEGIN_EXAMPLE
+	<form role="form">
+	<div class="form-group">
+		<label for="name">名称</label>
+		<input type="text" class="form-control" id="name" placeholder="请输入名称" />
+
+	</div>
+	<div class="form-group">
+		<label for="inputfile">文件输入</label>
+		<input type="file" id="inputfile" />
+		<p class="help-block">这里是块级帮助文本的实例</p>
+	</div>
+	<div class="checkbox">
+		<label>
+			<input type="checkbox" /> 请打勾
+		</label>
+	</div>
+	<button type="submit" class="btn btn-primary">提交</button>
+	</form>
+	#+END_EXAMPLE
+*** 水平表单
+	水平表单与其他表单不仅标记的数量上不同，而且表单的呈现形式也不同。
+	如需创建一个水平布局的表单，需要下面的几个步骤进行：
+	+ 向父<form>元素添加class .form-horizontal
+	+ 把标签和控件放在一个带有class .form-group的<div>中
+	+ 向标签添加class .control-label
+	
+    一个例子：
+	#+BEGIN_EXAMPLE
+	<form class="form-horizontal">
+		<div class="form-group">
+			<label for="username" class="col-sm-2 control-label">用户名</label>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" id="username" placeholder="请输入用户名"/>
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label for="password" class="col-sm-2 control-label">密码</label>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" id="password" placeholder="请输入密码"/>
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				<div class="checkbox">
+					<label>
+						<input type="checkbox" /> 记住我
+					</label>
+				</div>
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				<button type="submit" class="btn btn-primary">登录</button>
+			</div>
+		</div>
+	</form>
+	#+END_EXAMPLE
+** 按钮
+   任何带有class .btn的元素都会继承圆角灰色按钮的默认外观。但是
+   Bootstrap提供了一些选项来定义按钮的样式，具体如下表所示：
+   | 类           | 描述                                   |
+   |--------------+----------------------------------------|
+   | .btn         | 为按钮添加基本样式                     |
+   | .btn-default | 默认/标准按钮                          |
+   | .btn-primary | 原始按钮样式（未被操作）               |
+   | .btn-success | 表示成功的动作                         |
+   | .btn-info    | 该样式可用于要弹出信息的按钮           |
+   | .btn-warning | 表示需要谨慎操作的按钮                 |
+   | .btn-danger  | 表示一个危险动作的按钮操作             |
+   | .btn-link    | 让按钮看起来像个链接(仍然保留按钮行为) |
+   | .btn-lg      | 制作一个大按钮                         |
+   | .btn-sm      | 制作一个小按钮                         |
+   | .btn-xs      | 制作一个超小按钮                       |
+   | .btn-block   | 块级按钮(拉伸至父元素100%的宽度)       |
+   | .active      | 按钮被点击                             |
+   | .disabled    | 禁用按钮                               |
+
+   一个例子：
+   #+BEGIN_EXAMPLE
+   <button class="btn btn-default">Default</button>
+   <button class="btn btn-primary">Primary</button>
+   <button class="btn btn-info">Information</button>
+   <button class="btn btn-warning">Warning</button>
+   <button class="btn btn-danger">Dangerous</button>
+   #+END_EXAMPLE
+
+   按钮大小：
+   | Class      | 描述                                         |
+   |------------+----------------------------------------------|
+   | .btn-lg    | 这会让按钮看起来比较大。                     |
+   | .btn-sm    | 这会让按钮看起来比较小。                     |
+   | .btn-xs    | 这会让按钮看起来特别小。                     |
+   | .btn-block | 这会创建块级的按钮，会横跨父元素的全部宽度。 | 
+
+   一个例子：
+   #+BEGIN_EXAMPLE
+   <button class="btn btn-default btn-lg">Default</button>
+   <button class="btn btn-primary btn-sm">Primary</button>
+   <button class="btn btn-info btn-xs">Information</button>
+   <button class="btn btn-warning btn-block">Warning</button>
+   <button class="btn btn-danger">Dangerous</button>
+   #+END_EXAMPLE
+
+   按钮的激活与禁用：
+   #+BEGIN_EXAMPLE
+   .active
+   .disabled
+   #+END_EXAMPLE
+** 分页
+** jQuery
+   The general workflow of using jQuery consists of the following two steps:
+   + Selecting an HTML element or a group of elements to work on.
+   + Applying a jQuery method to the selected group.
+* C
+  编程环境为CentOS6.5-x86_64环境。
+** access函数
+   #+BEGIN_SRC c
+# cat check-access.c
+/*
+ * Check File Access Permissions
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[])
+{
+    char *path = argv[1];
+    int rval;
+
+    if (argc != 2) {
+        printf("Usage: %s <file>\n", argv[0]);
+        exit(1);
+    }
+    /* check file existence */
+    rval = access(path, F_OK);
+    if (rval == 0) {
+        printf("%s exists\n", path);
+    } else {
+        if (errno == ENOENT) {
+            printf("%s does not exist\n", path);
+        } else if (errno == EACCES) {
+            printf("%s is not accessible\n", path);
+        }
+        return 0;
+    }
+
+    /* check read access */
+    rval = access(path, R_OK);
+    if (rval == 0) {
+        printf("%s is readable\n", path);
+    } else {
+        printf("%s is not readable (access denied)\n", path);
+    }
+
+    /* check write access */
+    rval = access(path, W_OK);
+    if (rval == 0) {
+        printf("%s is writeable\n", path);
+    } else if (errno == EACCES) {
+        printf("%s is not writable (access denied)\n", path);
+    } else if (errno == EROFS) {
+        printf("%s is not writable (read-only filssytem)\n", path);
+    }
+
+    return 0;
+}
+   #+END_SRC
+
+   运行结果为：
+   #+BEGIN_SRC sh
+# gcc -o check-access check-access.c
+# ./check-access /tmp
+/tmp exists
+/tmp is readable
+/tmp is writeable
+   #+END_SRC
+** read函数
+   #+BEGIN_SRC C
+# cat my_read.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#define BUF_SIZE 20
+
+int main(int argc, char *argv[])
+{
+    int     input_fd;
+    ssize_t num_read;
+    char    buffer[BUF_SIZE+1];
+
+    if (argc != 2 || strcmp(argv[1], "--help") == 0) {
+        printf("%s file\n", argv[0]);
+        exit(1);
+    }
+
+    input_fd = open(argv[1], O_RDONLY);
+    if (input_fd == -1) {
+        perror("open error");
+        exit(1);
+    }
+    
+    while ((num_read = read(input_fd, buffer, BUF_SIZE)) > 0) {
+        buffer[num_read] = '\0';
+        printf("The input data was: %s\n", buffer);
+        sleep(1);
+    }
+
+    if (close(input_fd == -1)) {
+        perror("close file fd error");
+        exit(1);
+    }
+    
+    return 0;
+}
+   #+END_SRC
+** write函数
+   #+BEGIN_SRC C
+# cat my_copy.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#ifndef BUF_SIZE
+#define BUF_SIZE 1024
+#endif
+
+int main(int argc, char *argv[])
+{
+    int     input_fd, output_fd, open_flags;
+    mode_t  file_perms;
+    ssize_t num_read;
+    char    buf[BUF_SIZE];
+
+    if (argc !=3 || strcmp(argv[1], "--help") == 0) {
+        printf("%s old-file new-file\n", argv[0]);
+        exit(1);
+    }
+
+    /* Open input files */
+    input_fd = open(argv[1], O_RDONLY);
+    if (input_fd == -1) {
+        printf("opening file %s\n", argv[1]);
+        exit(1);
+    }
+
+    /* Open output files */
+    open_flags = O_CREAT | O_WRONLY | O_TRUNC;
+    file_perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+        S_IROTH | S_IWOTH; /* rw-rw-rw- */
+    output_fd = open(argv[2], open_flags, file_perms);
+    if (output_fd == -1) {
+        printf("opening file %s\n", argv[2]);
+        exit(1);
+    }
+
+    /* Transfer data until we encounter eof or an error */
+    while ((num_read = read(input_fd, buf, BUF_SIZE)) > 0) {
+        if (write(output_fd, buf, num_read) != num_read) {
+            perror("couldn't write whole buffer");
+            exit(2);
+        }
+
+    }
+
+    if (num_read == -1) {
+        perror("read error");
+        exit(1);
+    }
+
+    /* close the opened file descriptor */
+    if (close(input_fd) == -1) {
+        perror("close error");
+        exit(1);
+    }
+    if (close(output_fd) == -1) {
+        perror("close error");
+    }
+    
+    return 0;
+}
+   #+END_SRC
+** opendir与readdir函数
+   #+BEGIN_SRC C
+# cat my_opendir.c 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+int my_readdir(const char *path)
+{
+    DIR           *dir;
+    struct dirent *ptr;
+
+    if ((dir = opendir(path)) == NULL) {
+        perror("opendir error");
+        return -1;
+    }
+
+    while ((ptr = readdir(dir)) != NULL) {
+        if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0) {
+            continue;
+        } else {
+            printf("file name: %s\n", ptr->d_name);            
+        }
+    }
+
+    closedir(dir);
+
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc < 2) {
+        printf("usage: %s <target path>\n", argv[0]);
+        exit(1);
+    }
+
+    if (my_readdir(argv[1]) < 0) {
+        exit(1);
+    }
+    
+    return 0;
+}
+   #+END_SRC
+** uname函数
+   #+BEGIN_SRC c
+#ifdef __linux__
+#define _GNU_SOURCE
+#endif
+
+#include <stdio.h>
+#include <sys/utsname.h>
+
+int main(int argc, char *argv[])
+{
+    struct utsname uts;
+
+    if (uname(&uts) == -1) {
+        perror("uname");
+    }
+
+    printf("Node name:   %s\n", uts.nodename);
+    printf("System name: %s\n", uts.sysname);
+    printf("Release:     %s\n", uts.release);
+    printf("Version      %s\n", uts.version);
+    printf("Machine:     %s\n", uts.machine);
+#ifdef _GNU_SOURCE
+    printf("Domain name: %s\n", uts.domainname);
+#endif
+    
+    return 0;
+}   
+   #+END_SRC
+   运行结果为：
+   #+BEGIN_EXAMPLE
+Node name:   python
+System name: Linux
+Release:     2.6.32-573.12.1.el6.x86_64
+Version      #1 SMP Tue Dec 15 21:19:08 UTC 2015
+Machine:     x86_64
+Domain name: (none)   
+   #+END_EXAMPLE
+** getrlimit与setrlimit函数
+** sysconf函数
+   #+BEGIN_SRC C
+# cat my_sysconf.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+
+static void
+pr_sysconf(const char *msg, int name)
+{
+    long lim;
+
+    errno = 0;
+    lim = sysconf(name);
+    if (lim != -1) {
+        printf("%s %ld\n", msg, lim);
+    } else {
+        if (errno == 0) {
+            printf("%s (indeterminate)\n", msg);
+        } else {
+            perror("sysconf error");
+            exit(1);
+        }
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    pr_sysconf("_SC_ARG_MAX:        ", _SC_ARG_MAX);
+    pr_sysconf("_SC_LOGIN_NAME_MAX: ", _SC_LOGIN_NAME_MAX);
+    pr_sysconf("_SC_OPEN_MAX:       ", _SC_OPEN_MAX);
+    pr_sysconf("_SC_NGROUPS_MAX:    ", _SC_NGROUPS_MAX);
+    pr_sysconf("_SC_PAGESIZE:       ", _SC_PAGESIZE);
+    pr_sysconf("_SC_RTSIG_MAX:      ", _SC_RTSIG_MAX);
+    
+    return 0;
+}
+   #+END_SRC
+** fpathconf函数
+** getpwent函数
+   #+BEGIN_SRC C
+# cat my_getpwent.c
+#include <stdio.h>
+#include <pwd.h>
+
+int main(int argc, char *argv[])
+{
+    struct passwd *pwd;
+
+    while ((pwd = getpwent()) != NULL) {
+        printf("%-15s %-5ld %-15s\n", pwd->pw_name, (long)pwd->pw_uid, pwd->pw_shell);
+    }
+    endpwent();
+    
+    return 0;
+}
+   #+END_SRC
+* HTML
+** DOCTYPE的三种写法
+** 网页布局
+   #+BEGIN_EXAMPLE
+   切块->布局
+   1. 从上到下
+   2. 从左到右
+   #+END_EXAMPLE
+
+   #+BEGIN_SRC html
+   <html>
+   <head><title>用div占块，布局</title></head>
+   <body>
+	   <div></div>
+	   <div></div>
+	   <div></div>
+   </body>
+   </html>
+   #+END_SRC
+
+   #+BEGIN_SRC html
+   <!DOCTYPE html>
+   <html lang="en">
+   
+   <style>
+	   div {
+	   width: 300px;
+	   height: 200px;
+	   background: blue;
+   }
+   
+   #main {
+   background: green;
+   }
+   
+   #footer {
+   background: gray;
+   }
+   </style>
+   
+   <head>
+   <meta charset="UTF-8">
+   <title>div盒子</title>
+   </head>
+   <body>
+   <div id="header"></div>
+   <div id="main"></div>
+   <div id="footer"></div>
+   </body>
+   </html>
+   #+END_SRC
+** 浮动布局
+   div独占一行
+   #+BEGIN_SRC html
+   <style>
+	  #lside {
+	  height: 200px;
+	  background: green;
+	  float: left;
+   }
+	  #rside {
+	  height: 200px;
+	  background: red;
+	  float: right;
+   }
+	  #common {
+	  width: 300px;
+	  height: 300px;
+	  background: yellow;
+   }
+   </style>
+
+   <body>
+   <div id="lside">left</div>
+   <div id="rside">right</div>
+   <div id="common"common</div>
+   </body>
+   浮动图形的副作用：前面的div覆盖后面的div
+   #+END_SRC
+
+   #+BEGIN_SRC html
+   clear: left;
+   clear: right;
+   clear: both;
+   #+END_SRC
+   如果父div中，有2个子div是浮动的，父div的高度有没有被子div的高度撑
+   起来。父div是多高。
+
+   #+BEGIN_SRC html
+   <body>
+   <div id="container">
+	  <div id="header"></div>
+	  <div id="main">
+		  <div id="lside"></div>
+		  <div id="rside"></div>
+	  </div>
+   <div id="footer"></div>
+   </div>
+   <body>
+   #+END_SRC
+** HTML DOM
+   HTML DOM模型被构造为对象的树。
+** 标签a
+   基本用法：
+   #+BEGIN_EXAMPLE
+   <a href="http://www.baidu.com">百度</a>
+   #+END_EXAMPLE
+
+   a标签属性：
+   #+BEGIN_EXAMPLE
+   1. 在浏览器新标签中打开链接 - target="_blank"
+   2. id
+   #+END_EXAMPLE
+* CSS
+  Cascading Style Sheets的缩写，称为层叠样式表。对页面进行美化。
+** 语法
+   #+BEGIN_EXAMPLE
+   style = key1: value1; key2: value2;''
+   #+END_EXAMPLE
+** 有3种使用方式：
+   1. 元素内联
+	  #+BEGIN_EXAMPLE
+	  在标签中使用：sytle='key1: value1;'
+	  #+END_EXAMPLE
+   2. 页面嵌入
+	 #+BEGIN_EXAMPLE
+	 在页面中嵌入：<style type="text/css"> </style>
+	 #+END_EXAMPLE
+   3. 外部引入CSS文件
+	 
+   几种写法：
+   1. class选择器
+	  #+BEGIN_EXAMPLE
+	  .myclass {
+		 background-color: blue;
+	  }
+	  <div class="myclass"> ... </div>
+	  #+END_EXAMPLE
+   2. id选择器
+	  #+BEGIN_EXAMPLE
+	  #myid {
+		 background-color: cyan;
+	  }
+	  <div id="myid"> ... </div>
+	  #+END_EXAMPLE
+   3. 关联选择器
+	  + id关联
+		#+BEGIN_EXAMPLE
+		#myid p {
+		   background-color: red;
+		}
+		<div id="myid"><p> ... </p></div>
+		#+END_EXAMPLE
+	  + class关联
+		#+BEGIN_EXAMPLE
+		.myclass p {
+		   background-color: red;
+		}
+		<div class="myclass"><p> ... </p></div>
+		#+END_EXAMPLE
+   4. 组合选择器
+	 
+	  多个标签可以共用一个CCS样式
+	  #+BEGIN_EXAMPLE
+	  div, p, a {
+		 background-color: red;
+		 font-size: 12px;
+	  }
+	  #+END_EXAMPLE
+   5. 标签选择器
+	  #+BEGIN_EXAMPLE
+	  div {
+		 background-color: red;
+	  }
+	  #+END_EXAMPLE
+   6. 属性选择器
+	  #+BEGIN_EXAMPLE
+	  input[type="text"] {
+		 width: 50px;
+		 height: 100px;
+	  }
+	  #+END_EXAMPLE
+** CSS优先级
+   控制的越精细，优先级越高
+** margin
+   外边距
+** padding
+   内边距
+* JavaScript
+* DOM
+  Document Object Model
+* jQuery
+* MarkDown
+** 标题
+   与Emacs的org-mode有些区别。使用"#"来定义标题，最多六个标题深度。
+   
+   n个#：表示n级深度的标题
+** 列表
+   列表可以嵌套使用。
+*** 有序列表
+	使用数字与英文逗号组合，产生一个有序列表。数字可以不连续，建议数字
+	从1开始。
+*** 无序列表
+	使用"*"、"+"、"-"都可以定义一个无序列表。	
+** 强调
+   "*italic*" "**bold**" "_italic_" "__bold__"
+** 引用
+   使用">"来引用。
+** 链接
+   #+BEGIN_EXAMPLE
+   This is [an example](http://example.com/ "Title") inline link.
+
+   [This link](http://example.net/) has no title attribute.
+   #+END_EXAMPLE
+** 图片
+   #+BEGIN_EXAMPLE
+   ![alt text](/path/img.jpg "Title")
+   #+END_EXAMPLE
+* Perl
+** 正则表达式元字符
+   | 元字符               | 匹配项                                                   |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：单字符与数字 |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | .                    | 匹配除换行符外的任意字符                                 |
+   | [a-z0-9]             | 匹配集合中任意单个字符                                   |
+   | [^a-z0-9]            | 匹配不在集合中的任意单个字符                             |
+   | \d                   | 匹配单个数字                                             |
+   | \D                   | 匹配非数字字符，等效于[^0-9]                             |
+   | \w                   | 匹配数字型（字）字符                                     |
+   | \W                   | 匹配非数字型（非字）字符                                 |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：空白字符     |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | \s                   | 匹配空白字符，如空格，制表符和换行符                     |
+   | \S                   | 匹配非空白字符                                           |
+   | \n                   | 匹配换行符                                               |
+   | \r                   | 匹配回车符                                               |
+   | \t                   | 匹配制表符                                               |
+   | \f                   | 匹配进纸符                                               |
+   | \b                   | 匹配退格符                                               |
+   | \0                   | 匹配空值字符                                             |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：锚定字符     |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | \b                   | 匹配字边界（不在[] 中时）                                |
+   | \B                   | 匹配非字边界                                             |
+   | ^                    | 匹配行首                                                 |
+   | $                    | 匹配行尾                                                 |
+   | \A                   | 匹配字符串开头                                           |
+   | \Z                   | 匹配字符串或行的末尾                                     |
+   | \z                   | 只匹配字符串末尾                                         |
+   | \G                   | 匹配前一次m//g 离开之处                                  |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：重复字符     |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | x?                   | 匹配0或1个x                                              |
+   | x*                   | 匹配0或多个x                                             |
+   | x+                   | 匹配1或多个x                                             |
+   | (xyz)+               | 匹配1或多个模式xyz                                       |
+   | x(m,n)               | 匹配m到n个x组成的值                                      |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：替换字符     |                                                          |
+   |----------------------+----------------------------------------------------------|
+   |                      |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：记忆字符     |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | (stirng)             | 用于反向引用                                             |
+   | \1 或$1              | 匹配第一组括号                                           |
+   | \2 或$2              | 匹配第二组括号                                           |
+   | \3 或$3              | 匹配第三组括号                                           |
+   |----------------------+----------------------------------------------------------|
+   | 字符类：其他字符     |                                                          |
+   |----------------------+----------------------------------------------------------|
+   | \12                  | 匹配八进制数，直到\377                                   |
+   | \x811                | 匹配十六进制数值                                         |
+   | \cX                  | 匹配控制字符。譬如\cC 指的是<Ctrl>-C；\cV 指的是<Ctrl>-V |
+   | \e                   | 匹配ASCII 编码中的ESC 符（取消），而非反斜杠             |
+   | \E                   | 标识使用\U、\L 或\Q 的大小写更改操作的结束位置           |
+   | \l                   | 只小写下一个字符                                         |
+   | \L                   | 小写字符，直到字符串末尾或碰到\E                         |
+   | \N                   | 匹配已命名的字符，如\N{greek:Beta}                       |
+   | \p{PROPERTY}         | 匹配拥有已命名属性的任意字符，譬如\p{IsAlpha}/           |
+   | \p{PROPERTY}         | 匹配不带已命名属性的任意字符                             |
+   | \Q                   | 引用\E之前的元字符                                       |
+   | \u                   | 只大写下一个字符                                         |
+   | \U                   | 大写字符，直到字符串末尾或碰到\E                         |
+   | \x{NUMBER}           | 匹配以十六进制形式给出的Unicode 编码NUMBER               |
+   | \X                   | 匹配Unicode编码“组合字符序列”字符串                      |
+   | \[                   | 匹配元字符                                               |
+   | \\                   | 匹配反斜杠                                               |
+
+* PHP
+** 命令行运行模式
+   1. 直接运行PHP代码
+	  #+BEGIN_EXAMPLE
+	  # php -r "php statements"
+	  # php -r "for($i=0; $i<5; $i++) {echo $i;}"
+	  #+END_EXAMPLE
+   2. 运行PHP文件
+	  #+BEGIN_EXAMPLE
+	  # php -f xxx.php
+	  #+END_EXAMPLE
+* Lisp语言
+  Lisp表达式称为符号表达式或S-表达式。
+
+  S表达式由三个有效对象：原子、列表和字符串组成。
+** Variables
+*** Global Variables
+	setq is used to set variables. Variables need not be declared, and
+	is global.
+	#+begin_src emacs-lisp :tangle yes
+(setq x 1) ; assign 1 to x
+	#+end_src
+
+ #+RESULTS:
+ : 1
+
+	#+begin_src emacs-lisp :tangle yes
+(setq a 3 b 2 c 7) ; assign 3 to a, 2 to b, 7 to c
+	#+end_src
+
+ #+RESULTS:
+ : 7
+
+*** Local Variables
+	To define local variables, use *let*, The form is the following,
+	where <body> is (one or more) lisp expressions. The body's last
+	expression's value is returned.
+	#+BEGIN_EXAMPLE
+	(let (<var1> <var2> ...)
+	  <body>
+	)
+	#+END_EXAMPLE
+
+	#+begin_src emacs-lisp :tangle yes
+(let (a b)
+  (setq a 3)
+  (setq b 4)
+  (+ a b)
+)
+	#+end_src
+
+ #+RESULTS:
+ : 7
+	
+	Another form of let is this: 
+	#+BEGIN_EXAMPLE
+	(let ((<var1> <val1>) (<var2> <val2>) ...)
+	  <body>
+	)
+	#+END_EXAMPLE
+
+	For example:
+	#+begin_src emacs-lisp :tangle yes
+(let ((a 3) (b 4))
+(+ a b)
+)
+	#+end_src
+
+ #+RESULTS:
+ : 7
+
+** if then else
+   The form for "if" expression is:
+   #+BEGIN_EXAMPLE
+   (if <test> <body>)
+   #+END_EXAMPLE
+
+   if we want a "else" part, the form is:
+   #+BEGIN_EXAMPLE
+   (if <test> <true_body> <false_body>)
+   #+END_EXAMPLE
+
+   Examples:
+   #+begin_src emacs-lisp :tangle yes
+(if (< 3 2) (message "yes") )
+(if (< 3 2) (message "yes") (message "no"))
+(if nil (message "yes") (message "no"))
+   #+end_src
+
+   #+RESULTS:
+   : no
+
+   If we do not need a "else" part, we should use the functin *when*
+   instead, because it is more clear. The form is this:
+   #+BEGIN_EXAMPLE
+   (when <test> <expr1> <expr2> ...)
+   #+END_EXAMPLE
+   Its meaning is the same as:
+   #+BEGIN_EXAMPLE
+   (if <test> 
+   (progn <expr1> <expr2> ...))
+   #+END_EXAMPLE
+** Block of Expressions
+   Sometimes we need to group several expressions together as one
+   single expression. This can be done with *progn*.
+   #+begin_src emacs-lisp :tangle yes
+(progn (message "a") (message "b"))
+;; is equivalent to
+(message "a") (message "b")
+   #+end_src
+
+   #+RESULTS:
+   : b
+
+   The purpose of *progn* is similar to a block of code *{...}* in
+   C-like languages. It is used to group together a bunch of
+   expressions into one single parenthesized expression. Mose of the
+   time it's used inside "if". For exmaple:
+   #+BEGIN_EXAMPLE
+   (if something
+     (progn ; true
+     ...
+     )
+     (progn ; else
+     ...
+     )
+   )
+   #+END_EXAMPLE
+
+   *progn* returns the last expression in its body.
+** Iteration
+   The following code shows a loop using the *while* function. The
+   format is: 
+   #+BEGIN_EXAMPLE
+   (while <test> <body>
+   #+END_EXAMPLE
+   where <body> is one or more lisp expressions.
+
+   #+begin_src emacs-lisp :tangle yes
+;(setq x 0)
+;(while (< x 4)
+;  (print (format "yay %d" x))
+;  (setq x (1+ x)))
+(let ((x 0))
+(while (< x 4)
+(print (format "yay %d" x))
+(setq x (1+ x))))
+   #+end_src
+
+   #+RESULTS:
+
+   In the following sample code, it inserts Unicode chars 32
+   to 126. First, it sets a local variable x to 32. Then it starts a
+   while loop, insert the corresponding Unicode char (in current
+   buffer), then increase x by 1.
+   #+begin_src emacs-lisp :tangle yes
+(let ((x 32))
+(while (< x 127)
+(ucs-insert x)
+(setq x (+ x 1)))) 
+   #+end_src
+
+   #+RESULTS:
+   : !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+
+** Sequence List Vector Array
+** Defining a Function
+** Defining Commands
+* Lua
+** 安装Lua
+   #+BEGIN_SRC sh
+   # cd /usr/local/src
+   # tar zxf lua-5.3.2.tar.gz
+   # cd lua-5.3.2
+   # make linux test
+   #+END_SRC

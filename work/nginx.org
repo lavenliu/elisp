@@ -1,0 +1,3276 @@
+#+TITLE: Nginx
+#+AUTHOR: LavenLiu
+#+DATE: 2010-08-20
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: book
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* Nginx
+  Nginx与Apache相比，在性能上，占用更少的系统资源，特定的场景应用(静态
+  数据)能支持更多的并发连接，达到更高的访问效率；在功能上，Nginx是一个
+  优秀的代理服务器和负载均衡服务器，也可以作为缓存服务器；在安装配置上，
+  Nginx安装简单、配置灵活。
+* Nginx特点及应用场景
+** Nginx特点
+   Nginx是一个高性能的Web和反向代理服务器，它具有很多优越的特性，作为
+   Web服务器，和Apache相比，Nginx能够支持更多的并发连接，而占用更少的
+   资源，效率很高。
+
+   作为负载均衡服务器，Nginx可以作为HTTP或DB等服务的代理服务器，类似
+   专业的HAproxy软件功能(Nginx代理功能相对简单，代理功能及效率不及
+   HAproxy)。
+
+   Nginx同时也是一款优秀的邮件代理服务软件(最早开发这个产品的目的之一
+   也是作为邮件代理服务)。
+
+   Nginx还可以作为缓存服务器使用，相当于专业的缓存软件squid。
+
+   Nginx的安装简单，配置文件简洁、配置灵活(支持Perl语法)。
+
+   Nginx的HTTP服务器特性：
+   1. 处理静态文件，索引文件以及自动索引；打开文件描述符缓存；
+   2. 使用缓存加速反向代理；简单负载均衡以及容错；
+   3. 远程FastCGI服务的缓存加速支持；
+   4. 模块化的架构。过滤器包括gzip压缩、ranges支持、chunked响应、XSLT、
+      SSL以及图像缩放。在SSL过滤器中，一个包含多个SSI的页面，如果经由
+      FastCGI或反向代理处理，可被并行处理；
+   5. 支持SSL，TLS SNI；
+   6. 基于名字和IP的虚拟主机；
+   7. Keep-alive和pipelined连接支持；
+   8. 灵活的配置；
+   9. 重新加载配置以及在线升级时，不需要中断正在处理的请求；
+   10. 自定义访问日志格式，带缓存的日志写操作以及快速日志轮转；
+   11. 3xx-5xx错误代码重定向；
+   12. 重写(rewrite)模块；
+   13. 基于客户端IP地址和HTTP基本认证机制的访问控制；
+   14. 支持PUT、DELETE、MKCOL、COPY以及MOVE方法；
+   15. 支持FLV流和MP4流；
+   16. 速度限制；
+   17. 来自同一地址的同时连接数或请求数限制；
+
+   Nginx优点总结：
+   #+BEGIN_EXAMPLE
+   Nginx最主要的优点是：支持kqueue(FreeBSD 4.1+), epoll(Linux 2.6+)等网络IO事件
+   模型。由此来支持高并发。
+   #+END_EXAMPLE
+   1. 高并发：能支持1-2万甚至更多的并发连接(静态小文件环境下)
+   2. 内存消耗少：在3万并发连接下，开启的10个Nginx进程消耗不到200M内存
+   3. 可以做HTTP反向代理，即负载均衡功能，相当于专业的HAproxy软件或lvs功能
+   4. 内置对RS服务器健康检查功能；如果Nginx Proxy后端某台Web服务器宕
+      机，不会影响前端的访问
+   5. 通过cache插件(cache_purge)可以实现类squid等专业的缓存软件实现的功能
+** Nginx主要应用场景
+   1. 使用Nginx结合FastCGI运行PHP、JSP、Perl等程序
+   2. 使用Nginx做反向代理、负载均衡、规则过滤
+   3. 使用Nginx运行静态HTML网页、小图片等
+   4. 使用Nginx加cache插件实现对web服务器缓存功能
+* 主流web服务产品对比说明
+  1. Apache
+	 + 2.2版本非常稳定强大，据官方说明，其2.4版本性能超强
+	 + prefork模式取消了进程创建开销，性能很高
+	 + 处理动态业务数据时，因关联到后端的引擎和数据库，瓶颈不在于
+       Apache本身
+	 + 高并发时消耗系统资源相对比较多一些
+  2. Nginx
+	 + 基于异步IO模型，性能强，能够支持上万并发
+	 + 对小文件支持很好，性能很高(限静态小文件)
+	 + 代码优雅，扩展库必须编译进主程序
+	 + 消耗系统资源比较低
+  3. Lighttpd
+	 + 基于异步IO模型，性能和Nginx相近
+	 + 扩展库是so模式，比Nginx要灵活
+	 + 全球使用率比以前低，安全性没有上面两个好
+	 + 通过插件(mod_secdownload)可以实现文件URL地址加密
+* WEB服务产品性能对比测试
+  1. WEB服务器静态内容测试数据
+     + 处理静态小文件(小于1M)，Nginx和lighttpd比Apache更有优势
+	 + Nginx在处理小文件优势明显
+
+     |          |      1K |     10K |    100K |      1M |     10M |
+     |----------+---------+---------+---------+---------+---------|
+     | Apache   | 12241.6 | 11749.7 | 6524.32 | 1501.13 | 166.933 |
+     | Nginx    | 18020.5 | 17947.3 | 12888.2 | 12879.9 | 232.398 |
+     | Lighttpd | 18377.9 | 19593.9 | 13140.9 | 2040.06 | 224.433 | 
+  2. WEB服务器动态内容测试数据
+	 + 处理动态内容三者相差不大(测试环境差异)，主要取决于PHP和数据库
+       的处理性能
+
+     |          |    echo |     1K |     10K |   100K |      1M |
+     |----------+---------+--------+---------+--------+---------|
+     | Apache   | 5044.32 | 4811.3 | 4460.61 | 2331.9 | 296.912 |
+     | Nginx    | 4060.73 | 3748.6 | 3264.30 | 1631.8 | 227.167 |
+     | Lighttpd | 5714.10 | 5815.9 | 4110.23 | 816.52 | 191.933 | 
+
+  可以看到Nginx，也并不是什么都强的，在处理大文件和动态数据时优势并不
+  明显。当处理动态数据时，三者的差距不大，从测试结果来看，Apache更有
+  优势一点。这是因为处理动态数据的能力取决于PHP和后端数据库的提供服务
+  能力。也就是说瓶颈不在web服务器上。一般PHP支持的并发参考值300-1000，
+  JAVA引擎支持并发300-1000。
+* 为什么Nginx的总体性能比Apache高
+  Nginx使用epoll(Linux 2.6内核)和kqueue(FreeBSD)网络I/O模型，而Apache
+  则使用的是传统的select模型。目前Linux下能够承受高并发访问的Squid、
+  Memcached都采用的是epoll网络I/O模型。
+
+  下面用一个比喻来解释Apache采用的select模型和Nginx采用的epoll模型之
+  间的区别：
+  #+BEGIN_EXAMPLE
+  假设你在大学读书，住的宿舍楼有很多房间，你的朋友要来找你。select版
+  宿管大妈就会带着你的朋友挨个房间去找，直到找到你的朋友为止。而epoll
+  版宿管大妈会先记下每位同学的房间号，你的朋友来时，只需要告诉你的朋
+  友住在哪个房间即可，不用亲自带着你的朋友满宿舍找人。如果来了10000个
+  人，都要找自己住这栋楼的同学时，select版和epoll版宿管大妈，谁的效率
+  高，大家应该清楚了。同理，在高并发服务器中，轮询I/O是最耗时间的操作
+  之一，select和epoll的性能谁的性能更高，同样十分明了。
+  #+END_EXAMPLE
+   
+  |              | select                                     | epoll                                                  |
+  |--------------+--------------------------------------------+--------------------------------------------------------|
+  | 性能         | 随着连接数增加，急剧下降。处理成千上万并发 | 随着连接数的增加，性能基本上没有下降。处理成千上万并发 |
+  |              | 连接数时，性能很差                         | 连接时，性能很好                                       |
+  |--------------+--------------------------------------------+--------------------------------------------------------|
+  | 连接数       | 连接数有限制，处理的最大连接数不超过1024。 | 连接数无限制                                           |
+  |              | 如果超过1024个连接数，则需要修改FD_SETSIZE |                                                        |
+  |              | 宏，并重新编译                             |                                                        |
+  |--------------+--------------------------------------------+--------------------------------------------------------|
+  | 内在处理机制 | 线性轮询                                   | 回调callback                                           |
+  |--------------+--------------------------------------------+--------------------------------------------------------|
+  | 开发复杂性   | 低                                         | 中                                                     |
+* 如何正确选择WEB服务器
+  在实际工作中，我们要根据业务需求来选择合适的业务服务器，在满足需求
+  的前提下，可以选择自己最擅长的软件，然后掌握了新的软件后，在逐步替
+  换，切记不要盲从选择使用，最终导致自己无法控制的结果。
+  #+BEGIN_EXAMPLE
+  静态业务：采用Nginx或Lighttpd
+  动态业务：采用Nginx和Apache均可
+  动态业务可以由前端代理，根据页面元素的类型，向后转发相应的服务器进行处理。
+  如果并发不是很大，又对Apache很熟悉，采用Apache也是可以的，Apache2.4版本也
+  很强大，并发连接数也有所增加。
+  #+END_EXAMPLE
+* 编译安装
+   需要下载其依赖包，pcre及zlib
+   1. pcre
+	  #+BEGIN_EXAMPLE
+	  pcre(Perl Compatible Regular Expressions)
+	  该模块实现Nginx的正则表达式
+	  #+END_EXAMPLE
+   2. zlib-devel
+	  #+BEGIN_EXAMPLE
+	  该模块实现Nginx的HttpGzip压缩功能
+	  #+END_EXAMPLE
+   3. openssl-devel
+	  #+BEGIN_EXAMPLE
+	  如果有需要则安装
+	  #+END_EXAMPLE
+
+   编译安装：
+   #+BEGIN_SRC bash
+# cd /usr/local/src
+# wget http://nginx.org/download/nginx-1.9.11.tar.gz
+# wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.37.tar.bz2
+# cd /usr/local/src/nginx-1.8.0
+# useradd -s /sbin/nologin -M nginx
+# ./configure --prefix=/usr/local/nginx-1.9.11 \
+--user=nginx --group=nginx \
+--with-http_stub_status_module \
+--with-file-aio \
+--with-http_dav_module \
+--with-http_ssl_module \
+--with-pcre=/usr/local/src/pcre-8.37
+# make
+# make install   
+   #+END_SRC
+
+   #+BEGIN_EXAMPLE
+   ln -s /usr/local/nginx-1.9.11 /usr/local/nginx
+   方便以后升级。
+   # 当Nginx软件升级带新版本后，删除原来软链接在重新建立新的到/usr/local/nginx就好
+   # 程序中如果有引用Nginx路径的地方，不需要做任何更改，因为升级后访问路径还是
+   # /usr/local/nginx
+   #+END_EXAMPLE
+* 基本使用
+** Nginx命令行参数
+   Nginx支持下面的一些命令行参数：
+   |----------+----------+----------------------------------------------------------------------------|
+   | 选项     | 参数     | 说明                                                                       |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -? or -h | -        | 显示帮助信息                                                               |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -c       | 配置文件 | 使用指定的配置文件而非默认的配置文件                                       |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -g       | 指令     | 使用命令行进行全局配置，                                                   |
+   |          |          | 如nginx -g "pid /var/run/nginx.pid; worker_processes `sysctl -n hw.ncpu`;" |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -p       | prefix   | set nginx path prefix, a directory that will keep server files             |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -q       |          | 进行配置语法检查时，不输出非错误信息                                       |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -s       | signal   | 向Nginx主进程发送指定signal                                                |
+   |          | stop     | 快速关闭                                                                   |
+   |          | quit     | 优雅地关闭                                                                 |
+   |          | reload   | 重新读取配置文件，使用新的配置启动新的工作进程，优雅地关闭旧的工作进程     |
+   |          | reopen   | 重新打开日志文件                                                           |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -t       |          | 配置语法检查                                                               |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -T       |          | 与-t相同，但会把配置信息打印到标准输出                                     |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -v       |          | 打印Nginx版本信息                                                          |
+   |----------+----------+----------------------------------------------------------------------------|
+   | -V       |          | 打印Nginx版本信息，编译信息和配置参数                                      |
+   |----------+----------+----------------------------------------------------------------------------|
+
+** 启停
+   启动：
+   #+BEGIN_SRC bash
+   # /usr/local/nginx/sbin/nginx
+   #+END_SRC
+
+   停止：
+   #+BEGIN_SRC bash
+   # kill -9 <nginx_pid>
+   #+END_SRC
+
+   重启：
+   #+BEGIN_SRC bash
+	
+   #+END_SRC
+** 显示编译信息
+   #+BEGIN_SRC bash
+   # /usr/local/nginx/sbin/nginx -V
+   nginx version: nginx/1.8.0
+   built by gcc 4.4.7 20120313 (Red Hat 4.4.7-16) (GCC) 
+   configure arguments: --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_gzip_static_module
+   #+END_SRC
+* Nginx配置说明
+** nginx.conf主配置文件说明
+    #+BEGIN_EXAMPLE
+worker_processes  1; # worker进程的数量
+
+events { # 事件标签
+    worker_connections  1024; # 每个worker进程支持的最大连接数
+}
+
+http {
+    include            mime.types; # Nginx支持的媒体类型库文件
+    default_type       application/octet-stream; # 默认的媒体类型
+    sendfile           on; # 开启高效传输模式
+    keepalive_timeout  65; # 连接超时
+    
+    server {               # 第一个server标签，表示一个独立的虚拟主机站点
+        listen       80;   # 提供服务外的端口，默认80
+        server_name  www.lavenliu.com; # 提供服务的域名，主机名
+        
+        location / { # 第一个location标签开始
+            root   html/www; # 站点的根目录，相当于Nginx安装目录
+            index  index.html index.htm; # 默认的首页文件，多个用空格分开
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+    
+    server {
+        listen       80;
+        server_name  bbs.lavenliu.com;
+        
+        location / {
+            root   html/bbs;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+
+    server {
+        listen       80;
+        server_name  blog.lavenliu.com;
+        
+        location / {
+            root   html/blog;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+}
+    #+END_EXAMPLE
+* Nginx虚拟主机配置
+  一个server标签就是一个虚拟主机。
+  1. 基于域名的虚拟主机。通过域名来区分虚拟主机 -> 应用：外部网站
+  2. 基于端口的虚拟主机。通过端口来区分虚拟主机 -> 应用：公司内部网站，网站的后台
+  3. 基于IP的虚拟主机。几乎不用。不支持ifconfig别名配置
+** 基于域名的虚拟主机访问原理
+   #+BEGIN_EXAMPLE
+worker_processes  1; # worker进程的数量
+
+events { # 事件标签
+    worker_connections  1024; # 每个worker进程支持的最大连接数
+}
+
+http {
+    include            mime.types; # Nginx支持的媒体类型库文件
+    default_type       application/octet-stream; # 默认的媒体类型
+    sendfile           on; # 开启高效传输模式
+    keepalive_timeout  65; # 连接超时
+    
+    server {               # 第一个server标签，表示一个独立的虚拟主机站点
+        listen       80;   # 提供服务外的端口，默认80
+        server_name  www.lavenliu.com; # 提供服务的域名，主机名
+        
+        location / { # 第一个location标签开始
+            root   html/www; # 站点的根目录，相当于Nginx安装目录
+            index  index.html index.htm; # 默认的首页文件，多个用空格分开
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+    
+    server {
+        listen       80;
+        server_name  bbs.lavenliu.com;
+        
+        location / {
+            root   html/bbs;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+
+    server {
+        listen       80;
+        server_name  blog.lavenliu.com;
+        
+        location / {
+            root   html/blog;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+}   
+   #+END_EXAMPLE
+
+   当配置多个虚拟主机时，如果通过IP地址来访问的话，那么将访问到配置文
+   件里的第一个定义的虚拟主机。最主要的原因是http的请求头里没有包含
+   "Host: xxx.yyyy.com"字段，所以，网站返回了第一个配置的虚拟主机。
+** 基于端口的虚拟主机
+   #+BEGIN_EXAMPLE
+worker_processes  1; # worker进程的数量
+
+events { # 事件标签
+    worker_connections  1024; # 每个worker进程支持的最大连接数
+}
+
+http {
+    include            mime.types; # Nginx支持的媒体类型库文件
+    default_type       application/octet-stream; # 默认的媒体类型
+    sendfile           on; # 开启高效传输模式
+    keepalive_timeout  65; # 连接超时
+    
+    server {               # 第一个server标签，表示一个独立的虚拟主机站点
+        listen       81;   # 提供服务外的端口，默认80
+        server_name  www.lavenliu.com; # 提供服务的域名，主机名
+        
+        location / { # 第一个location标签开始
+            root   html/www; # 站点的根目录，相当于Nginx安装目录
+            index  index.html index.htm; # 默认的首页文件，多个用空格分开
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+    
+    server {
+        listen       82;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html/bbs;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+
+    server {
+        listen       83;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html/blog;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+}
+   #+END_EXAMPLE
+** 基于IP的虚拟主机
+   使用ip命令在eth1上再增加一个辅助IP，
+   #+BEGIN_SRC sh
+ip addr add 192.168.20.119/24 dev eth1
+ping 192.168.20.119
+   #+END_SRC
+
+   配置文件，
+   #+BEGIN_EXAMPLE
+worker_processes  1; # worker进程的数量
+
+events { # 事件标签
+    worker_connections  1024; # 每个worker进程支持的最大连接数
+}
+
+http {
+    include            mime.types; # Nginx支持的媒体类型库文件
+    default_type       application/octet-stream; # 默认的媒体类型
+    sendfile           on; # 开启高效传输模式
+    keepalive_timeout  65; # 连接超时
+    
+    server {               # 第一个server标签，表示一个独立的虚拟主机站点
+        listen       192.168.20.118:80;   # 提供服务外的端口，默认80
+        server_name  www.lavenliu.com; # 提供服务的域名，主机名
+        
+        location / { # 第一个location标签开始
+            root   html/www; # 站点的根目录，相当于Nginx安装目录
+            index  index.html index.htm; # 默认的首页文件，多个用空格分开
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+    
+    server {
+        listen       192.168.20.119:80;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html/bbs;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+        location = /50x.html {
+            root   html; # 指定对应的站点目录为html
+        }
+    }
+}
+   #+END_EXAMPLE
+
+   测试，
+   #+BEGIN_SRC sh
+[root@lnmp conf]# curl 192.168.20.119
+bbs.lavenliu.com
+[root@lnmp conf]# curl 192.168.20.118
+www.lavenliu.com
+   #+END_SRC
+* 利用include功能优化Nginx配置文件
+   为了保持nginx.conf配置文件的清晰，可以使用include指令把额外的配置放
+   到单独的配置文件里，然后使用include把该文件包含进来即可。相当于
+   apache下的"include vhosts/*.conf"
+
+   #+BEGIN_SRC sh
+cd /application/nginx/conf
+cat > nginx.conf <<EOF
+worker_processes  1; # worker进程的数量
+
+events { # 事件标签
+    worker_connections  1024; # 每个worker进程支持的最大连接数
+}
+
+http {
+    include            mime.types; # Nginx支持的媒体类型库文件
+    default_type       application/octet-stream; # 默认的媒体类型
+    sendfile           on; # 开启高效传输模式
+    keepalive_timeout  65; # 连接超时
+
+    include extra/www.conf; # 或者可以写成 include extra/*.conf;
+    include extra/bbs.conf;
+    include extra/blog.conf;
+}
+EOF
+mkdir extra
+cd extra
+cat > www.conf <<EOF
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       192.168.20.118:80;   # 提供服务外的端口，默认80
+    server_name  www.lavenliu.com; # 提供服务的域名，主机名
+    
+    location / { # 第一个location标签开始
+        root   html/www; # 站点的根目录，相当于Nginx安装目录
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+    error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+    location = /50x.html {
+        root   html; # 指定对应的站点目录为html
+    }
+}
+EOF
+
+cat > bbs.conf <<EOF
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  bbs.lavenliu.com; # 提供服务的域名，主机名
+    
+    location / { # 第一个location标签开始
+        root   html/bbs; # 站点的根目录，相当于Nginx安装目录
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+    error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+    location = /50x.html {
+        root   html; # 指定对应的站点目录为html
+    }
+}
+
+EOF
+
+cat > blog.conf <<EOF
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  blog.lavenliu.com; # 提供服务的域名，主机名
+    
+    location / { # 第一个location标签开始
+        root   html/blog; # 站点的根目录，相当于Nginx安装目录
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+    error_page   500 502 503 504  /50x.html; # 出现50x错误代码时，使用50x.html响应
+    location = /50x.html {
+        root   html; # 指定对应的站点目录为html
+    }
+}
+EOF
+   #+END_SRC
+* Nginx别名作用及配置实战-企业应用案例
+  所谓虚拟主机别名，就是为虚拟主机设置除了主域名以外的一个或多个名称。
+
+  在server标签内的server_name指令后面可以写多个，每个用空格分开。每个
+  域名都要有DNS解析才行。第一个就是主域名，后面的就是这个主域名的别名。
+* Nginx状态信息配置实战及信息详解
+   在编译Nginx时，我们编译了"stub_status_module"模块，这个模块可以让我
+   们查看Nginx的当前运行状态。
+
+   #+BEGIN_SRC sh
+cat > /application/nginx/conf/extra/status.conf <<EOF
+server {
+    listen 80;
+    server_name status.lavenliu.com;
+    location / {
+        stub_status on;
+        access_log  off;
+    }
+}
+EOF
+   #+END_SRC
+
+   #+BEGIN_EXAMPLE
+   Active connections: 2000 # 表示正在处理的活动连接数2872个
+   server accepts handled requests
+   xxxxxx yyyyyy zzzzzz
+   Reading:80 Writing:35 Waiting:2757
+   server：表示Nginx启动到现在共处理了xxxxxx连接
+   accepts：表示Nginx启动到现在共成功创建yyyyyy此握手
+            请求丢失数=(握手数-连接数)，可以看出，本次状态显示没有丢失请求
+   handled requests：表示总共处理了zzzzzz此请求
+   Reading：Nginx读取到客户端的Header信息数
+   Writing：Nginx返回给客户端的Header信息数
+   Waiting：Nginx已经处理完正在等待下一次请求指令的驻留连接，开启keep-alive的情况下，
+            这个值等于active-(reading+writing)
+   #+END_EXAMPLE
+* Nginx错误日志作用及配置
+  Nginx的错误信息是调试Nginx服务的重要手段，属于核心功能模块
+  （ngx_core_module）的指令，该指令名字为"error_log"，可以放在main标
+  签中做全局配置，也可以放置在不同的主机中单独记录虚拟主机的错误信息。
+
+  error_log的语法格式及参数语法说明如下：
+  #+BEGIN_EXAMPLE
+  error_log file     level;
+  关键字    日志文件 错误日志级别
+  #+END_EXAMPLE
+
+  常见的有[debug|info|notice|warn|error|crit|alert|emerg]，级别越高记
+  录的信息越少，场景一般是warn|error|crit这个三个级别之一，注意不要配
+  置info等较低级别，会带来大量磁盘I/O消耗。
+
+  可以放置的标签为：
+  #+BEGIN_EXAMPLE
+  main http server location
+  #+END_EXAMPLE
+** 错误日志配置
+	在配置文件中添加如下内容，
+	#+BEGIN_SRC sh
+error_log logs/error.log error;
+	#+END_SRC
+
+	检查配置语法，并reload服务
+	#+BEGIN_SRC sh
+/application/nginx/sbin/nginx -t
+/application/nginx/sbin/nginx -s reload
+	#+END_SRC
+* 访问日志作用及格式详解并配置
+  Nginx软件会把每个用户访问网站的日志信息记录到指定的日志文件里，供网
+  站提供分析用户浏览行为等，此功能由ngx_http_log_module模块负责。
+** 访问日志参数
+   Nginx的访问日志参数主要由下表的两个参数控制，
+   | 参数       | 说明                                                           |
+   |------------+----------------------------------------------------------------|
+   | log_format | 用来定义记录日志的格式（可以定义多种日志格式，去不同名字即可） |
+   | access_log | 用来指定日志文件的路径及使用的何种日志格式记录日志             |
+** 配置访问日志及采集日志对日志格式详解
+   #+BEGIN_EXAMPLE
+   log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                     '$status $body_bytes_sent "$http_referer" '
+			         '"$http_user_agent" "$http_x_forwarded_for"';
+   #+END_EXAMPLE
+
+   main是为日志格式指定的标签，记录日志时通过这个main标签选择指定的格
+   式。其后所接的所有内容都是可以记录的日志信息，具体见下表，所有的日
+   志段用空格分隔，一行可以记录多个。
+   | Nginx日志变量         | 说明                                                                                |
+   |-----------------------+-------------------------------------------------------------------------------------|
+   | $remote_addr          | 记录访问网站的客户端地址                                                            |
+   | $http_x_forwarded_for | 当前端有代理服务器时，设置web节点记录客户端地址的配置，此参数生效的前提是代理服务器 |
+   |                       | 上也要进行相关的x_forwarded_for设置                                                 |
+   | $remote_user          | 远程客户端用户名称                                                                  |
+   | $time_local           | 记录访问时间与时区                                                                  |
+   | $request              | 用户的http请求起始行信息                                                            |
+   | $status               | http状态码，记录请求返回的状态，例如：200、404、301等                               |
+   | $body_bytes_sent      | 服务器发送给客户端的响应body字节数                                                  |
+   | $http_referer         | 记录此请求是从哪个廉洁访问过来的，可以根据referer进行防盗链设置                     |
+   | $http_user_agent      | 记录客户端访问信息，例如，浏览器、手机客户端等                                      | 
+
+   没有特殊要求，默认的配置即可，更多的设置可以参考记录日志信息的变量，
+   #+BEGIN_EXAMPLE
+   http://nginx.org/en/docs/http/ngx_http_log_module.html
+   #+END_EXAMPLE
+** 配置实战
+	配置语法，
+	#+BEGIN_EXAMPLE
+	access_log logs/access.log main;
+	#+END_EXAMPLE
+
+	访问日志最好是基于虚拟主机。这里以www虚拟主机为例进行配置，
+	#+BEGIN_SRC sh
+[root@lnmp conf]# cat extra/www.conf 
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  www.lavenliu.com; # 提供服务的域名，主机名
+    
+    location / { # 第一个location标签开始
+        root   html/www; # 站点的根目录，相当于Nginx安装目录
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+    access_log logs/access_www.log main;
+}
+	#+END_SRC
+* 访问日志优化及企业工作日志轮询案例
+   默认情况下，Nginx会把所有的访问日志生成到一个指定的访问日志文件
+   access.log里，时间长了会导致日志文件很大，不利于分析日志和处理，因
+   此，有必要对Nginx日志按天或按小时进行切割成不同的文件保留，这里使用
+   按天切割的方法。
+
+   具体切割脚本如下：
+   #+BEGIN_SRC sh
+cat > /server/scripts/cut_nginx_log.sh <<EOF
+#!/bin/bash
+DATE_FORMAT=`date +%Y%m%d`
+BASE_DIR="/application/nginx"
+NGX_LOG_DIR="$BASE_DIR/logs"
+LOG_NAME="access_www"
+[ -d $NGX_LOG_DIR ] && cd $NGX_LOG_DIR || exit 1
+[ -f ${LOG_NAME}.log ] || exit 1
+/bin/mv ${LOG_NAME}.log ${DATE_FORMAT}_${LOG_NAME}.log
+$BASE_DIR/sbin/nginx -s reload # 重新生成日志
+EOF
+   #+END_SRC
+
+   设置定时任务实现每天00点整定时执行/server/scripts/cut_nginx_log.sh
+   切割日志：
+   #+BEGIN_SRC sh
+cat >> /var/spool/cron/root <<EOF
+### cut nginx access log by lavenliu
+00 00 * * * /bin/sh /server/scripts/cut_nginx_log.sh &> /dev/null 
+EOF
+[root@lnmp conf]# crontab -l
+### cut nginx access log by lavenliu
+00 00 * * * /bin/sh /server/scripts/cut_nginx_log.sh &> /dev/null
+   #+END_SRC
+* Nginx rewrite语法介绍及301跳转企业实战案例配置
+   #+BEGIN_SRC sh
+[root@lnmp conf]# cat extra/www.conf 
+server {
+    listen       80;
+    server_name  lavenliu.com;
+    rewrite ^/(.*) http://www.lavenliu.com/$1 permanent;
+}
+
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  www.lavenliu.com; # 提供服务的域名，主机名
+    
+    location / { # 第一个location标签开始
+        root   html/www; # 站点的根目录，相当于Nginx安装目录
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+    access_log logs/access_www.log main;
+}
+   #+END_SRC
+   
+   重新加载配置，
+   #+BEGIN_SRC sh
+[root@lnmp conf]# ../sbin/nginx -t
+nginx: the configuration file /application/nginx-1.6.3/conf/nginx.conf syntax is ok
+nginx: configuration file /application/nginx-1.6.3/conf/nginx.conf test is successful
+[root@lnmp conf]# ../sbin/nginx -s reload
+[root@lnmp conf]# curl -I lavenliu.com
+HTTP/1.1 301 Moved Permanently
+Server: nginx/1.6.3
+Date: Thu, 10 Mar 2016 02:32:56 GMT
+Content-Type: text/html
+Content-Length: 184
+Connection: keep-alive
+Location: http://www.lavenliu.com/
+   #+END_SRC
+
+   访问流程：
+   1. lavenliu.com/index.html
+   2. tcp 192.168.20.118 80
+   3. get /index.html http 1.1
+   4. nginx找nginx.conf -> include -> www.conf
+   5. 客户端的请求头里包含"lavenliu.com"，根据配置重定向到www.lavenliu.com
+* Nginx rewrite语法细节及正则介绍
+  指令语法：rewrite regex replacement [flag];
+  默认值：none
+  应用位置：server, location, if
+
+  rewrite是实现URL重写的关键指令，根据regex（正则表达式）部分内容，重
+  定向到replacement部分内容，结尾是flag标记。下面是一个简单的URL
+  Rewrite跳转的例子，
+  #+BEGIN_EXAMPLE
+  rewrite ^/(.*) http://www.lavenliu.com/$1 permanent;
+  #+END_EXAMPLE
+   
+  rewrite指令最后一项参数为flag标记，rewrite支持的flag标记见下表，
+  | flag标记符号 | 说明                                                 |
+  |--------------+------------------------------------------------------|
+  | last         | 本条规则匹配完成后，继续向下匹配新的location URI规则 |
+  | break        | 本条规则匹配完成即终止。不再匹配后面的任何规则       |
+  | redirect     | 返回302临时重定向，浏览器地址栏会显示跳转后的URL地址 |
+  | permanent    | 返回301永久重定向，浏览器地址栏会显示跳转后的URL地址 |
+* Nginx rewrite企业应用场景详解
+   Nginx的rewrite功能在企业里应用非常广泛：
+   1. 可以调整用户浏览的URL，看起来更规范，合乎开发及产品人员的需求。
+   2. 为了让搜索引擎收录网站内容及用户体验更好，企业会将动态URL地址伪
+      装成静态地址提供服务。
+   3. 网站换新域名后，让旧域名的访问跳转到新的域名上，例如：让京东的360buy.com
+   4. 根据特殊变量、目录、客户端的信息进行URL跳转等。
+
+   如访问www.360buy.com时，
+   #+BEGIN_SRC sh
+[root@lnmp conf]# curl -I 360buy.com
+HTTP/1.1 302 Moved Temporarily
+Server: JDWS/1.0.0
+Date: Thu, 10 Mar 2016 02:47:36 GMT
+Content-Type: text/html
+Content-Length: 159
+Location: http://m.jd.com/
+Connection: Keep-alive
+
+[root@lnmp conf]# curl -I www.360buy.com
+HTTP/1.1 301 Moved Permanently
+Server: JDWS
+Date: Thu, 10 Mar 2016 02:03:59 GMT
+Content-Type: text/html
+Content-Length: 272
+Location: http://www.jd.com/
+Via: BJ-H-NX-112(), http/1.1 SQ-UNI-1-JCS-167 ( [cRs f ])
+Age: 2634
+Connection: keep-alive
+   #+END_SRC
+* 利用Nginx rewrite规则实现不同域名URL跳转的案例
+   实现访问http://blog.lavenliu.com跳转到
+   http://www.lavenliu.com/blog/lavenliu.html。外部跳转时使用这种方法，
+   浏览器地址会变为跳转后的地址，另外，要实现设置
+   http://www.lavenliu.com/blog/lavenliu.html 有输出结果，不然会出现
+   401等权限错误。
+   
+   配置Nginx rewrite规则，跳转前http://blog.lavenliu.com对应站点的配置如下，
+   #+BEGIN_SRC sh
+[root@lnmp conf]# cat extra/blog.conf 
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  blog.lavenliu.com; # 提供服务的域名，主机名
+    
+    location / { # 第一个location标签开始
+        root   html/blog; # 站点的根目录，相当于Nginx安装目录
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+	
+	if ( $http_host ~* "^(.*)\.lavenliu\.com$" ) {
+		set $domain $1;
+		rewrite ^(.*) http://www.lavenliu.com/$domain/lavenliu.html break;
+	}
+}
+   #+END_SRC
+
+   测试，
+   #+BEGIN_SRC sh
+[root@lnmp conf]# ../sbin/nginx -t
+nginx: the configuration file /application/nginx-1.6.3/conf/nginx.conf syntax is ok
+nginx: configuration file /application/nginx-1.6.3/conf/nginx.conf test is successful
+[root@lnmp conf]# ../sbin/nginx -s reload
+[root@lnmp conf]# curl -I blog.lavenliu.com
+HTTP/1.1 302 Moved Temporarily
+Server: nginx/1.6.3
+Date: Thu, 10 Mar 2016 03:16:57 GMT
+Content-Type: text/html
+Content-Length: 160
+Connection: keep-alive
+Location: http://www.lavenliu.com/blog/lavenliu.html
+   #+END_SRC
+* Nginx进程及运行时控制
+** Master & Worker进程
+   NGINX has one master process and one or more worker processes. If
+   caching is enabled, the cache loader and cache manager processes
+   also run at startup.
+
+   The main purpose of the master process is to read and evaluate
+   configuration files, as well as maintain the worker processes.
+
+   The worker processes do the actual processing of requests. NGINX
+   relies on OS-dependent mechanisms to efficiently distribute
+   requests among worker processes. The number of worker processes is
+   defined in the nginx.conf configuration file and can be fixed for a
+   given configuration or automatically adjusted to the number of
+   available CPU cores.
+
+   小白的翻译：
+   #+BEGIN_EXAMPLE
+   Nginx有一个主进程和一个或多个工作进程。如果开
+   启缓存功能，缓存的loader与manager进程也会随着Nginx主进程一起启动。
+
+   主进程的主要作用是读取并评估配置文件，同时也管理工作进程。
+
+   实际的处理请求工作由Nginx的工作进程来完成。Nginx主要依赖操作系统的
+   一些机制在工作进程中高效的分发请求。Nginx的工作进程数量可以在
+   nginx.conf主配置文件中进行指定或根据CPU可用的核心数进行自动的调整。
+   #+END_EXAMPLE
+
+** 控制Nginx
+   当修改完毕Nginx的配置文件后，我们可以停止或重启Nginx进程，或者向
+   Nginx的主进程发送具体的信号。信号可以通过运行nginx命令并跟上"-s"选
+   项来发送到Nginx主进程。
+   #+BEGIN_EXAMPLE
+   # /path/to/nginx -s <signal>
+   #+END_EXAMPLE
+
+   信号可以是下面的任何一个：
+   + quit   - 优雅地关闭(工作进程处理完当前的请求后退出)
+   + reload - 重新加载配置文件
+   + reopen - 重新打开日志文件
+   + stop   - 立即关闭(快速关闭)
+* 配置文件中的度量单位
+  Sizes can be specified in bytes, kilobytes (suffixes k and K) or
+  megabytes (suffixes m and M), for example, "1024", "8k", "1m".
+
+  Time intervals can be specified in milliseconds, seconds, minutes,
+  hours, days and so on, using the following suffixes:
+  | 单位 | 说明            |
+  |------+-----------------|
+  | ms   | milliseconds    |
+  | s    | seconds         |
+  | m    | minutes         |
+  | h    | hours           |
+  | d    | days            |
+  | w    | weeks           |
+  | M    | months, 30 days |
+  | y    | years, 365 days | 
+
+  Multiple units can be combined in a single value by specifying them
+  in the order from the most to the least significant, and optionally
+  separated by whitespace. For example, "1h 30m" specifies the same
+  time as "90m" or "5400s". A value without a suffix means
+  seconds. It is recommended to always specify a suffix.
+
+  Some of the time intervals can be specified only with a seconds
+  resolution.
+* Nginx处理连接请求所使用的方法
+  nginx supports a variety of connection processing methods. The
+  availability of a particular method depends on the platform
+  used. On platforms that support several methods nginx will normally
+  select the most efficient method automatically. However, if needed,
+  a connection processing method can be selected explicitly with the
+  use directive.小白的翻译：Nginx支持多种处理客户端连接请求的方法。每
+  种处理方法都依赖特定的操作系统。如果在某种操作系统上Nginx支持多种处
+  理连接请求的方法，则Nginx会自动选用这些方法中相对高效的处理方法。或
+  者，我们也可使用use指令进行手工指定某种特定的方法。
+
+  Nginx支持以下的处理连接请求的方法：
+  1. select    - 标准方法
+	 #+BEGIN_EXAMPLE
+	 standard method. The supporting module is built automatically on
+     platforms that lack more efficient methods. The
+     --with-select_module and --without-select_module configuration
+     parameters can be used to forcibly enable or disable the build
+     of this module.
+	 #+END_EXAMPLE
+  2. poll      - 标准方法
+	 #+BEGIN_EXAMPLE
+	 The supporting module is built automatically on platforms that
+     lack more efficient methods. The --with-poll_module and
+     --without-poll_module configuration parameters can be used to
+     forcibly enable or disable the build of this module.
+	 #+END_EXAMPLE
+  3. kqueue    - 高效方法
+	 #+BEGIN_EXAMPLE
+	 FreeBSD 4.1+, OpenBSD 2.9+, NetBSD 2.0, and Mac OS X.
+	 #+END_EXAMPLE
+  4. epoll     - 高效方法
+	 #+BEGIN_EXAMPLE
+	 Linux 2.6+
+	 #+END_EXAMPLE
+  5. /dev/poll - 高效方法
+	 #+BEGIN_EXAMPLE
+	 Solaris 7 HP/UX 11.22+ IRIX 6.5.15+ Tru64 UNIX 5.1A+
+	 #+END_EXAMPLE
+  6. eventport - 高效方法
+	 #+BEGIN_EXAMPLE
+	 Solaris 10
+	 #+END_EXAMPLE
+* 使用Nginx作为HTTP的负载均衡器
+** 简介
+   Load balancing across multiple application instances is a commonly
+   used technique for optimizing resource utilization, maximizing
+   throughput, reducing latency, and ensuring fault-tolerant
+   configurations.
+
+   It is possible to use nginx as a very efficient HTTP load balancer
+   to distribute traffic to several application servers and to
+   improve performance, scalability and reliability of web
+   applications with nginx.
+** upstream模块
+   Nginx的负载均衡功能依赖于ngx_upstream_module模块。所支持的代理方式有，
+   1. proxy_pass
+   2. fastcgi_pass
+   3. memcached_pass
+    
+   upstream模块相关说明：
+   1. upstream字段放置在nginx.conf的http{}标签内，与server字段平行。
+   2. upstream模块默认的算法是wrr（权重轮询weighted round-robin）
+	
+   upstream内部指令部分说明：
+   | 指令                  | 说明                                                                 |
+   |-----------------------+----------------------------------------------------------------------|
+   | server 192.168.20.128 | 负载均衡后面的RS配置，可以是IP或域名，端口默认为80，可省略不写。     |
+   |                       | 高并发场景IP要换成域名，通过DNS做负载均衡。                          |
+   |-----------------------+----------------------------------------------------------------------|
+   | weight                | 指定权重，默认是1。权重越大则被分配的请求越多。                      |
+   |-----------------------+----------------------------------------------------------------------|
+   | max_fails=2           | 最大尝试失败的次数，默认为1，0表示禁止失败尝试。企业场景：2-3次。    |
+   |                       | 根据业务需求来设置。                                                 |
+   |-----------------------+----------------------------------------------------------------------|
+   | backup                | 热备配置（RS节点的高可用），当前面活动的RS都失败后会自动启用热备RS。 |
+   |-----------------------+----------------------------------------------------------------------|
+   | fail_timeout=20s      | 失败超时时间，默认是10秒。根据业务需求来配置，常规业务2-3秒较合理。  |
+   |-----------------------+----------------------------------------------------------------------|
+   | down                  | 这标志这服务器永不可用，这个参数一直配合ip_hash使用。                | 
+
+   需要注意的地方：
+   1. weight=number
+	  #+BEGIN_EXAMPLE
+	  设置该服务器的权重，默认值是1。这个数值越大，后端服务器就会被转发更多的请求。
+	  注意，当负载调度算法为ip_hash时，后端服务器在负载均衡调度中的状态不能是
+	  weight和backup。
+	  #+END_EXAMPLE
+   2. max_fails=number
+	  #+BEGIN_EXAMPLE
+	  Nginx尝试连接后端服务器的失败次数。这个数值是配合
+      proxy_next_upstream，fastcgi_next_upstream和
+      memcached_next_upstream这三个参数来使用的。当Nginx接收后端服务
+      器返回这三个参数定义的状态码的时候，会将这个请求转发到正常工作的后端服务器
+	  #+END_EXAMPLE
+   3. fail_timeout=time
+	  #+BEGIN_EXAMPLE
+	  在max_fails定义的失败次数后，距离下次检查的时间间隔默认为10秒。
+      如果max_fails是5，Nginx就检测5次，如果5次都是502错误，那么Nginx
+      就会根据fail_timeout的值，等待10秒再去做检查。
+	  #+END_EXAMPLE
+   4. backup
+	  #+BEGIN_EXAMPLE
+	  这标志着这个后端服务器为备份服务器，当后端的主服务器全部宕机时，
+      才会向该服务器转发请求；
+
+	  当负载均衡算法为ip_hash时，后端服务器在负载均衡调度中的状态不能
+      是weight和backup。
+	  #+END_EXAMPLE
+   5. down
+	  #+BEGIN_EXAMPLE
+	  这标志着该后端服务器永不可用，这个参数一直配合ip_hash使用。
+	  #+END_EXAMPLE
+   6. max_fails=5 fail_timeout=10s
+	  #+BEGIN_EXAMPLE
+	  重新加载Nginx配置，如果后端出现proxy_next_upstream中定义的错误
+      （502），Nginx会根据max_fails的值去后端服务器检测，如果
+      max_fails是5，它就检测5次，如果5次都是502，那么，Nginx就会根据
+      fail_timeout的值，等待10秒再去检查一次，如果持续502错误，在不重
+      新加载Nginx配置的情况下，每隔10秒都只检测一次。
+	  #+END_EXAMPLE
+   7. 特别说明
+	  #+BEGIN_EXAMPLE
+	  对于Nginx代理cache服务时，可能需要使用hash算法，此时，如果宕机
+      时，可通过设置down参数确保客户端用户按照当前的hash算法访问，这
+      点很重要。
+
+	  upstream backend_pool {
+	      ip_hash;
+	      server backend1.lavenliu.com;
+	      server backend2.lavenliu.com;
+	      server backend3.lavenliu.com down;
+	      server backend4.lavenliu.com;
+	  }
+	  #+END_EXAMPLE
+
+   几个问题：
+   #+BEGIN_EXAMPLE
+   1. Nginx多长时间间隔检测服务器
+   2. 
+   #+END_EXAMPLE
+
+   proxy_next_upstream参数说明：
+	
+** 负载均衡方法
+   The following load balancing mechanisms (or methods) are supported
+   in nginx:
+   + round-robin
+	 #+BEGIN_EXAMPLE
+	 requests to the application servers are distributed in a
+     round-robin fashion。按客户端请求顺序把客户端的请求逐一分配到不同的后端
+	 服务器。如果后端服务器宕机（默认情况下只检测80端口，如果后端报502，
+	 404，403，503等错误，还是会直接返回给用户），宕机服务器会被自动剔除，
+	 使用户访问不受影响，请求会分配给正常的服务器。
+	 #+END_EXAMPLE
+   + weight
+	 #+BEGIN_EXAMPLE
+	 在轮询算法的基础上加上权重（默认是rr+weight），权重轮询和访问成
+     正比，权重越大，被转发的请求也就越多。可以根据服务器的配置和性能
+     指定不同的权重值，这样可以有效地解决了新旧服务器性能不均进行请求
+     分配问题。
+	 #+END_EXAMPLE
+   + least-connected
+	 #+BEGIN_EXAMPLE
+	 next request is assigned to the server with the least number of
+     active connections
+	 #+END_EXAMPLE
+   + ip-hash
+	 #+BEGIN_EXAMPLE
+	 a hash-function is used to determine what server should be
+     selected for the next request (based on the client’s IP address)
+
+	 每个请求按访问IP的hash结果进行分配，当新的请求到达时，先将其客户
+     端IP通过哈希算法计算出一个值，在后续的客户端请求中，如果客户端的
+     IP哈希值相同，就会被分配至后端同一台服务器（LVS负载均衡的-p参数，
+     keepalived配置里的persistence_timeout 50），该调度算法可以解决动
+     态网页session共享问题，但有时会导致请求分配不均，即无法保证1:1的
+     负载均衡。在国内所有的公司都是NAT模式上网，多个PC对应一个外部IP。
+	 #+END_EXAMPLE
+   + fair（第三方）动态算法
+	 #+BEGIN_EXAMPLE
+	 按照后端服务器的响应时间来分配请求，响应时间短的优先分配。比上面
+     两个更加智能的负载均衡算法。此算法可以根据页面大小和加载时间长短
+     智能地进行负载均衡，也就是根据后端服务器的响应时间来分配请求，响
+     应时间短的优先分配。Nginx本身不支持fair算法，如果需要使用这种调
+     度算法，必须下载Nginx的upstream_fail模块。
+	 #+END_EXAMPLE
+   + url_hash(第三方)
+	 #+BEGIN_EXAMPLE
+	 按访问url的hash结果来分配请求，让每个url定向到同一个后端服务器，
+     后端服务器为缓存服务器时效果显著。在upstream中加入hash语句，
+     server语句不能写入weight等其他参数，hash_method是使用的hash算法。
+
+	 url_hash按访问URL的hash结果来分配请求，使每个URL定向到同一个后端
+     服务器，可以进一步提高后端缓存服务器的命中率。Nginx本身不支持
+     url_hash调度算法，如果要使用这种算法，必须安装Nginx的hash软件包。
+	 #+END_EXAMPLE
+   + 一致性hash（tengine）
+*** 默认的负载均衡配置
+	 The simplest configuration for load balancing with nginx may look
+	 like the following:
+	 #+BEGIN_EXAMPLE
+http {
+    upstream myapp1 {
+        server srv1.example.com;
+        server srv2.example.com;
+        server srv3.example.com;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://myapp1;
+        }
+    }
+}	 
+	 #+END_EXAMPLE
+
+	 In the example above, there are 3 instances of the same
+	 application running on srv1-srv3. When the load balancing method
+	 is not specifically configured, it defaults to round-robin. All
+	 requests are proxied to the server group myapp1, and nginx
+	 applies HTTP load balancing to distribute the requests.
+
+	 Reverse proxy implementation in nginx includes load balancing for
+	 HTTP, HTTPS, FastCGI, uwsgi, SCGI, and memcached.
+
+	 To configure load balancing for HTTPS instead of HTTP, just use
+	 "https" as the protocol.
+
+	 When setting up load balancing for FastCGI, uwsgi, SCGI, or
+	 memcached, use fastcgi_pass, uwsgi_pass, scgi_pass, and
+	 memcached_pass directives respectively.
+*** 最少连接的负载均衡配置
+	 Another load balancing discipline is
+	 least-connected. Least-connected allows controlling the load on
+	 application instances more fairly in a situation when some of the
+	 requests take longer to complete.
+
+	 With the least-connected load balancing, nginx will try not to
+	 overload a busy application server with excessive requests,
+	 distributing the new requests to a less busy server instead.
+
+	 Least-connected load balancing in nginx is activated when the
+	 least_conn directive is used as part of the server group
+	 configuration:
+	 #+BEGIN_EXAMPLE
+upstream myapp1 {
+    least_conn;
+    server srv1.example.com;
+    server srv2.example.com;
+    server srv3.example.com;
+}	 
+	 #+END_EXAMPLE
+*** 回话保持
+	 Please note that with round-robin or least-connected load
+	 balancing, each subsequent client’s request can be potentially
+	 distributed to a different server. There is no guarantee that the
+	 same client will be always directed to the same server.
+
+	 If there is the need to tie a client to a particular application
+	 server — in other words, make the client's session "sticky" or
+	 "persistent" in terms of always trying to select a particular
+	 server — the ip-hash load balancing mechanism can be used.
+
+	 With ip-hash, the client's IP address is used as a hashing key to
+	 determine what server in a server group should be selected for
+	 the client's requests. This method ensures that the requests from
+	 the same client will always be directed to the same server except
+	 when this server is unavailable.
+
+	 To configure ip-hash load balancing, just add the ip_hash
+	 directive to the server (upstream) group configuration:
+	 #+BEGIN_EXAMPLE
+upstream myapp1 {
+    ip_hash;
+    server srv1.example.com;
+    server srv2.example.com;
+    server srv3.example.com;
+}	 
+	 #+END_EXAMPLE
+*** 基于权值的负载均衡配置
+	 It is also possible to influence nginx load balancing algorithms
+	 even further by using server weights.
+
+	 In the examples above, the server weights are not configured
+	 which means that all specified servers are treated as equally
+	 qualified for a particular load balancing method.
+
+	 With the round-robin in particular it also means a more or less
+	 equal distribution of requests across the servers — provided
+	 there are enough requests, and when the requests are processed in
+	 a uniform manner and completed fast enough.
+
+	 When the weight parameter is specified for a server, the weight
+	 is accounted as part of the load balancing decision.
+	 #+BEGIN_EXAMPLE
+upstream myapp1 {
+    server srv1.example.com weight=3;
+    server srv2.example.com;
+    server srv3.example.com;
+}	 
+	 #+END_EXAMPLE
+
+	 With this configuration, every 5 new requests will be distributed
+	 across the application instances as the following: 3 requests
+	 will be directed to srv1, one request will go to srv2, and
+	 another one — to srv3.
+
+	 It is similarly possible to use weights with the least-connected
+	 and ip-hash load balancing in the recent versions of nginx.
+** 集群状态健康检查
+   Reverse proxy implementation in nginx includes in-band (or
+   passive) server health checks. If the response from a particular
+   server fails with an error, nginx will mark this server as failed,
+   and will try to avoid selecting this server for subsequent inbound
+   requests for a while.
+
+   The max_fails directive sets the number of consecutive
+   unsuccessful attempts to communicate with the server that should
+   happen during fail_timeout. By default, max_fails is set
+   to 1. When it is set to 0, health checks are disabled for this
+   server. The fail_timeout parameter also defines how long the
+   server will be marked as failed. After fail_timeout interval
+   following the server failure, nginx will start to gracefully probe
+   the server with the live client's requests. If the probes have
+   been successful, the server is marked as a live one.
+** Nginx负载均衡实战
+*** 环境准备
+	 1. 机器准备
+        | 主机名             |         IP地址 | 备注          |
+        |--------------------+----------------+---------------|
+        | lb01.lavenliu.com  | 192.168.20.150 | 主负载均衡器  |
+        | lb02.lavenliu.com  | 192.168.20.151 | 备负载均衡器  |
+        | web01.lavenliu.com | 192.168.20.152 | Real Server 1 |
+        | web02.lavenliu.com | 192.168.20.153 | Real Server 2 | 
+
+		修改主机名：
+		#+BEGIN_SRC sh
+        # vim /etc/sysconfig/network
+		# hostname `awk -F= '/HOSTNAME/ { print $2 }' /etc/sysconfig/network`
+		#+END_SRC
+	 2. 安装软件包
+		+ web端
+		  #+BEGIN_SRC sh
+yum install -y httpd
+service httpd start
+lsof -i:80
+echo "192.168.20.152" > /var/www/html/index.html
+curl http://192.168.20.152
+		  #+END_SRC
+		+ 负载均衡端
+		  #+BEGIN_SRC sh
+useradd -M -s /sbin/nologin nginx
+yum install -y zlib-devel openssl-devel pcre-devel
+cd /usr/local/src
+wget http://nginx.org/download/nginx-1.9.1.tar.gz 
+tar -xf nginx-1.9.1.tar.gz
+cd nginx-1.9.1
+./configure --user=nginx --group=nginx \
+--prefix=/application/nginx-1.9.1 --with-http_stub_status_module \
+--with-http_ssl_module --with-http_realip_module
+make && make install
+ln -s /application/nginx-1.9.1 /application/nginx
+/application/nginx/sbin/nginx
+lsof -i:80
+curl http://192.168.20.150
+		  #+END_SRC
+*** Nginx负载均衡端配置及故障演练
+	 #+BEGIN_EXAMPLE
+cd /application/nginx/conf
+egrep -v "#|^$" nginx.conf.default > nginx.conf
+	 #+END_EXAMPLE
+
+	 #+BEGIN_EXAMPLE
+	 # 把下面的内容添加到http字段内，与server字段平行。
+upstream web_pool {
+	 ip_hash; # 如果启用了ip_hash，则backup功能将不能启用。这时权重也不起作用了。
+	 server 192.168.20.152:80 weight=5;
+	 server 192.168.20.153:80 weight=5;
+	 server 192.168.20.154:80 weight=5 backup; # 上面两台web的热备，如果上面两台都宕机了，则开始接管服务
+}
+
+	 # 然后在server字段的location字段内，添加如下内容
+	 proxy_pass http://web_pool;
+
+	 # 一些指令的解释
+	 # "server"是固定的，后面可以接域名（门户会用）或IP。如果不加端口，默认是80端口。
+	 # weight代表权重，值越大则被分配的几率越高；
+	 # 域名加端口。转发到后端的指定端口上；
+	 # "server"如果接域名，需要内网有DNS服务器，或者在负载均衡器的hosts文件做
+	 # 域名解析。"server"后面还可以直接跟IP或IP加端口；
+	 #+END_EXAMPLE
+
+	 检查Nginx配置语法，并重新reload
+	 #+BEGIN_EXAMPLE
+	 # /application/nginx/sbin/nginx -t
+	 # /application/nginx/sbin/nginx -s reload
+	 #+END_EXAMPLE
+**** 多种场景故障演练
+***** 权重相同
+	   #+BEGIN_SRC sh
+# 配置文件片段为
+    upstream web_pool {
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=5;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+# 执行测试
+# for i in {1..10} ; do curl http://192.168.20.150 ; done
+192.168.20.152
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.152
+192.168.20.153
+	   #+END_SRC
+
+	   从测试结果中可以发现，两台后端的WEB服务器权重值一样，说明是1:1的权
+	   重，那么来自客户端的请求会被依次（均衡地）转发至后端WEB服务器上。
+***** 权重不同
+	   #+BEGIN_SRC sh
+# 配置文件片段为
+    upstream web_pool {
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=10;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+# 执行测试为
+# for i in {1..15} ; do curl http://192.168.20.150 ; done
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.153
+192.168.20.152
+192.168.20.153
+192.168.20.153
+192.168.20.152
+192.168.20.153
+	   #+END_SRC
+
+	   从测试结果中可以发现，两台后端的WEB服务器权重值分别为5和10，其
+	   权重比值为1:2，其后端WEB服务器处理客户端的请求也基本符合1:2这样
+	   的比值。这样设置不同的权重值，可以均衡新旧服务器的处理能力不同
+	   的问题。
+***** 启用ip_hash，关闭backup功能
+	   #+BEGIN_SRC sh
+# 配置文件片段为
+    upstream web_pool {
+        ip_hash;
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=5;
+#        server 192.168.20.154:80 weight=5 backup;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+# 开始测试
+# for i in {1..15} ; do curl http://192.168.20.150 ; done
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+	   #+END_SRC
+
+	   从测试结果中可以发现，如果开启了ip_hash功能，来自同一客户端的请
+	   求会被转发至后端同一台WEB服务器上。不过这时后端的WEB服务器不能
+	   使用backup指令，不然，Nginx在检查配置语法时将不能通过。
+***** 禁用ip_hash，关闭web1服务与开始web2的backup功能
+	   #+BEGIN_SRC sh
+# 配置文件片段为
+    upstream web_pool {
+#        ip_hash;
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=5 backup;
+#        server 192.168.20.154:80 weight=5 backup;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+# 开始测试
+web01# service httpd stop
+# for i in {1..15} ; do curl http://192.168.20.150 ; done
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+192.168.20.153
+
+# 然后，再次启用web01的服务
+web01# service httpd start
+# for i in {1..15} ; do curl http://192.168.20.150 ; done
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+	   #+END_SRC
+
+	   从测试结果中可以发现，把后端web01服务器的httpd服务停止，把web02
+	   设置为backup，可以发现，客户端的请求都会被转发至后端的web02这台
+	   机器上；如果把web01的http服务重新启动，客户端再次来请求，则来自
+	   客户端的请求又被转发至了web01这台服务器上了。
+***** 禁用ip_hash，开启web01服务，开启web02的backup功能
+	   #+BEGIN_SRC sh
+# 配置文件片段为
+    upstream web_pool {
+#        ip_hash;
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=5 backup;
+#        server 192.168.20.154:80 weight=5 backup;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+
+# 开始测试
+# for i in {1..15} ; do curl http://192.168.20.150 ; done
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+192.168.20.152
+	   #+END_SRC
+
+	   从测试结果中可以发现，后端主WEB服务器为健康状态时，这时客户端的
+	   请求，不会被转发至后端为backup标识的WEB服务器上。
+***** 演示max_fails及fail_timeout的不同值
+*** 反向代理核心模块原理
+	proxy_pass指令属于ngx_http_proxy_module模块，此模块可以将请求转发
+	至其他服务器上。Nginx的代理功能是通过http proxy模块实现的，默认在
+	安装Nginx时就已经安装了http proxy模块，因此可以直接使用http proxy
+	模块。
+
+	每个选项代表的含义：
+    | 选项                       | 说明                                                  |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_set_header           | 设置由后端的服务器获取用户的主机名或者真实IP地址，    |
+    |                            | 以及代理者的真实IP地址                                |
+    |----------------------------+-------------------------------------------------------|
+    | client_body_buffer_size    | 用于指定客户端请求主体缓冲区大小，可以理解为先保存    |
+    |                            | 到本地再传给用户                                      |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_connect_timeout      | 表示与后端服务器连接的超时时间，即发起握手等候响应    |
+    |                            | 的超时时间                                            |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_send_timeout         | 表示后端服务器的数据回传时间，即在规定时间之内后端    |
+    |                            | 服务器必须传完所有的数据，否则，Nginx将断开这个连接   |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_read_timeout         | 设置Nginx从代理的后端服务器获取信息的时间，表示连接   |
+    |                            | 建立成功后，Nginx等待后端服务器的响应时间             |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_buffer_size          | 设置缓冲区大小，默认该缓冲区大小等于指令proxy_buffers |
+    |                            | 设置的大小                                            |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_buffers              | 设置缓冲区的数量和大小。Nginx从代理的后端服务器获取的 |
+    |                            | 响应信息，会放置到缓冲区                              |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_busy_buffers_size    | 用于设置系统繁忙时可以使用的proxy_buffers大小，官方   |
+    |                            | 推荐的大小为proxy_buffers*2                           |
+    |----------------------------+-------------------------------------------------------|
+    | proxy_temp_file_write_size | 指定proxy缓存临时文件的大小                           |
+*** 反向代理实战演练
+	 配置文件里常用的参数，
+	 #+BEGIN_EXAMPLE
+proxy_redirect off;
+proxy_set_header Host $host; # 在header中设置主机名信息，让不同的域名可以转发至后端不同的RS的虚拟主机
+proxy_set_header X-Forwarded-For $remote_addr;
+# proxy_set_header X-Real-IP $remote_addr;
+# proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_connect_timeout 90;
+proxy_send_timeout 90;
+proxy_read_timeout 90;
+proxy_buffer_size 4k;
+proxy_buffers 4 32k;
+proxy_busy_buffers_size 64k;
+proxy_temp_file_write_size 64k;
+	 #+END_EXAMPLE
+**** proxy_set_header之多虚拟主机代理演练
+	  proxy_pass参数说明：
+      | 指令                                           | 说明                                            |
+      |------------------------------------------------+-------------------------------------------------|
+      | proxy_pass http://web_pool;                    | 用于指定反向代理的服务器池                      |
+      |------------------------------------------------+-------------------------------------------------|
+      | proxy_set_header Host $host                    | 当后端WEB服务器上也配置有多个虚拟主机时，需要用 |
+      |                                                | 该header来区分反向代理哪个主机名                |
+      |------------------------------------------------+-------------------------------------------------|
+      | proxy_set_header X-Forwarded-For $remote_addr; | 如果后端WEB服务器上的程序需要获取用户IP，从该   |
+      |                                                | header头获取                                    |
+  
+	  在后端的两台web服务器上设置两个基于域名的虚拟主机，
+	  #+BEGIN_SRC sh
+# mkdir /var/www/{bbs,www}
+# echo bbs > /var/www/bbs/index.html
+# echo www > /var/www/www/index.html
+# cd /etc/httpd/conf
+# vim httpd.conf
+# 配置文件片段
+NameVirtualHost *:80
+
+<VirtualHost *:80>
+    ServerAdmin ldczz@163.com
+    DocumentRoot /var/www/bbs
+    ServerName bbs.lavenliu.com
+    ErrorLog logs/bbs-error_log
+    CustomLog logs/bbs-access_log common
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerAdmin ldczz@163.com
+    DocumentRoot /var/www/www
+    ServerName www.lavenliu.com
+    ErrorLog logs/www-error_log
+    CustomLog logs/www-access_log common
+</VirtualHost>
+
+# /etc/init.d/httpd configtest
+# /etc/init.d/httpd graceful
+# ======================================================================
+# 在lb01端对web01进行测试
+# cat /etc/hosts
+192.168.20.152 www.lavenliu.com bbs.lavenliu.com
+# for name in bbs www ; do curl ${name}.lavenliu.com ; done
+bbs
+www
+# ======================================================================
+# 在lb01端对web02进行测试
+# cat /etc/hosts
+192.168.20.153 www.lavenliu.com bbs.lavenliu.com
+# for name in bbs www ; do curl ${name}.lavenliu.com ; done
+bbs
+www
+	  #+END_SRC
+
+	  以上的测试没有问题，都可以正常访问到bbs或www域名。现在通过Nginx
+	  来进行访问，是不是也能得到正确结果呢？
+	  #+BEGIN_SRC sh
+# cat /etc/hosts
+192.168.20.150 www.lavenliu.com bbs.lavenliu.com
+# for name in bbs www ; do curl ${name}.lavenliu.com ; done
+bbs
+bbs
+# 找到了web服务器的第一个虚拟主机bbs
+	  #+END_SRC
+
+	  从测试结果中，可以发现，通过Nginx代理访问，并不能得到我们想要的
+	  结果。主要是Nginx在向后转发客户端的请求时，并没有携带来自客户端
+	  请求头部，如“Host: www.lavenliu.com”或“bbs.lavenliu.com”，所以导
+	  致测试结果不是我们所预期的。可以在Nginx代理端进行设置
+	  proxy_set_header以期得到正确的结果，
+	  #+BEGIN_SRC sh
+# 配置文件片段
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+            proxy_set_header Host $host; # 在这里进行设置，只设置了header携带主机名
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+# 检查配置语法
+# /application/nginx/sbin/nginx -t
+nginx: the configuration file /application/nginx-1.9.1/conf/nginx.conf syntax is ok
+nginx: configuration file /application/nginx-1.9.1/conf/nginx.conf test is successful
+
+# 重新加载Nginx配置文件
+# /application/nginx/sbin/nginx -s reload
+
+# 在lb01端再次进行测试
+# for name in bbs www ; do curl ${name}.lavenliu.com ; done
+bbs
+www
+	  #+END_SRC
+
+	  当后端的Real Server分别为Apache或Nginx时的配置，
+	  #+BEGIN_EXAMPLE
+# 当RS为Nginx时，nginx.conf的配置
+log_format	commonlog  '$remote_addr - $remote_user [$time_local] "$request" '
+				       '$status $body_bytes_sent "$http_referer" '
+				       '"$http_user_agent" "$http_x_forwarded_for"';
+# 
+# 当后端RS为Apache时，httpd.conf的配置
+LogFormat "\"%{X-Forwarded-For}i\" %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+	  #+END_EXAMPLE
+**** 后端WEB记录客户端真实IP演练
+	  一般情况下，后端WEB集群的访问日志里的IP信息都是来自代理端的IP，
+	  而非客户端IP。如果后端WEB集群需要获取来自客户端的真实IP地址，则
+	  还需要从proxy_set_header中获取。
+
+	  设置lb01端的Nginx配置，
+	  #+BEGIN_SRC sh
+# 配置文件片段 - lb01之nginx.conf
+    upstream web_pool {
+#        ip_hash;
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=5 backup;
+#        server 192.168.20.154:80 weight=5 backup;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://web_pool;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $remote_addr;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+	  #+END_SRC
+
+	  有了以上配置，Nginx可以把来自客户端的IP地址转发到后端的WEB集群了，
+	  但默认的Apache是不会接收Nginx传过来的IP地址的。所以，需要在
+	  Apache上进行设置，
+	  #+BEGIN_SRC sh
+# 配置文件片段 - web01之httpd.conf
+LogFormat "\"%{X-Forwarded-For}i\" %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+#          ----------------------
+#          ---- 增加了该参数 ----
+<VirtualHost *:80>
+    ServerAdmin ldczz@163.com
+    DocumentRoot /var/www/www
+    ServerName www.lavenliu.com
+    ErrorLog logs/www-error_log
+    CustomLog logs/www-access_log combined # 日志格式改为了combined
+</VirtualHost>
+# service httpd restart
+# tail -f /etc/httpd/logs/www-access.log
+192.168.20.150 - - [21/Feb/2016:15:07:55 +0800] "GET / HTTP/1.0" 200 4
+192.168.20.150 - - [21/Feb/2016:15:07:56 +0800] "GET / HTTP/1.0" 200 4
+"192.168.20.153" - - [21/Feb/2016:15:15:29 +0800] "GET / HTTP/1.0" 200 4 "-" "curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.14.0.0 zlib/1.2.3 libidn/1.18 libssh2/1.4.2"
+"192.168.20.153" - - [21/Feb/2016:15:15:48 +0800] "GET / HTTP/1.0" 200 4 "-" "curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.14.0.0 zlib/1.2.3 libidn/1.18 libssh2/1.4.2"
+# 可以看到，在web01上可以记录来自客户端的IP地址了
+#
+# 在web02上进行操作
+# cat /etc/hosts
+192.168.20.150 www.lavenliu.com bbs.lavenliu.com
+# curl www.lavenliu.com
+	  #+END_SRC
+**** 反向代理之动静分离演练
+	 演练环境：
+     | 服务器             | 说明         |
+     |--------------------+--------------|
+     | web01.lavenliu.com | 为静态服务器 |
+     | web02.lavenliu.com | 为动态服务器 | 
+
+	 在开发人员无法通过程序实现动静分离的时候，运维人员可以根据资源实
+	 体进行动静分离。
+***** 通过目录实现动静分离演练
+	   准备工作：
+	   #+BEGIN_SRC sh
+# 在lb01上进行操作：
+# 配置文件片段 - nginx.conf
+# process static requests
+    upstream static_pool {
+        server 192.168.20.152:80 weight=5;
+    }
+
+# process dynamic requests
+    upstream dynamic_pool {
+        server 192.168.20.153:80 weight=5;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://dynamic_pool;
+            include proxy.conf;
+        }
+
+        location /image/ {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://static_pool;
+            include proxy.conf;
+        }
+        
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+# --------------------
+# web01上的操作：
+# cd /var/www/www
+# mkdir image
+# rz emacs.png # 上传一张照片
+# -------------------- 
+# web02上的操作：
+# cd /var/www/www
+# mkdir dynamic
+# echo dynamic153 > dynamic/index.html
+# 在Windows客户端进行测试
+# vi /c/Windows/System32/drivers/etc/hosts
+192.168.20.150 www.lavenliu.com bbs.lavenliu.com
+# 在Windows上的浏览器进行访问
+# ping www.lavenliu.com
+# http://www.lavenliu.com/image/emacs.png
+# http://www.lavenliu.com/dynamic/index.html
+	   #+END_SRC
+***** 通过扩展名实现动静分离演练
+	   在lb01上进行操作，（不用在其他机器上进行额外操作）：
+	   #+BEGIN_SRC sh
+# 配置文件片段 - nginx.conf
+# process static requests
+    upstream static_pool {
+        server 192.168.20.152:80 weight=5;
+    }
+
+# process dynamic requests
+    upstream dynamic_pool {
+        server 192.168.20.153:80 weight=5;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html;
+            index  index.html index.htm;
+            proxy_pass http://dynamic_pool;
+            include proxy.conf;
+        }
+
+        location ~ .*.(gif|jpg|jpeg|png|bmp|swf|css|js)$ {
+            proxy_pass http://static_pool;
+            include proxy.conf;
+        }
+        
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+	   #+END_SRC
+
+	   在Windows客户端进行测试：
+	   #+BEGIN_SRC sh
+# vi /c/Windows/System32/drivers/etc/hosts
+# 192.168.20.150 www.lavenliu.com bbs.lavenliu.com
+# 在浏览器里进行访问
+# ping www.lavenliu.com
+# http://www.lavenliu.com/image/emacs.png
+# http://www.lavenliu.com/dynamic/index.html
+# 停止lb01的WEB服务，再次进行访问，看是否有报错
+# http://www.lavenliu.com/image/emacs.png
+	   #+END_SRC
+***** http_user_agent演练
+	   应用场景：浏览器的判断，比如我们的程序不支持IE，可以针对客户端
+	   的浏览器做判断，返回给客户端友好的提示信息。
+
+	   在lb01上进行操作：
+	   #+BEGIN_SRC sh
+# 配置文件片段 - nginx.conf
+# process static requests
+    upstream static_pool {
+        server 192.168.20.152:80 weight=5;
+    }
+
+# process dynamic requests
+    upstream dynamic_pool {
+        server 192.168.20.153:80 weight=5;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html;
+            index  index.html index.htm;
+            
+            if ($http_user_agent ~* "MSIE") {
+               proxy_pass http://dynamic_pool;   
+            }
+
+            if ($http_user_agent ~* "Firefox") {
+               proxy_pass http://static_pool;
+            }
+
+            proxy_pass http://dynamic_pool; 
+            include proxy.conf;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+# 在web01上进行操作，设置test.html文件
+# cd /var/www/www/
+# echo "Firefox" > test.html
+# 
+# 在web02上进行操作，设置test.html文件
+# cd /var/www/www/
+# echo "Chrome" > test.html
+#
+# 在Windows客户端进行测试，分别使用Firefox和Chrome浏览器
+# http://www.lavenliu.com/test.html
+	   #+END_SRC
+
+**** 反向代理移动端和PC端同域名分离访问演练
+	  该功能的实现也是使用http_user_agent来实现的。对于移动端和PC端等
+	  访问，都可以有很友好的呈现给用户。
+
+	  #+BEGIN_SRC sh
+# 配置文件片段 - lb01之nginx.conf
+# process static requests
+    upstream static_pool {
+        server 192.168.20.152:80 weight=5;
+    }
+
+# process dynamic requests
+    upstream dynamic_pool {
+        server 192.168.20.153:80 weight=5;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html;
+            index  index.html index.htm;
+            
+            if ($http_user_agent ~* "android") {
+               proxy_pass http://dynamic_pool;   
+            }
+
+            if ($http_user_agent ~* "iphone") {
+               proxy_pass http://static_pool;
+            }
+
+            proxy_pass http://dynamic_pool; 
+            include proxy.conf;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+# ======================================================================
+# 在web01及web02上进行设置
+# 配置文件片段 - web01之httpd.conf
+#<VirtualHost *:80>   # 需要注释掉
+#    ServerAdmin ldczz@163.com
+#    DocumentRoot /var/www/bbs
+#    ServerName bbs.lavenliu.com
+#    ErrorLog logs/bbs-error_log
+#    CustomLog logs/bbs-access_log common
+#</VirtualHost>
+
+<VirtualHost *:80>
+    ServerAdmin ldczz@163.com
+    DocumentRoot /var/www/www
+    ServerName www.lavenliu.com
+    ErrorLog logs/www-error_log
+    CustomLog logs/www-access_log combined
+</VirtualHost>
+# cd /var/www/www
+web01# echo iPhone > test.html
+web02# echo Android > test.html
+# service httpd restart
+# 分别使用iPhone和Android手机进行测试
+# 在web01或web02上观察http的访问日志（目前作者只有iPhone手机）
+"192.168.0.103" - - [21/Feb/2016:22:12:31 +0800] "GET /test.html HTTP/1.0" 200 8 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12H321 Safari/600.1.4"
+"192.168.0.103" - - [21/Feb/2016:22:13:05 +0800] "GET /test.html HTTP/1.0" 200 7 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12H321 Safari/600.1.4"
+"192.168.0.103" - - [21/Feb/2016:22:13:07 +0800] "GET /test.html HTTP/1.0" 200 7 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12H321 Safari/600.1.4"
+	  #+END_SRC
+** Nginx+KeepAlived高可用
+*** KeepAlived高可用与Nginx整合实战
+	 配置Nginx负载均衡器高可用的步骤：
+	 1. 两台机器都安装配置Nginx负载均衡器
+	 2. 两台机器都安装配置KeepAlived软件
+	 3. 选择提供服务的VIP，在keepalived.conf中进行配置
+	 4. 确保两台负载均衡器的Nginx都处于启动状态，监听本机的IP地址即可
+	 5. 当主Nginx负载均衡器宕机时，备用负载均衡器接管VIP，使得用户请求
+        自身的Nginx代理服务
+    
+	 上述过程存在一个隐患：
+	 #+BEGIN_EXAMPLE
+	 主服务器没宕机，而Nginx负载均衡服务本身不提供服务了，这样的情况下，
+	 KeepAlived服务不会切换VIP。相当于VIP地址还存在于主Nginx负载均衡器
+	 上，但Nginx服务已经关闭了。所以，无法对外提供服务。
+	 #+END_EXAMPLE
+
+	 解决方案：
+	 #+BEGIN_EXAMPLE
+	 最简单的，在Nginx负载均衡所在服务器本地，通过定时任务（守护进程）
+	 运行一个脚本，当Nginx进程（或URL）不存在时，停止其KeepAlived服务，
+	 强制VIP切换。
+[root@lb01 scripts]# cat check_lb.sh
+#!/bin/sh
+while true
+do
+	 PNUM=`ps -ef |grep nginx |grep -v grep |wc -l`
+	 if [ $PNUM -lt 2 ]; then
+	     /etc/init.d/keepalived stop > /dev/null 2>&1
+	     killall -9 keepalived > /dev/null 2>&1
+	     killall -9 keepalived > /dev/null 2>&1
+	 fi
+	 sleep 5
+done
+	 #+END_EXAMPLE
+
+	 在lb01及lb02上分别安装及配置KeepAlived软件，安装及配置参考前面的
+	 KeepAlived章节。
+	 #+BEGIN_EXAMPLE
+# 配置文件片段 - nginx.conf之lb01与lb02
+worker_processes  1;
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout  65;
+    
+# regular reverse proxy configure
+    upstream web_pool {
+        server 192.168.20.152:80 weight=5;
+        server 192.168.20.153:80 weight=5;
+    }
+
+    server {
+        listen       80;
+        server_name  www.lavenliu.com;
+        
+        location / {
+            root   html;
+            index  index.html index.htm;
+            
+            proxy_pass http://web_pool;
+            include proxy.conf;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+}
+# 设置完毕，检查nginx.conf配置语法，并重新加载配置文件
+# /application/nginx/sbin/nginx -t
+# /application/nginx/sbin/nginx -s reload
+	 #+END_EXAMPLE
+
+	 修改Windows客户端的hosts文件，如下，
+	 #+BEGIN_SRC sh
+# vi /c/Windows/System32/drivers/etc/hosts
+192.168.20.250 www.lavenliu.com bbs.lavenliu.com
+# 然后，使用curl进行测试
+for i in {1..10} ; do curl www.lavenliu.com ; done
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    437      0 --:--:-- --:--:-- --:--:--  7000www153 # 注意这里的内容
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    437      0 --:--:-- --:--:-- --:--:--  7000www152 # 注意这里的内容
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www153 # 注意这里的内容
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www152 # 注意这里的内容
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www153
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www152
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www153
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www152
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www153
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www152
+	 #+END_SRC
+
+	 现在关闭lb01的操作系统，观察客户端是否可以正常访问。
+	 #+BEGIN_SRC sh
+lb01# poweroff
+lb02# ip a |grep 192.168.20.250
+    inet 192.168.20.250/24 scope global secondary eth1
+windowns$ for i in {1..10} ; do curl www.lavenliu.com ; done
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    437      0 --:--:-- --:--:-- --:--:--  7000www152 # 注意这里的内容
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    466      0 --:--:-- --:--:-- --:--:--  7000www153 # 注意这里的内容
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www152
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    437      0 --:--:-- --:--:-- --:--:--  7000www153
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    466      0 --:--:-- --:--:-- --:--:--  7000www152
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www153
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    437      0 --:--:-- --:--:-- --:--:--   437www152
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0    466      0 --:--:-- --:--:-- --:--:--   466www153
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www152
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0      7      0  0:00:01 --:--:--  0:00:01  7000www153
+	 #+END_SRC
+**** Nginx负载均衡监测后端节点健康状态
+	 1. 插件
+	 2. 脚本实现
+		#+BEGIN_EXAMPLE
+		自己动手实现
+		#+END_EXAMPLE
+*** KeepAlived高可用问题及企业解决方案实战
+	 主服务器没宕机，而Nginx负载均衡服务本身不提供服务了，这样的情况下，
+	 KeepAlived服务不会切换VIP。相当于VIP地址还存在于主Nginx负载均衡器
+	 上，但Nginx服务已经关闭了。所以，无法对外提供服务。
+
+	 KeepAlived实现服务器级别的接管。Nginx宕掉KeepAlived不会接管。
+
+	 解决方案：
+	 #+BEGIN_EXAMPLE
+	 最简单的，在Nginx负载均衡所在服务器本地，通过定时任务（守护进程）
+	 运行一个脚本，当Nginx进程（或URL）不存在时，停止其KeepAlived服务，
+	 强制VIP切换。
+[root@lb01 scripts]# cat check_lb.sh
+#!/bin/sh
+while true
+do
+	 PNUM=`ps -ef |grep nginx |grep -v grep |wc -l`
+	 if [ $PNUM -lt 2 ]; then
+	     /etc/init.d/keepalived stop > /dev/null 2>&1
+	     killall -9 keepalived > /dev/null 2>&1
+	     killall -9 keepalived > /dev/null 2>&1
+	 fi
+	 sleep 5
+done
+	 #+END_EXAMPLE
+*** KeepAlived高可用脑裂问题解决及开发脚本检查脑裂方案实战
+	 如果在备节点上，可以ping的通主，并且备节点上还有VIP，则说明脑裂了。
+	 检测脑裂的脚本，
+	 #+BEGIN_SRC sh
+# cat /home/lavenliu/scripts/check_brain_split.sh
+#!/bin/sh
+
+while true
+do
+    ping -c2 -W3 192.168.20.150 &> /dev/null
+    if [ $? -eq 0 -a `ip a |grep 192.168.20.250|wc -l` -eq 1 ]; then
+        echo "HA is brain split. Dangerous!"
+    else
+        echo "HA is OK."
+    fi
+    sleep 5
+done
+	 #+END_SRC
+	 
+	 具体演示步骤，
+	 #+BEGIN_SRC sh
+lb02# sh check_brain_split.sh
+HA is OK.
+HA is brain split. Dangerous!
+HA is brain split. Dangerous!
+HA is brain split. Dangerous!
+HA is brain split. Dangerous!
+HA is brain split. Dangerous!
+HA is OK.
+HA is OK.
+lb02# /etc/init.d/iptables start
+lb01# /etc/init.d/iptables start
+lb01# ip a |grep 192.168.20.250
+    inet 192.168.20.250/24 scope global secondary eth1
+lb02# ip a |grep 192.168.20.250
+    inet 192.168.20.250/24 scope global secondary eth1
+	 #+END_SRC
+*** KeepAlived高可用日志说明及实战配置日志路径
+	 KeepAlived的日志信息是输出在/var/log/messages日志文件里的。可以进
+	 行配置，改变其日志的输出位置。
+
+	 修改/etc/sysconfig/keepalived配置文件，
+	 #+BEGIN_SRC
+cat /etc/sysconfig/keepalived 
+# Options for keepalived. See `keepalived --help' output and keepalived(8) and
+# keepalived.conf(5) man pages for a list of all options. Here are the most
+# common ones :
+#
+# --vrrp               -P    Only run with VRRP subsystem.
+# --check              -C    Only run with Health-checker subsystem.
+# --dont-release-vrrp  -V    Dont remove VRRP VIPs & VROUTEs on daemon stop.
+# --dont-release-ipvs  -I    Dont remove IPVS topology on daemon stop.
+# --dump-conf          -d    Dump the configuration data.
+# --log-detail         -D    Detailed log messages.
+# --log-facility       -S    0-7 Set local syslog facility (default=LOG_DAEMON)
+#
+
+# KEEPALIVED_OPTIONS="-D" # default line
+KEEPALIVED_OPTIONS="-D -d -S 0"
+	 #+END_SRC
+
+	 修改rsyslog配置文件，增加内容如下，
+	 #+BEGIN_EXAMPLE
+tail -n2 /etc/rsyslog.conf
+# keepalived                                                                                                                         
+local0.*                                                /var/log/keepalived.log
+	 #+END_EXAMPLE
+
+	 修改完毕，重启rsyslog服务及KeepAlived服务，
+	 #+BEGIN_SRC sh
+lb01# service rsyslog restart
+lb01# service keepalived resart
+lb01# tail /var/log/keepalived.log
+Feb 22 04:52:07 lb01 Keepalived_vrrp[5232]: VRRP sockpool: [ifindex(3), proto(112), unicast(0), fd(10,11)]
+Feb 22 04:52:07 lb01 Keepalived_healthcheckers[5231]: Configuration is using : 7528 Bytes
+Feb 22 04:52:07 lb01 Keepalived_healthcheckers[5231]: Using LinkWatch kernel netlink reflector...
+Feb 22 04:52:08 lb01 Keepalived_vrrp[5232]: VRRP_Instance(VI_1) Transition to MASTER STATE
+Feb 22 04:52:08 lb01 Keepalived_vrrp[5232]: VRRP_Instance(VI_1) Received lower prio advert, forcing new election
+Feb 22 04:52:09 lb01 Keepalived_vrrp[5232]: VRRP_Instance(VI_1) Entering MASTER STATE
+Feb 22 04:52:09 lb01 Keepalived_vrrp[5232]: VRRP_Instance(VI_1) setting protocol VIPs.
+Feb 22 04:52:09 lb01 Keepalived_vrrp[5232]: VRRP_Instance(VI_1) Sending gratuitous ARPs on eth1 for 192.168.20.250
+Feb 22 04:52:09 lb01 Keepalived_healthcheckers[5231]: Netlink reflector reports IP 192.168.20.250 added
+Feb 22 04:52:14 lb01 Keepalived_vrrp[5232]: VRRP_Instance(VI_1) Sending gratuitous ARPs on eth1 for 192.168.20.250
+lb02# service rsyslog restart
+lb02# service keepalived resart
+lb02# tail /var/log/keepalived.log
+Feb 22 04:54:37 lb02 Keepalived_healthcheckers[4117]: Registering Kernel netlink reflector
+Feb 22 04:54:37 lb02 Keepalived_healthcheckers[4117]: Registering Kernel netlink command channel
+Feb 22 04:55:17 lb02 Keepalived_vrrp[4118]: Opening file '/etc/keepalived/keepalived.conf'.
+Feb 22 04:55:17 lb02 Keepalived_vrrp[4118]: Configuration is using : 63175 Bytes
+Feb 22 04:55:17 lb02 Keepalived_vrrp[4118]: Using LinkWatch kernel netlink reflector...
+Feb 22 04:55:17 lb02 Keepalived_vrrp[4118]: VRRP_Instance(VI_1) Entering BACKUP STATE
+Feb 22 04:55:17 lb02 Keepalived_vrrp[4118]: VRRP sockpool: [ifindex(3), proto(112), unicast(0), fd(10,11)]
+Feb 22 04:55:17 lb02 Keepalived_healthcheckers[4117]: Opening file '/etc/keepalived/keepalived.conf'.
+Feb 22 04:55:17 lb02 Keepalived_healthcheckers[4117]: Configuration is using : 7534 Bytes
+Feb 22 04:55:17 lb02 Keepalived_healthcheckers[4117]: Using LinkWatch kernel netlink reflector...
+	 #+END_SRC
+*** KeepAlived高可用多实例介绍
+	 lb01上的配置，
+	 #+BEGIN_EXAMPLE
+global_defs {
+   notification_email {
+     ldc@163.com
+   }
+   notification_email_from Alexandre.Cassen@firewall.loc
+   smtp_server 192.168.200.1
+   smtp_connect_timeout 30
+   router_id LVS_DEVEL
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth1
+    virtual_router_id 51
+    priority 150
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.20.250/24
+    }
+}
+
+vrrp_instance VI_2 {
+    state BACKUP
+    interface eth1
+    virtual_router_id 52
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.20.251/24
+    }
+}
+	 #+END_EXAMPLE
+
+	 lb02上的配置，
+	 #+BEGIN_EXAMPLE
+global_defs {
+   notification_email {
+     ldc@163.com
+   }
+   notification_email_from Alexandre.Cassen@firewall.loc
+   smtp_server 192.168.200.1
+   smtp_connect_timeout 30
+   router_id LVS_DEVEL02
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface eth1
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.20.250/24
+    }
+}
+
+vrrp_instance VI_2 {
+    state MASTER
+    interface eth1
+    virtual_router_id 52
+    priority 150
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.20.251/24
+    }
+}
+	 #+END_EXAMPLE
+
+	 在各个负载均衡器上检查VIP，
+	 #+BEGIN_SRC sh
+lb01# ip a |grep 192.168.20
+    inet 192.168.20.150/24 brd 192.168.20.255 scope global eth1
+    inet 192.168.20.250/24 scope global secondary eth1
+lb02# ip a |grep 192.168.20
+    inet 192.168.20.151/24 brd 192.168.20.255 scope global eth1
+    inet 192.168.20.251/24 scope global secondary eth1
+#
+# 停止lb02上的KeepAlived服务
+lb02# service keepalived stop
+# 再次检查各个负载均衡器上的VIP
+lb01# ip a |grep 192.168.20
+    inet 192.168.20.150/24 brd 192.168.20.255 scope global eth1
+    inet 192.168.20.250/24 scope global secondary eth1
+    inet 192.168.20.251/24 scope global secondary eth1
+lb02# ip a |grep 192.168.20
+    inet 192.168.20.151/24 brd 192.168.20.255 scope global eth1
+#
+# 停止lb01上的KeepAlived服务
+lb01# service keepalived stop
+# 再次检查各个负载均衡器上的VIP
+lb01# ip a |grep 192.168.20
+    inet 192.168.20.150/24 brd 192.168.20.255 scope global eth1
+lb02# ip a |grep 192.168.20
+    inet 192.168.20.151/24 brd 192.168.20.255 scope global eth1
+    inet 192.168.20.250/24 scope global secondary eth1
+    inet 192.168.20.251/24 scope global secondary eth1
+	 #+END_SRC
+*** 代理节点状态检查脚本
+	动手实践。
+* Nginx的cache功能
+  nginx_cache 
+
+  http://zyan.cc/nginx_cache/
+* Nginx优化
+   本优化适合apache、nginx和squid等多种应用，特殊业务也可能需要略作调
+   整。
+
+   所谓内核优化，主要是在Linux中针对业务服务应用而进行的系统内核参数优
+   化，优化并无特殊标准，下面是常见的生产环境Linux内核优化案例，仅供参
+   考，
+   #+BEGIN_EXAMPLE
+net.手机照片里
+   #+END_EXAMPLE
+** Nginx基本安全优化
+*** 调整参数隐藏Nginx软件版本号信息
+	 尽量隐藏或消除WEB服务对访问的用户显示各类敏感信息（例如：web软件
+	 名称及版本号等信息），这样恶意的用户就很难猜测他攻击的服务器是否
+	 有特定漏洞的软件，或者是否为有对应漏洞的某一特定版本，从而加强web
+	 服务的安全性。
+	 #+BEGIN_SRC sh
+# curl -I 192.168.20.150
+# curl -I 192.168.20.150
+HTTP/1.1 200 OK
+Server: nginx/1.8.0 # 这里暴露了Nginx软件版本号
+Date: Mon, 22 Feb 2016 09:18:47 GMT
+Content-Type: text/html; charset=UTF-8
+Content-Length: 7
+Connection: keep-alive
+Last-Modified: Sun, 21 Feb 2016 19:36:43 GMT
+ETag: "22fef-7-52c4cd6060379"
+Accept-Ranges: bytes
+	 #+END_SRC
+	 
+	 在Nginx配置文件里增加如下的配置，在http字段里添加，
+	 #+BEGIN_SRC sh
+http {
+	server_tokens off;
+}
+	 #+END_SRC
+
+	 配置完毕，检查Nginx配置语法，然后reload，
+	 #+BEGIN_SRC sh
+/application/nginx/sbin/nginx -t
+/application/nginx/sbin/nginx -s reload
+# 再次使用curl查看
+curl -I 192.168.20.150
+HTTP/1.1 200 OK
+Server: nginx # 版本号已经隐藏了，但还是有nginx的字眼
+Date: Mon, 22 Feb 2016 10:27:40 GMT
+Content-Type: text/html; charset=UTF-8
+Content-Length: 7
+Connection: keep-alive
+Last-Modified: Sun, 21 Feb 2016 19:36:43 GMT
+ETag: "22fef-7-52c4cd6060379"
+Accept-Ranges: bytes
+	 #+END_SRC
+
+	 另外就是修改Nginx的源代码，可以达到彻底修改的目的，源文件在
+	 nginx-<version>/src/core/nginx.h文件中，如下，
+	 #+BEGIN_SRC sh
+# sed -n '13,24p' nginx.h
+#define NGINX_VERSION      "1.8.0"
+#define NGINX_VER          "nginx/" NGINX_VERSION
+
+#ifdef NGX_BUILD
+#define NGINX_VER_BUILD    NGINX_VER " (" NGX_BUILD ")"
+#else
+#define NGINX_VER_BUILD    NGINX_VER
+#endif
+
+#define NGINX_VAR          "NGINX"
+#define NGX_OLDPID_EXT     ".oldbin"
+# 作如下修改
+#define NGINX_VERSION      "1.8.0"
+#define NGINX_VER          "nginx/" NGINX_VERSION
+
+#ifdef NGX_BUILD
+#define NGINX_VER_BUILD    NGINX_VER " (" NGX_BUILD ")"
+#else
+#define NGINX_VER_BUILD    NGINX_VER
+#endif
+
+#define NGINX_VAR          "NGINX"
+#define NGX_OLDPID_EXT     ".oldbin"
+
+# 还要修改http/ngx_http_header_filter_module.c文件的49行，
+static char ngx_http_server_string[] = "Server: nginx" CRLF;
+static char ngx_http_server_string[] = "Server: ZWS" CRLF;
+
+# 还要修改http/ngx_http_special_response.c的第21到30行
+static u_char ngx_http_error_full_tail[] =
+"<hr><center>" NGINX_VER "</center>" CRLF # 这里也可做修改
+"</body>" CRLF
+"</html>" CRLF
+;
+
+
+static u_char ngx_http_error_tail[] =
+"<hr><center>lighttp</center>" CRLF # 此行是更改对外展示的Nginx名字为lighttp
+"</body>" CRLF
+	 #+END_SRC
+
+	 修改完毕，进行编译即可，
+	 #+BEGIN_SRC sh
+useradd -M -s /sbin/nologin nginx
+./configure --user=nginx --group=nginx \
+			--prefix=/application/nginx-1.9.1 \
+			--with-http_stub_status_module \
+			--with-http_ssl_module
+make
+make install
+	 #+END_SRC
+*** 更改Nginx服务的默认用户
+	编译时指定用户，如nginx，但要新增nginx用户。如果编译之前没有指定，
+	可以在编译完毕后，修改配置文件也可。
+** 根据参数优化Nginx服务性能
+*** 优化Nginx服务的worker进程个数
+	在高并发、高访问量的web服务场景，需要事先启动好更多的Nginx进程以
+	确保快速响应并处理大量并发用户的请求。 
+* LNMP
+** MysQL
+*** 添加用户
+	#+BEGIN_SRC sh
+useradd mysql -s /sbin/nologin -M
+	#+END_SRC
+*** 下载解压软件
+	#+BEGIN_SRC sh
+tar -xf mysql-5.5.32-linux2.6-x86_64.tar.gz -C /home/lavenliu/tools
+mv /home/lavenliu/tools/mysql-5.5.32-linux2.6-x86_64 /application/mysql-5.5.32
+ln -s /application/mysql-5.5.32 /application/mysql
+	#+END_SRC
+*** 初始化数据库
+	#+BEGIN_SRC sh
+/application/mysql/scripts/mysql_install_db \
+--basedir=/application/mysql \
+--datadir=/application/mysql/data \
+--user=mysql
+	#+END_SRC
+*** 授权MySQL管理数据库文件
+	#+BEGIN_SRC sh
+chown -R mysql.mysql /application/mysql/
+	#+END_SRC
+*** 生成MySQL配置文件
+	#+BEGIN_SRC sh
+\cp /application/mysql/support-files/my-small.cnf /etc/my.cnf
+sed -i 's#/usr/local/mysql#/application/mysql#g' /application/mysql/bin/mysqld_safe
+\cp /application/mysql/support-files/mysql.server /etc/init.d/mysqld
+chmod +x /etc/init.d/mysqld
+sed -i 's#/usr/local/mysql#/application/mysql#g' /etc/init.d/mysqld
+/etc/init.d/mysqld start
+chkconfig mysqld on
+[root@lnmp ~]# lsof -i:3306
+COMMAND  PID  USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+mysqld  5621 mysql   10u  IPv4  25591      0t0  TCP *:mysql (LISTEN)
+	#+END_SRC
+*** 设置及更改密码
+	新安装的MySQL是没有密码的，所以接下来设置密码，
+	#+BEGIN_SRC sh
+mysqladmin -uroot password "123456" # 设置新密码
+mysqladmin -uroot -p123456 password "lavenliu" # 修改密码
+	#+END_SRC
+*** 安全优化
+	#+BEGIN_SRC sh
+[root@lnmp ~]# mysql -uroot -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 6
+Server version: 5.5.32 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| test               |
++--------------------+
+4 rows in set (0.00 sec)
+#
+# 删除test库
+mysql> drop database test;
+Query OK, 0 rows affected (0.01 sec)
+#
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
++--------------------+
+3 rows in set (0.00 sec)
+#
+# 删除多余的用户
+mysql> select user,host from mysql.user;
++------+-----------+
+| user | host      |
++------+-----------+
+| root | 127.0.0.1 |
+| root | ::1       | # 把此用户删除
+|      | lnmp      | # 把此用户删除
+| root | lnmp      | # 把此用户删除
+|      | localhost | # 把此用户删除
+| root | localhost |
++------+-----------+
+6 rows in set (0.00 sec)
+mysql> drop user ''@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> drop user 'root'@'::1';
+Query OK, 0 rows affected (0.00 sec)
+# 注意，主机名有大写或包含特殊字符，使用drop删除不掉
+# 可以使用如下的方式删除，
+# delete from mysql.user where user='root' and host='A';
+mysql> delete from mysql.user;
+mysql> grant all on *.* to 'root'@'localhost' identified by '123456' with grant option;
+mysql> flush privileges;
+	#+END_SRC
+*** mysqldump
+	#+BEGIN_SRC sh
+mysqldump -uroot -p123456 -B -A -x --events |gzip > /opt/bak_$(date +%F).sql.gz
+# -A 备份所有库
+# -B 备份多个库，并添加use库名；create database库等功能
+# -x 锁表，会影响读写，尽量晚上操作
+# gzip 压缩效率高
+# 备份指定的库
+mysqldump -uroot -p123456 -B wordpress -x |gzip > /opt/bak_$(date +%F).sql.gz
+	#+END_SRC
+** PHP
+*** PHP服务之FastCGI介绍
+**** 什么是CGI
+	CGI全称是“通用网关接口”（Common Gateway Interface），用于HTTP服务
+	器与其它机器上的程序服务通信交流的一种工具，CGI程序必须运行在网路
+	服务器上。
+
+	传统CGI接口方式的主要缺点是性能较差，因为每次HTTP服务器遇到动态程序时都需要重新启动解析器来执行解析，然后结果被返回给HTTP服务器。
+	这在处理高并发访问时，几乎是不可用的，因此就诞生了FastCGI。另外传统的CGI接口方式安全性也很差，现在已经很少被使用了。
+**** 什么是FastCGI
+	FastCGI是一个可伸缩地、高速地在HTTP服务器和动态脚本语言间通信的接
+	口（FastCGI接口在Linux下是socket，这个socket可以是文件socket，也
+	可以是ip socket），主要优点是把动态语言和HTTP服务器分离开来。多数流行的HTTP服务器都支持
+	FastCGI，包括Apache、Nginx和Lighttpd等。
+
+	同时，FastCGI也被许多脚本语言所支持，比较流行的脚本语言之一为PHP。
+	FastCGI接口采用C/S架构，可以将HTTP服务器和脚本解析服务器分离开来，
+	同时在脚本解析服务器上启动一个或者多个脚本解析守护进程。当HTTP服
+	务器每次遇到动态程序时，可以将其直接交给FastCGI进程来执行，然后将
+	得到的结果返回给浏览器。这种方式可以让HTTP服务器专一的处理静态请
+	求或者将动态脚本服务器的结果返回给客户端，这在很大程度上提高了整
+	个应用系统的性能高。
+
+	FastCGI的重要特点总结：
+	1. FastCGI是HTTP服务器和动态脚本语言间通信的接口或者工具。
+	2. FastCGI的优点是把动态语言解析和HTTP服务器分离开来。
+	3. Nginx、Apache、Lighttpd以及多数动态语言都支持FastCGI。
+	4. FastCGI接口方式采用C/S架构，分为客户端（HTTP服务器）和服务端（动态语言解析服务器）。
+	5. PHP动态语言服务端可以启动多个FastCGI的守护进程（例如，php-fpm（fcgi process management））。
+	6. http服务器通过（例如：Nginx fastcgi_pass）FastCGI客户端和动态语言FastCGI服务端通信（例如：php-fpm）。
+
+    PHP fastcgi模式的设置说明：
+	#+BEGIN_EXAMPLE
+	php5.3及以上：编译参数 --enable-fpm
+	php5.2: 编译参数 --enable-fastcgi --enable-fpm --enable-cgi
+	php5.2安装可以参考http://blog.zyan.cc/nginx_php_v6
+	#+END_EXAMPLE
+*** PHP服务之php基础依赖库安装
+	php程序在开发及运行时会调用一些诸如zlib、gd等函数库，因此需要这些
+	库事先已安装。检查是否已安装，
+	#+BEGIN_SRC sh
+rpm -qa zlib-devel libxml2-devel libjpeg-turbo-devel libiconv-devel
+zlib-devel-1.2.3-29.el6.x86_64
+rpm -qa freetype-devel libpng-devel gd-devel libcurl-devel
+libpng-devel-1.2.49-2.el6_7.x86_64
+yum install -y libxml2-devel libjpeg-turbo-devel libiconv-devel freetype-devel gd-devel libcurl-devel
+	#+END_SRC
+*** PHP服务之特殊功能库软件安装
+	由于yum源里没有libiconv包，所以进行手工编译安装。
+	#+BEGIN_SRC sh
+cd /home/lavenliu/tools
+wget http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz
+tar -xf libiconv-1.14.tar.gz
+cd libiconv-1.14
+./configure --prefix=/usr/local/libiconv
+make
+make install
+	#+END_SRC
+	
+	然后，还需要安装libmcrypt库，
+	#+BEGIN_SRC sh
+wget --no-check-certificate https://sourceforge.net/projects/mcrypt/files/Libmcrypt/2.5.8/libmcrypt-2.5.8.tar.gz
+tar -xf libmcrypt-2.5.8.tar.gz
+cd libmcrypt-2.5.8
+./configure
+make
+make install
+# 或者使用yum的方式安装
+yum install -y libmcrypt-devel
+rpm -qa libmcrypt-devel
+libmcrypt-devel-2.5.8-9.el6.x86_64
+	#+END_SRC
+
+	还需要再安装一个mhash的加密扩展库。mhash是基于离散数学原理的不可逆
+	向的php加密方式扩展库，其在默认情况下不开启。mhash可以用于创建校验
+	数值、消息摘要、消息认证码，以及无需原文的关键信息保存（如密码）等。
+
+	mhash为php提供了多种哈希算法，如MD5、SHA1、GOST等。你可以通过
+	MHASH_hashname()来查看支持的算法有哪些。
+
+	#+BEGIN_SRC sh
+	yum install -y mhash-devel mhash
+    rpm -qa mhash-devel mhash
+	#+END_SRC
+*** 安装PHP服务
+     	#+BEGIN_SRC sh
+	--with-mysql=mysqlnd # 在没有安装MySQL的情况下使用
+	#+END_SRC
+
+	#+BEGIN_SRC sh
+./configure --prefix=/application/php-5.3.27 \
+--with-mysql=/application/mysql \
+--with-iconv-dir=/usr/local/libiconv \
+--with-freetype-dir \
+--with-jpeg-dir \
+--with-png-dir \
+--with-zlib \
+--with-libxml-dir=/usr \
+--enable-xml \
+--disable-rpath \
+--enable-safe-mode \
+--enable-bcmath \
+--enable-shmop \
+--enable-sysvsem \
+--enable-inline-optimization \
+--with-curl \
+--with-curlwrappers \
+--enable-mbregex \
+--enable-fpm \
+--enable-mbstring \
+--with-mcrypt \
+--with-gd \
+--enable-gd-native-ttf \
+--with-openssl \
+--with-mhash \
+--enable-pcntl \
+--enable-sockets \
+--with-xmlrpc \
+--enable-zip \
+--enable-soap \
+--enable-short-tags \
+--enable-zend-multibyte \
+--enable-static \
+--with-xsl \
+--with-fpm-user=nginx \
+--with-fpm-group=nginx \
+--enable-ftp
+# 编译安装出现了错误提示
+# configure: error: xslt-config not found. Please reinstall the libxslt >= 1.1.0 distribution
+yum install -y libxslt-devel
+make
+# make的时候，报错
+# /usr/bin/ld: cannot find -lltdl
+# make: *** [sapi/fpm/php-fpm] Error 1
+yum install libtool-ltdl-devel -y
+make install
+Installing PHP SAPI module:       fpm
+Installing PHP CLI binary:        /application/php5.3.27/bin/
+Installing PHP CLI man page:      /application/php5.3.27/man/man1/
+Installing PHP FPM binary:        /application/php5.3.27/sbin/
+Installing PHP FPM config:        /application/php5.3.27/etc/
+Installing PHP FPM man page:      /application/php5.3.27/man/man8/
+Installing PHP FPM status page:      /application/php5.3.27/share/php/fpm/
+Installing build environment:     /application/php5.3.27/lib/php/build/
+Installing header files:          /application/php5.3.27/include/php/
+Installing helper programs:       /application/php5.3.27/bin/
+  program: phpize
+  program: php-config
+Installing man pages:             /application/php5.3.27/man/man1/
+  page: phpize.1
+  page: php-config.1
+Installing PEAR environment:      /application/php5.3.27/lib/php/
+[PEAR] Archive_Tar    - installed: 1.3.11
+[PEAR] Console_Getopt - installed: 1.3.1
+warning: pear/PEAR requires package "pear/Structures_Graph" (recommended version 1.0.4)
+warning: pear/PEAR requires package "pear/XML_Util" (recommended version 1.2.1)
+[PEAR] PEAR           - installed: 1.9.4
+Wrote PEAR system config file at: /application/php5.3.27/etc/pear.conf
+You may want to add: /application/php5.3.27/lib/php to your php.ini include_path
+[PEAR] Structures_Graph- installed: 1.0.4
+[PEAR] XML_Util       - installed: 1.2.1
+/home/lavenliu/tools/php-5.3.27/build/shtool install -c ext/phar/phar.phar /application/php5.3.27/bin
+ln -s -f /application/php5.3.27/bin/phar.phar /application/php5.3.27/bin/phar
+Installing PDO headers:          /application/php5.3.27/include/php/ext/pdo/
+[root@lnmp php-5.3.27]# echo $?
+0
+ln -s /application/php-5.3.27 /application/php
+	#+END_SRC
+
+	附php5.5编译安装参数，
+	#+BEGIN_SRC sh
+./configure \
+--prefix=/application/php-5.5.33 \
+--with-mysql=mysqlnd \
+--with-iconv-dir=/usr/local/libiconv \
+--with-freetype-dir \
+--with-jpeg-dir \
+--with-png-dir \
+--with-zlib \
+--with-libxml-dir=/usr \
+--enable-xml \
+--disable-rpath \
+--enable-bcmath \
+--enable-shmop \
+--enable-sysvsem \
+--enable-inline-optimization \
+--with-curl \
+--enable-mbregex \
+--enable-fpm \
+--enable-mbstring \
+--with-mcrypt \
+--with-gd \
+--enable-gd-native-ttf \
+--with-openssl \
+--with-mhash \
+--enable-pcntl \
+--enable-sockets \
+--with-xmlrpc \
+--enable-soap \
+--enable-short-tags \
+--enable-static \
+--with-xsl \
+--with-fpm-user=nginx \
+--with-fpm-group=nginx \
+--enable-ftp
+make 
+make install
+ln -s /application/php-5.5.33/ /application/php/
+	#+END_SRC
+*** 配置PHP及进程管理
+     #+BEGIN_SRC sh
+cd /home/lavenliu/tools/php-5.3.27
+cp php.ini-production /application/php/lib/php.ini
+cd /application/php/etc
+cp php-fpm.conf.default php-fpm.conf
+/application/php/sbin/php-fpm
+ps -ef |grep php-fpm
+root      22356      1  0 13:47 ?        00:00:00 php-fpm: master process (/application/php5.3.27/etc/php-fpm.conf)
+nginx     22357  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22358  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22359  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22360  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22361  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22362  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22363  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22364  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22365  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22366  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22367  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22368  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22369  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22370  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22371  22356  0 13:47 ?        00:00:00 php-fpm: pool www            
+nginx     22372  22356  0 13:47 ?        00:00:00 php-fpm: pool www
+[root@lnmp etc]# netstat -antup |grep php-fpm
+tcp        0      0 127.0.0.1:9000              0.0.0.0:*                   LISTEN      22356/php-fpm
+# php.ini参数
+egrep -v ";|^$" /application/php/etc/php-fpm.conf
+[global]
+pid = run/php-fpm.pid
+error_log = log/php-fpm.log
+log_level = error
+ 
+rlimit_files = 32768
+ 
+events.mechanism = epoll
+[www]
+user = nginx
+group = nginx
+listen = 127.0.0.1:9000
+ 
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+ 
+pm.max_requests = 2048
+ 
+slowlog = log/$pool.log.slow
+	#+END_SRC
+*** Nginx与PHP整合
+     	根据原理图的流程，接下来配置Nginx的配置文件，把php的请求转给php处
+	理。在nginx.conf的blog虚拟主机extra/blog.conf配置文件里增加如下配
+	置，
+	#+BEGIN_SRC sh
+location ~ .*\.(php|php5)?$ {
+	root html/blog;
+	fastcgi_pass  127.0.0.1:9000;
+	fastcgi_index index.php;
+	include       fastcgi.conf;
+}
+	#+END_SRC
+
+	完整的blog.conf配置为，
+	#+BEGIN_SRC sh
+[root@lnmp extra]# cat blog.conf 
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  blog.lavenliu.com; # 提供服务的域名，主机名
+    root   html/blog; # 站点的根目录，相当于Nginx安装目录
+    
+    location / { # 第一个location标签开始
+        index  index.html index.htm; # 默认的首页文件，多个用空格分开
+    }
+
+    location ~ .*\.(php|php5)?$ {
+        # 注意这里的站点根目录问题，不然会产生404的错误，
+        # 这里与blog公用一个站点目录，html/blog
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi.conf;
+    }
+	
+    access_log logs/access_blog.log main;
+}
+	#+END_SRC
+
+	写一个phpinfo()的函数测试一下，Nginx与PHP是否已整合成功，
+	#+BEGIN_SRC sh
+vi /application/nginx/html/blog/phpinfo.php
+<?php
+phpinfo();
+?>
+	#+END_SRC
+
+	可以在客户端进行访问，http://blog.lavenliu.com/phpinfo.php 如果有
+	输出说明，整合成功。
+*** PHP与MySQL整合
+     接下来PHP与MySQL进行整合，
+
+	 一个测试PHP与MySQL整合成功与否的脚本，
+	 #+BEGIN_SRC php
+<?php
+$test_link = mysql_connect('localhost', 'root', '123456');
+if ($test_link) {
+	   echo "mysql successful join php"
+   } else {
+	   echo mysql_error();
+}
+?>
+     #+BEGIN_SRC
+*** PHP服务控制权限防止木马安全解决方案
+     #+BEGIN_SRC sh
+cd /application/nginx/html
+[root@lnmp html]# find ./blog/ -type f |xargs chmod 644
+[root@lnmp html]# find ./blog/ -type d |xargs chmod 755
+[root@lnmp html]# mkdir blog/wp-content/uploads -p
+[root@lnmp html]# chown -R nginx.nginx blog/wp-content/uploads/
+	#+END_SRC
+*** 安装bbs程序
+	 bbs使用的是Discuz。
+	 
+	 设置BBS的伪静态化，
+	 1. 全局
+	 2. SEO设置
+	 3. 勾选"URL静态化"一栏右侧的复选框
+	 4. 勾选"Rewrite兼容性"
+	 5. 提交
+	 6. 点击"URL静态化"右侧的"查看当前的Rewrite规则"
+	 7. 拉到网页的最下面，把Nginx的Rewrite规则，粘贴到Nginx相应的虚拟主机下
+
+     设置权限，
+	#+BEGIN_SRC sh
+cd /data/www/
+[root@lnmp01 www]# chown -R root.root bbs/
+[root@lnmp01 www]# find ./bbs/ -type f|xargs chmod 644
+[root@lnmp01 www]# find ./bbs/ -type d|xargs chmod 755
+[root@lnmp01 www]# chown -R nginx.nginx bbs/uc_server
+	#+END_SRC
+
+     新建一个测试的帖子，写入一些内容，然后在数据库上进行查看是否有相
+     应的数据产生：
+	 #+BEGIN_SRC sh
+mysql -ubbs -h192.168.20.160 -p
+mysql> use bbs;
+mysql> select * from lt_forum_post\G
+************************** 1. row ***************************
+        pid: 1
+        fid: 2
+        tid: 1
+      first: 1
+     author: lavenliu
+   authorid: 1
+    subject: 第一个BBS帖子
+   dateline: 1458080291
+    message: 这是我的第一篇BBS帖子。欢迎来访。
+
+      useip: 192.168.20.1
+       port: 58176
+  invisible: 0
+  anonymous: 0
+     usesig: 1
+     htmlon: 0
+  bbcodeoff: -1
+  smileyoff: -1
+parseurloff: 0
+ attachment: 0
+       rate: 0
+  ratetimes: 0
+     status: 0
+       tags: 
+    comment: 0
+replycredit: 0
+   position: 1
+	 #+END_SRC
+*** 安装blog程序
+     	#+BEGIN_SRC sh
+mysql> create database wordpress;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> show databases;           
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| wordpress          |
++--------------------+
+4 rows in set (0.00 sec)
+
+mysql> grant all on wordpress.* to wordpress@'localhost' identified by '123456';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> flush privileges;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> select user,host from mysql.user where user='wordpress';
++-----------+-----------+
+| user      | host      |
++-----------+-----------+
+| wordpress | localhost |
++-----------+-----------+
+1 row in set (0.00 sec)
+
+mysql> select user,host from mysql.user;
++-----------+-----------+
+| user      | host      |
++-----------+-----------+
+| root      | 127.0.0.1 |
+| root      | localhost |
+| wordpress | localhost |
++-----------+-----------+
+3 rows in set (0.00 sec)
+	#+END_SRC
+
+	设置权限，
+	#+BEGIN_SRC sh
+[root@lnmp02 html]# chown -R root.root blog/
+[root@lnmp02 html]# find ./blog/ -type f|xargs chmod 644
+[root@lnmp02 html]# find ./blog/ -type d|xargs chmod 755
+[root@lnmp02 html]# mkdir blog/wp-content/uploads
+[root@lnmp02 html]# chown -R nginx.nginx blog/wp-content/uploads/
+	#+END_SRC
+*** 为博客程序配置实现URL伪静态
+     在WordPress后台-设置-固定链接-自定义结构，输入下面的代码，最后保
+	 存更改即可。"/archives/%post_id%.html"，注意，不加两边的引号。
+	#+BEGIN_SRC sh
+[root@lnmp extra]# cat blog.conf 
+server {               # 第一个server标签，表示一个独立的虚拟主机站点
+    listen       80;   # 提供服务外的端口，默认80
+    server_name  blog.lavenliu.com; # 提供服务的域名，主机名
+    root         html/blog; # 站点的根目录，相当于Nginx安装目录
+    index  index.php index.html index.htm; # 默认的首页文件，多个用空格分开
+
+    location / { # 第一个location标签开始
+        if (-f $request_filename/index.html){
+            rewrite (.*) $1/index.html break;
+        }
+        if (-f $request_filename/index.php){
+            rewrite (.*) $1/index.php;
+        }
+        if (!-f $request_filename){
+            rewrite (.*) /index.php;
+        }
+    }
+
+    location ~ .*\.(php|php5)?$ {
+        # 注意这里的站点根目录问题，不然会产生404的错误，
+        # 这里与blog公用一个站点目录，html/blog
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi.conf;
+    }
+	
+    access_log logs/access_blog.log main;
+}
+	#+END_SRC
+* 附录
+** proxy_next_upstream健康检查
+   #+BEGIN_EXAMPLE
+   # proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+   # Nginx尝试连接后端主机失败的次数，这个数值是配合proxy_next_upstream，fastcgi_next_upstream和
+   # memcached_next_upstream这三个参数使用的，当Nginx接收后端服务器返回这三个参数定义
+   # 的状态码的时候，会将这个请求转发给正常工作的后端服务器，例如404,502,503。max_fails
+   # 默认值是1。
+   #+END_EXAMPLE
+** gzip压缩模块
+   Nginx在响应客户端的请求时，可以使用自身的ngx_http_gzip_module模块对
+   响应的内容进行压缩。通常会减少一半甚至更多的传输数据，节省网络带宽。
+
+   与gzip常用的指令：
+   #+BEGIN_SRC sh
+   gzip
+   gzip_buffers
+   gzip_comp_level
+   gzip_disable
+   gzip_min_length
+   gzip_http_version
+   gzip_proxied
+   gzip_types
+   gzip_vary
+   #+END_SRC
+   
+   语法：
+   #+BEGIN_SRC sh
+gzip on | off;
+# 默认是关闭的
+# 可以在http、server、location、if等字段内使用
+######################################
+
+gzip_buffers number size;
+# 设置number个大小的压缩来响应客户端的请求。默认size大小是一个内存页的大小。
+# 通常是4K或8K，与操作系统有关。
+# 0.7.28版本及以后默认使用4个4K或8K
+
+gzip_comp_level level;
+# 设置压缩级别，默认level是1；
+# level范围是1到9；压缩级别越大，将节省更多的带宽，但更耗用系统资源，尤其是CPU资源。
+# 一般设置为1或2即可；
+
+gzip_min_length length;
+# 设置压缩页面的最小字节数，默认length是20字节；
+# 页面的大小由响应的头部"Content-Length"获得；
+# 默认值是0,，不管页面大小多大都压缩。建议设置成大于1k的字节数（如果小于1k可能会越压越大）。
+gzip_http_version 1.0 | 1.1;
+# 使用HTTP协议的版本
+
+gzip_types mime-type ...;
+# 默认值是text/html;可以使用"*"代表所有的MIME类型。
+
+gzip_vary on;
+# 要不要在响应的http头部加"Vary: Accept-Encoding"字段；
+# 因为有的浏览器支持压缩，有的不支持压缩，可以避免不必要的客户端浏览器不支持压缩，而服务端却压缩；
+   #+END_SRC
+** SSL配置
+   To configure an HTTPS server, the ssl parameter must be enabled on
+   listening sockets in the server block, and the locations of the
+   server certificate and private key files should be specified:
+   #+BEGIN_SRC sh
+server {
+    listen              443 ssl;
+    server_name         www.example.com;
+    ssl_certificate     www.example.com.crt;
+    ssl_certificate_key www.example.com.key;
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ...
+}
+   #+END_SRC
+
+   The directives ssl_protocols and ssl_ciphers can be used to limit
+   connections to include only the strong versions and ciphers of
+   SSL/TLS. By default nginx uses “ssl_protocols TLSv1 TLSv1.1
+   TLSv1.2” and “ssl_ciphers HIGH:!aNULL:!MD5”, so configuring them
+   explicitly is generally not needed. Note that default values of
+   these directives were changed several times.
+
+** SSL配置实践
+   #+BEGIN_SRC sh
+# 生成一个RSA密钥 
+openssl genrsa -des3 -out lavenliu.com.key 1024
+ 
+# 拷贝一个不需要输入密码的密钥文件
+# 不然，每次启动nginx都会需要密码
+openssl rsa -in lavenliu.com.key -out lavenliu.com_nopass.key
+ 
+# 生成一个证书请求
+openssl req -new -key lavenliu.com.key -out lavenliu.com.csr
+ 
+# 自己签发证书
+openssl x509 -req -days 365 -in lavenliu.com.csr -signkey lavenliu.com.key -out lavenliu.com.crt
+   #+END_SRC
+* 遇到的问题
+** ip_hash与backup不能同时启用
+   #+BEGIN_SRC sh
+# /application/nginx/sbin/nginx -t
+nginx: [emerg] balancing method does not support parameter "backup" in /application/nginx-1.9.1/conf/nginx.conf:15
+nginx: configuration file /application/nginx-1.9.1/conf/nginx.conf test failed
+   #+END_SRC
+** 安装PHP时出现的问题
+*** 找不到mysqlclient.so库
+	 #+BEGIN_SRC sh
+echo "/application/mysql/lib" >> /etc/ld.so.conf
+ldconfig
+	 #+END_SRC
+*** 找不到phar.phar文件
+	在php-5.3.27目录下，
+	 #+BEGIN_SRC sh
+touch ext/phar/phar.phar
+	 #+END_SRC
+	然后，重新make和make install。

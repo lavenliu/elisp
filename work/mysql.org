@@ -1,0 +1,2626 @@
+#+TITLE: MySQL数据库
+#+AUTHOR: LavenLiu
+#+DATE: 2011-06-07
+#+EMAIL: ldczz2008@163.com 
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+#+LaTeX_HEADER: \renewcommand{\baselinestretch}{1.38}
+#+LaTeX_HEADER: \setlength{\baselineskip}{20pt}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+* 数据库概念介绍
+** 什么是数据库
+   简单的说，数据库就是一个存放数据的仓库，这个仓库是按照一定的数据结
+   构（数据结构是指数据的组织形式或数据之间的联系）来组织、存储的，我
+   们可以通过数据库提供的多种方法来管理数据库里的数据。
+
+   更简单的形象理解，数据库和我们生活中存放杂物的储物间仓库性质一样，
+   区别只是存放的东西不同，杂物间存放实体的物件，而数据库里存储的是数
+   据，这样我们就对数据库有一个初步的了解了。
+
+   数据库诞生于距现在六十多年前，随着信息技术的发展和人类社会的不断进步，特别是2000年以后，
+   数据库不在仅仅是存储和管理数据了，而转变成用户所需要的各种数据管理的方式。数据库有很多种类和功能，
+   从最简单的存储有各种数据的表格到能够进行海量数据存储的大型数据库系统都在各个方面得到了广泛的应用。
+** 数据库的总类
+   按照早期的数据库理论，比较流行的数据库模型有三种，分别为层次式数据库、网络式数据库和关系型数据库。而当今
+   的互联网中，最常用的数据库模型主要有两种，即关系型数据库和非关系型数据库。
+*** 关系型数据介绍
+**** 关系型数据库的由来
+	 虽然网状数据库和层次数据库已经很好地解决了数据的集中和共享问题，但是在数据
+	 独立性和抽象级别上有很大欠缺。用户在对这两种数据库进行存取时，仍然需要明确数据的存储结构，
+	 指出存取路径。而关系型数据库就可以较好地解决这些问题。
+**** 关系型数据库介绍
+	 关系型数据库模型是把复杂的数据结构归结为简单的二元关系（即二维表格形式）。在关系数据库中，对数据
+	 的操作几乎全部建立在一个或多个关系表格上，通过对这些关联的表格分类、合并、连接或选取等运算来实现
+	 数据的管理。
+
+	 关系型数据库诞生至今已有40多年了，从理论产生发展到现实产品，例如：常见的MySQL和Oracle数据库。
+	 Oracle在数据库领域里上升到了霸主地位，而MySQL也是不容忽视的数据库，以至于被Oracle重金收购了。
+**** 关系型数据库表格之间的关系举例
+	 #+CAPTION: MySQL数据库表1 - 学生表
+     | 学号 | 姓名     | 年龄 |
+     |------+----------+------|
+     | S001 | lavenliu | 28   |
+     | S002 | taoqi    | 25   |
+     | S003 | james    | 30   |
+     | S004 | wade     | 33   | 
+  
+	 #+CAPTION: MySQL数据库表2 - 课程表
+     | 课程号 | 课程名      | 学分 |
+     |--------+-------------+------|
+     | C1001  | linux运维   |   25 |
+     | C1002  | linux架构   |   25 |
+     | C1003  | python运维  |   25 |
+     | C1004  | mysql数据库 |   25 | 
+  
+	 #+CAPTION: MySQL数据库表3 - 学生选课表
+     | 学号 | 课程号 | 成绩 |
+     |------+--------+------|
+     | S001 | C1004  | 80   |
+     | S002 | C1002  | 90   |
+     | S003 | C1001  | 95   |
+     | S004 | C1003  | 75   |
+*** 非关系型数据库介绍
+**** 非关系型数据库诞生背景
+	 非关系型数据库也被称为NoSQL数据库，NoSQL的本意是“Not Only SQL”，指的是非关系型数据库，
+	 而不是“No SQL”的意思，因此，NoSQL的产生并不是要彻底地否定关系型数据库，而是作为传统关系型数据库的一个
+	 有效补充。NoSQL数据库在特定的场景下可以发挥出难以想象的高效率和高性能。
+
+	 随着互联网web2.0网站的兴起，传统的关系型数据库在应付web2.0网站，特别是对于规模日益扩大的
+	 海量数据，超大规模和高并发的微博、卫星、SNS类型的web2.0纯动态网站已经显得力不从心，暴露了
+	 很多难以克服的问题，例如：传统的关系型数据IO瓶颈、性能瓶颈都难以有效突破，于是开始出现了
+	 大批针对特定场景，以高性能和使用便利为目的的功能特异化的数据库产品，NoSQL（非关系型）类的
+	 数据库就是在这样的情景中诞生并得到了非常迅速的发展。
+
+	 NoSQL是非关系型数据库的广义定义。它打破了长久以来关系型数据库与ACID理论大一统的局面。NoSQL
+	 数据存储不要固定的表结构，通常也不存在连接操作。在大数据存取上具备关系型数据库无法比拟的性能优势。
+	 该数据库在2009年初得到了广泛的认同。
+
+	 当今的应用体系结构需要数据存储在横向伸缩性上能够满足需求。而NoSQL存储就是为了实现这个需求而诞生的。
+	 Google的BigTable与Amazon的Dynamo是非常成功的商业NoSQL实现。一些开源的NoSQL体系，如Facebook的Cassandra，
+	 Apache的HBase，也得到了广泛的认同，Redis，mongodb也逐渐的越来越受到大中小型公司的欢迎和追捧。
+**** 非关系型数据库种类
+***** 键值（Key-Value）存储数据库
+	  键值数据库就类似传统语言中使用的哈希表。可以通过Key来添加、查询或者删除数据，
+	  因为使用key主键访问，所以会获得很高的性能及扩展性。
+
+	  键值（Key-Value）数据库主要是使用一个哈希表，这个表中有一个特定的键和一个指针
+	  指向特定的数据。Key/Value模型对于IT系统来说的优势在于简单、易部署、高并发。
+
+	  典型产品：Memcached、Redis、MemcacheDB、Berkeley DB
+***** 列存储（Column-Oriented）数据库
+	  列存储数据库将数据存储在列族（column family）中，一个列族存储经常被一起查询
+	  的相关数据。举个例子，如果我们有一个Person类，我们通常会一起查询他们的姓名和
+	  年龄而不是薪资。这种情况下，姓名和年龄就会被放入一个列族中，而薪资则在另一个
+	  列族中。
+
+	  这部分数据库通常是用来应对分布式存储的海量数据。键仍然存在，但是它们的特点是指向
+	  了多个列。这些列是由列家族来安排的。
+
+	  典型产品：Cassandra、HBase
+***** 面向文档（Document-Oriented）数据库
+	  文档型数据库的灵感是来自于Lotus Notes办公软件的，而且它同第一种键值存储相类似。
+	  该类型的数据模型是版本化的文档，半结构化的文档以特定的格式存储，比如JSON。
+	  文档型数据库可以看作是键值数据库的升级版，允许之间嵌套键值。而且文档型数据库比
+	  键值数据库的查询效率更高。
+
+	  面向文档数据库会将数据以文档的形式储存。每个文档都是自包含的数据单元，是一系列
+	  数据项的集合。每个数据项都有一个名称与对应的值，值既可以是简单的数据类型，
+	  如字符串、数字和日期等；也可以是复杂的类型，如有序表和关联对象。数据存储的最小单位
+	  是文档，同一个表中存储的文档属性可以是不同的，数据可以使用XML、JSON或者JSONB等
+	  多种形式存储。
+
+	  典型产品：MongoD、CouchDB
+***** 图形（Graph）数据库
+	  图形数据库允许我们将数据以图的方式储存。实体会被作为顶点，而实体之间的关系则
+	  会被作为边。
+* 常用关系型数据库产品介绍
+** Oracle数据库
+   Oracle前身叫SDL，有Larry Eillison和另外两个编程人员在1977年创办。1979年，Oracle公司
+   引入了第一个商用SQL关系数据库管理系统。
+
+   Oracle主要应用范围：传统大企业、大公司、政府、金融、证券等。
+** MySQL数据库
+   MySQL数据库是一个中小型关系型数据库管理系统，软件开发者为瑞典MySQL AB公司。在2008年
+   1月16号被Sun公司收购，后来Sun公司又被Oracle公司收购。目前MySQL被广泛地应用在Internet上的
+   大中小型网站中。由于其体积小、速度快、总体拥有成本低，尤其是开放源码这一特点，许多大中小
+   型网站为了降低网站总体拥有成本而选择了MySQL作为网站数据库，甚至国内知名的淘宝网页选择
+   弃用Oracle而更换为更开放的MySQL。
+
+   MySQL数据库主要应用范围：互联网领域，大中小型网站、游戏公司，电商平台等。
+** MariaDB数据库
+   MariaDB数据库管理系统是MySQL数据库的一个分支，主要由开源社区维护，采用GPL授权许可。
+   开放这个MariaDB数据库分支的可能原因之一是：甲骨文公司收购了MySQL后，有将MySQL闭源
+   的潜在风险，因此MySQL开源社区采用分支的方式来避开这个风险。
+
+   开发MariaDB数据库的目的是完全兼容MySQL数据库，包括API和命令行，使之能轻松的
+   成为MySQL的代替品。在存储引擎方面，使用XtraDB来代替MySQL的InnoDB。MariaDB由
+   MySQL的创始人Michael Widenius主导开发。MariaDB数据库的名称来自MySQL创始人
+   Michael Widenius的女儿Maria的名字。
+
+   MariaDB基于事物的Maria存储引擎，替换了MySQL的MyISAM存储引擎，它使用了
+   Percona的XtraDB（InnoDB的变种）。
+* 常用非关系型数据库产品介绍
+** Memcached(key-value)
+   Memcached是一个开源的、高性能的、具有分布式内存对象的缓存系统。通过它可以
+   减轻数据库负载，加速动态的web应用。目前全球有非常多的用户都在使用它来构建自己
+   的大负载网站或提高自己的高访问网站的响应速度。注意：Memcache是这个项目的名称，而
+   Memcached是服务端的主程序文件名。
+
+   缓存一般用来保存一些经常被存取的对象或数据（例如，浏览器会把经常访问的网页
+   缓存起来一样），通过缓存来存取对象或数据要比在磁盘上存取快很多，前者是内存，
+   后者是磁盘。Memcached是一种纯内存缓存系统，把经常存取的对象或数据缓存在
+   Memcached的内存中，这些被缓存的数据被程序通过API的方式存取，Memcached里面的数据就像
+   一张巨大的Hash表，数据以key-value对的方式存在。Memcached通过缓存经常被存取的对象或数据，
+   来减轻频繁读取数据库的压力，提高网站的响应速度，构建出速度更快的可扩展的web应用。
+
+   由于Memcached为纯内存缓存软件，一旦重启所有数据都会丢失，因此，新浪网基于Memcached开发了
+   一个开源项目Memcachedb。通过Memcached增加Berkeley DB的持久化存储机制和异步主辅复制机制，
+   使Memcached具备了事物恢复能力、持久化数据存储能力和分布式复制能力，Memcachedb非常适合需要
+   超高性能读写速度、持久化保存的应用场景，但是最近几年逐渐被其他的持久化产品替代，例如Redis。
+** Redis（key-value）
+   与Memcached类似，Redis也是一个key-value型存储系统。但Redis支持的存储value类型相对较多，
+   包括string、list、set和zset等。这些数据类型都支持push/pop、add/remove及取交集、并集和差集及更
+   丰富的操作，而且这些操作都是原子性的。在此基础上，Redis支持各种不同方式的排序。与Memcached一样，为了
+   保证效率，Redis的数据都是缓存在内存中。区别是Redis会周期性的把数据写入磁盘或者把修改操作写入追加的记录文件，
+   并在此基础上实现了master-slave主从同步。
+
+   Redis是一个高性能的key-value数据库。Redis的出现，很大程度上补偿了Memcached这类key/value存储的不足，
+   在部分场合可以对关系数据库起到很好的补充作用。它提供了Python、Ruby、Erlang、PHP客户端，使用很方便。
+
+   Redis特点：
+   1. 支持内存缓存，这个功能相当于Memcached。
+   2. 支持持久化，这个功能相当于Memcachedb、ttserver。
+   3. 数据类型更丰富。比其他key-value库功能更强。
+   4. 支持集群、分布式。
+   5. 支持队列等特殊功能。
+
+   应用：缓存从存取Memcached更改存取Redis。
+** MongoDB（Document-Oriented）
+* MySQL数据库介绍
+** 为什么选择MySQL数据库
+   绝大多数的使用linux系统的大中小互联网网站都在使用MySQL作为其后端的数据库存储，从大型的BAT门户，到电商平台，
+   分类门户等无一例外都使用MySQL数据库。那么，MySQL数据库到底有哪些优势和特点，让大家选择它呢？
+   原因可能有以下几点：
+   1. MySQL性能卓越，服务稳定，很少出现异常宕机。
+   2. 开发源代码且无版权制约，自主性及使用成本低。
+   3. 历史悠久，社区及用户非常活跃，遇到问题，可以寻求帮助。
+   4. 软件体积小，安装使用简单，并且易于维护，安装及维护成本低。
+   5. 支持多种操作系统，提供多种API接口，支持多种开发语言，特别对流行的PHP语言有很好的支持。
+
+** MySQL数据库分类与版本升级
+   MySQL数据库的官方网站为http://www.mysql.com， 其发布的MySQL版本采用双授权政策，
+   和大多数开源产品的路线一样，分为社区版和商业版，而这两个版本又各自分四个版本
+   依次发布，这四个版本为：Alpha版、Beta版、RC版和GA版本。
+*** MySQL数据库商业版发布介绍
+	MySQL商业版是由MySQL AB公司内部专门的人员负责开发及维护，但同时也会
+	吸纳社区人员编写的优秀代码及算法，并且由专门的人员严格按照软件测试流程
+	对这些采纳的代码进行严格测试，没有问题再进行发布。简单地说，MySQL商业版
+	是由MySQL公司内部发布，同时参考社区版的先进代码功能和算法，是MySQL公司的
+	盈利产品，需要付费才能使用及提供服务支持，稳定性和可靠性无疑都是最好的。
+*** MySQL数据库社区版发布介绍
+	MySQL社区版则是由分散在世界各地的MySQL开发者、爱好者以及用户参与开发
+	与测试，并完成软件代码的管理、测试工作，社区也会设立BUG汇报机制，收集
+	用户使用遇到的BUG问题情况，相比商业版，社区版的开发及测试环境没有那么严格。
+*** MySQL数据库商业版与社区版区别
+	MySQL商业版与社区版之间的区别在于：
+	1. 商业版本组织管理与测试环境控制更严格，稳定性方面，会比社区版更稳定。
+	2. MySQL是成熟产品，商业版与社区版之间性能方面相差不大。
+	3. 商业版不遵守GPL协议，社区版遵守GPL协议可以免费使用。
+	4. 使用商业版后可以购买相关的服务，享受7*24小时技术支持以及定时打
+       补丁等服务，但是用户必须为此支付服务费用。
+	5. 社区版的维护服务只能靠社区提供，无法像商业版本获得故障及补丁解
+       决服务，但是使用社区版是完全免费的方式，社区版的服务质量与时效
+       性等方面就无法与MySQL AB公司提供的服务相比了。
+** MySQL数据库四种发布版本介绍
+   MySQL的版本发布采用双授权政策，即分为商业版和社区版，而这两个版本又各自分四个版本依次发布：Alpha版本、
+   Beta版、RC版和GA版本。
+
+   这四个发布版本之间的说明及区别如下，
+*** Alpha版本
+	Alpha版本一般只在开发的公司内部运行，不对外公开。主要是开发者自己对产品进行测试，
+	检查产品是否存在缺陷、错误，验证产品功能与说明书、用户手册是否一致。MySQL是属于
+	开发源代码的开源产品，因此需要世界各地的开发者、爱好者和用户参与软件的开发、测试和
+	手册编写等工作。所以会对外公布此版本的源码和产品，方便任何人可以参与开发或测试工作，
+	甚至编写与修改用户手册。
+*** Beta版本
+	Beta版一般是完成功能的开发和所有的测试工作之后的产品，不会存在较大的功能或性能BUG，
+	并且邀请或提供给用户体验与测试，以便更全面地测试软件的不足之处或存在的问题。
+*** RC版本
+	RC版属于生产环境发布之前的一个小版本或称候选版，是根据Beta版本测试结果，收集
+	到的BUG或缺陷之处等收集到的信息，进行修复和完善之后的一版产品。
+*** GA版本
+	GA版本是软件产品正式发布的版本，也称生产版本的产品。一般情况下，企业的生产环境
+	都会选择GA版本的MySQL软件，用于真实的生产环境中。偶尔有个别大型企业会追求
+	新功能驱动而牺牲稳定性使用其他版本，但这是个例。 
+*** MySQL四种发布版本选择说明
+	MySQL AB官方网站会把五种数据库版本都提供下载，主要是MySQL数据库属于开放
+	源代码的数据库产品，鼓励全球的技术爱好者参与开发、测试、文档编写和经验分享，
+	甚至包括产品发展规划，对于Development版本、Alpha版本和Beta版本是绝对不允许使用
+	在任何生产环境的，肯定存在重大问题或功能未完全实现。绝大多数情况下RC版本也是
+	不允许使用在生产环境，毕竟这是一个GA版本之前，也即生产版本发布之前的一个小版本。
+	另外，对MySQL数据库GA版本，也是需要慎重选择，开源社区产品毕竟不是经过严格
+	的测试工序完成的产品，是全球开源技术人员的自愿完成的，会存在比商业版产品
+	稳定性弱的缺陷。
+* MySQL产品路线
+  为了提高MySQL产品的竞争优势以及提高性能、降低开发维护成本等原因，同时，
+  更方便企业用户更精准的选择适合的版本产品用户自己的企业生产环境中，MySQL
+  在发展到5.1系列版本之后，重新规划为三条产品线。
+** 第一条 - 5.0.xx到5.1.xx产品线系列介绍
+** 第二条 - 
+** 第三条 - 
+* MySQL安装
+** MySQL源码编译安装
+   1. 安装MySQL需要的依赖包
+	  #+BEGIN_SRC sh
+yum install -y ncurses-devel libaio-devel
+rpm -qa ncurses-devel libaio-devel
+ncurses-devel-5.7-4.20090207.el6.x86_64
+libaio-devel-0.3.107-10.el6.x86_64
+	  #+END_SRC
+   2. 安装编译MySQL需要的软件CMake
+	  #+BEGIN_SRC sh
+cd /home/lavenliu/tools
+tar -xf cmake-2.8.8.tar.gz
+cd cmake-2.8.8
+./configure
+gmake
+gmake install
+which cmake
+	  #+END_SRC
+** 开始编译安装MySQL
+   1. 创建mysql用户与组
+	  #+BEGIN_SRC sh
+groupadd mysql
+useradd mysql -s /sbin/nologin -M -g mysql
+[root@mysql02 mysql-5.5.32]# id mysql
+uid=501(mysql) gid=501(mysql) groups=501(mysql)
+	  #+END_SRC
+   2. 解压编译安装MySQL
+	  #+BEGIN_SRC sh
+cd /home/lavenliu/tools
+tar -xf mysql-5.5.32.tar.gz
+cd mysql-5.5.32
+cmake . -DCMAKE_INSTALL_PREFIX=/application/mysql-5.5.32 \
+-DMYSQL_DATADIR=/application/mysql-5.5.32/data \
+-DMYSQL_UNIX_ADDR=/application/mysql-5.5.32/tmp/mysql.sock \
+-DDEFAULT_CHARSET=utf8 \
+-DDEFAULT_COLLATION=utf8_general_ci \
+-DEXTRA_CHARSETS=gbk,gb2312,utf8,ascii \
+-DENABLED_LOCAL_INFILE=ON \
+-DWITH_INNOBASE_STORAGE_ENGINE=1 \
+-DWITH_FEDERATED_STORAGE_ENGINE=1 \
+-DWITH_BLACKHOLE_STORAGE_ENGINE=1 \
+-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
+-DWITHOUT_PARTITION_STORAGE_ENGINE=1 \
+-DWITH_FAST_MUTEXES=1 \
+-DWITH_ZLIB=bundled \
+-DENABLED_LOCAL_INFILE=1 \
+-DWITH_READLINE=1 \
+-DWITH_EMBEDDED_SERVER=1 \
+-DWITH_DEBUG=0
+###############编译信息########################
+-- Performing Test HAVE_PEERCRED
+-- Performing Test HAVE_PEERCRED - Success
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/lavenliu/tools/mysql-5.5.32
+[root@mysql02 mysql-5.5.32]# echo $?
+0
+#######################################
+make
+make install
+ln -s /application/mysql-5.5.32 /application/mysql
+	  #+END_SRC
+* MySQL基本操作
+** 启动和关闭MySQL
+   1. 启动MySQL命令
+	  #+BEGIN_SRC sh
+/etc/init.d/mysqld start
+	  #+END_SRC
+   2. 查看MySQL端口
+	  #+BEGIN_SRC sh
+lsof -i:3306
+	  #+END_SRC
+   3. 查看MySQL进程
+	  #+BEGIN_SRC sh
+ps -ef |grep mysql |grep -v grep
+	  #+END_SRC
+   4. MySQL启动基本原理
+	  #+BEGIN_EXAMPLE
+	  /etc/init.d/mysqld是一个shell脚本，启动后最终会调用mysqld_safe程序，
+	  最后调用mysqld主程序启动MySQL。
+	  #+END_EXAMPLE
+   5. 停止MySQL数据
+	  #+BEGIN_SRC sh
+# 强制关闭数据库的方法
+# 尽量不要使用如下的几种方式来强制关闭数据库，
+# 容易导致数据库下次起不来
+killall mysql # 用killall关闭，要直到出现mysqld: no process killed表示完成关闭操作
+pkill mysqld # 该命令尽量不要在生产情况下使用，
+killall -9 mysqld
+kill -9 <mysql_pid>
+############################
+# 强调：尽量不要野蛮杀掉数据库进程，生产高并发环境可能会引发数据丢失。
+# 野蛮杀死数据库导致故障企业案例：
+# http://oldboy.blog.51cto.com/2561410/1431161
+# http://oldboy.blog.51cto.com/2561410/1431172
+# http://www.cnblogs.com/peida/archive/2012/12/20/2825837.html
+	  #+END_SRC
+   6. 优雅关闭数据库的方法
+	  #+BEGIN_SRC sh
+mysqladmin -uroot -p'lavenliu123' -S /data/3306/mysql.sock shutdown
+	  #+END_SRC
+** 进入数据库
+   #+BEGIN_SRC sh
+   [root@iLiuc ~]# mysql
+   mysql> show databases;      <- 查看我们有哪些库
+   +-------------------------+
+   | Database                |
+   +-------------------------+
+   | information_schema      | 
+   | clear_360fy             | <- 稍后我们将导出这个库 
+   | clear_iptv2x            | 
+   | clear_iptv_Skyworth     | 
+   | clear_qingpu_school     | 
+   | clear_vod_mingzhu       | 
+   | clear_vod_new           | 
+   | clear_vod_yiyuan        | 
+   | clear_xianhuashan       | 
+   | cleardb_str             | 
+   | happyview               | 
+   +-------------------------+
+    
+   mysql> use clear_360fy;     <- 选择要使用的库
+   Database changed            <- 提示数据库已改变
+    
+   mysql> show tables;         <- 查看clear_360fy库中有哪些表
+   +--------------------------+
+   | Tables_in_clear_360fy    |
+   +--------------------------+
+   | config                   | 
+   | directory                | 
+   | drinks_info_t            | 
+   | favorites                | 
+   | hotel_category           | 
+   | hotel_info               | 
+   | language                 | 
+   | livechannel              | 
+   | log                      | 
+     ...         
+   | massage                  | 
+   | program                  | 
+   | user_group_matrix        | 
+   | users                    | 
+   | weather                  | 
+   | wel_message              | 
+   +--------------------------+
+   mysql> exit                 <- 退出数据库
+   [root@iLiuc ~]# 
+   #+END_SRC
+** 创建数据库及表
+   当我们的数据很少时，把这些信息可以手工的记录在纸片上或其他介质上，
+   管理起来也是很方便的。现如今是信息的时代，我们总不能把数据还是记录
+   在纸上或龟壳上吧，管理起来非把人给累死。把数据存在易于管理的数据库
+   系统中是明智之举。
+
+   建表语法，
+   #+BEGIN_SRC sql
+create table <tbname> (
+<field1> <type1>,
+<field2> <typ2>,
+...,
+<fieldn> <typen>
+);
+   #+END_SRC
+
+   查看已创建的表结构，
+   #+BEGIN_SRC sql
+desc tbname;
+show create table tbname;
+   #+END_SRC
+
+   #+BEGIN_SRC sh
+   [root@iLiuc ~]# mysql
+   mysql> create database if not exists cc;
+   mysql> use cc;
+   mysql> create table hr (
+          id int not null primary key,
+          name char(10) not null,
+          deptname char(15) not null,
+          salary float(5,2) not null);
+    
+   mysql> desc hr;
+   +----------+------------+------+-----+---------+-------+
+   | Field    | Type       | Null | Key | Default | Extra |
+   +----------+------------+------+-----+---------+-------+
+   | id       | int(11)    | NO   | PRI | NULL    |       | 
+   | name     | char(10)   | NO   |     | NULL    |       | 
+   | deptname | char(15)   | NO   |     | NULL    |       | 
+   | salary   | float(5,2) | NO   |     | NULL    |       | 
+   +----------+------------+------+-----+---------+-------+
+   #+END_SRC
+
+   查看当前连接数据库，
+   #+BEGIN_SRC sql
+mysql> select database();
++------------+
+| database() |
++------------+
+| salt       |
++------------+
+1 row in set (0.00 sec)
+mysql> select version();
++-----------+
+| version() |
++-----------+
+| 5.5.32    |
++-----------+
+1 row in set (0.03 sec)
+mysql> select user();
++----------------+
+| user()         |
++----------------+
+| root@localhost |
++----------------+
+1 row in set (0.00 sec)
+   #+END_SRC
+** 创建多字符集的数据库
+   企业场景创建什么字符集
+   1. 根据开发的程序确定字符集（建议UTF8）
+   2. 编译的时候指定字符集
+   3. 编译的时候没有指定字符集或者指定了和程序不同的字符集，如何解决
+	  #+BEGIN_EXAMPLE
+	  指定字符集创建数据库即可。
+	  #+END_EXAMPLE
+   4. 数据库要支持创建库的字符集
+	  #+BEGIN_EXAMPLE
+	  gbk gb2312 utf8 ascii
+	  #+END_EXAMPLE
+
+   几种创建不同字符集的方法：
+   1. 创建GBK字符集的数据库
+      #+BEGIN_SRC sh
+show character set;
+create database lavenliu_gbk character set GBK collate gbk_chinese_ci;
+show create database lavenliu_gbk;
++--------------+----------------------------------------------------------------------+
+| Database     | Create Database                                                      |
++--------------+----------------------------------------------------------------------+
+| lavenliu_gbk | CREATE DATABASE `lavenliu_gbk` /*!40100 DEFAULT CHARACTER SET gbk */ |
++--------------+----------------------------------------------------------------------+
+1 row in set (0.00 sec)
+	  #+END_SRC
+   2. 创建UTF8字符集的数据库
+	  #+BEGIN_SRC sh
+mysql> create database ccliu character set utf8 collate utf8_general_ci;
+Query OK, 1 row affected (0.00 sec)
+
+mysql> show create database ccliu;
++----------+----------------------------------------------------------------+
+| Database | Create Database                                                |
++----------+----------------------------------------------------------------+
+| ccliu    | CREATE DATABASE `ccliu` /*!40100 DEFAULT CHARACTER SET utf8 */ |
++----------+----------------------------------------------------------------+
+1 row in set (0.00 sec)
+	  #+END_SRC
+** 插入数据
+   insert就是往表里面添加数据的，废话不多说，直接看例子：
+   #+BEGIN_SRC sh
+   mysql> insert into hr values
+       (1, "james", "development", 1000),
+       (2, "wade", "engineer", 800),
+       (3, "bosh", "finance", 600),
+       (4, "richard", "sale", 600),
+       (5, "laven", "it", 1010);
+
+   mysql> select * from hr;
+   +----+---------+-------------+--------+
+   | id | name    | deptname    | salary |
+   +----+---------+-------------+--------+
+   |  1 | james   | development | 999.99 | 
+   |  2 | wade    | engineer    | 800.00 | 
+   |  3 | bosh    | finance     | 600.00 | 
+   |  4 | richard | sale        | 600.00 | 
+   |  5 | laven   | it          | 999.99 | 
+   +----+---------+-------------+--------+
+   #+END_SRC
+** SQL语句常见的分类
+   1. DDL(Data Definition Language) - 数据定义语言（create alter drop），管理基础数据的
+   2. DCL(Data Control Language) - 数据控制语言（grant revoke commit rollback），用户授权，权限回收，数据提交与回滚
+   3. DML(Data Manuplation Language) - 数据操作语言（select insert delete update），针对数据库里的表及记录
+** SQL文件的导入
+** 数据文件导出
+** 修改密码
+** 忘记密码
+   如果MySQL正在运行，首先停掉服务，然后终止进程；在安全模式下进入
+   mysql数据库去修改密码，最后重启mysqld服务。具体操作为：
+   #+BEGIN_SRC sh
+   # service mysqld stop
+   # killall -TERM mysqld
+   # mysqld_safe --skip-grant-tables &
+   # mysql
+   mysql> use mysql;
+   mysql> update user set password('new_pass') where user="root";
+   mysql> exit
+   # service mysqld restart
+   #+END_SRC
+
+   提示：启动时加"--skip-grant-tables"参数启动登录修改完密码后一定要重
+   启再对外提供服务。
+
+   如果在多实例环境下，忘记MySQL的登录密码怎么办呢？跟上面的忘记MySQL
+   单实例密码的修改步骤差不多，多实例需要使用套接字与实例的配置文件，
+   #+BEGIN_SRC sh
+mysqladmin -uroot -p'lavenliu123' -S /data/3306/mysql.sock
+mysqld_safe --defaults-file=/data/3306/my.cnf --skip-grant-tables &
+mysql -uroot -S /data/3306/mysql.sock
+mysql> update mysql.user set password=password("lavenliu123") where user='root' and host='localhost';
+mysql> flush privileges;
+mysql> quit;
+mysqladmin -uroot -p'lavenliu123' -S /data/3306/mysql.sock shutdown
+/data/3306/mysql start
+   #+END_SRC
+** 修改数据库参数
+   尽量使用配置文件的形式修改数据库的一些配置。如果在命令行设置的话，
+   等下次数据库进程重启就会失效。如果在命令行设置了数据库的配置，需要
+   退出当前登录，再次登录才会看到改变的结果。
+** 通过grant命令创建用户并授权
+   grant命令的简单语法为：
+   #+BEGIN_SRC sql
+grant all privileges on dbname.* to username@localhost identified by 'passwd';
+   #+END_SRC
+
+   详细解释上面命令，
+   | grant    | all privileges | on dbname.*  | to username@localhost | identified by 'passwd' |
+   |----------+----------------+--------------+-----------------------+------------------------|
+   | 授权命令 | 对应权限       | 目标：库和表 | 用户名和客户端主机    | 用户密码               |
+   说明：上述命令是授权localhost主机上通过用户username管理dbname数据库
+   的所有权限，密码为passwd。其中username，dbname，passwd可根据具体情
+   况修改。
+
+   操作实例1：创建lavenliu用户，对test库具有所有权限，允许从localhost
+   主机登录管理数据库，密码是lavenliu123。
+   #+BEGIN_SRC sql
+grant all privileges on test.* to 'lavenliu'@'localhost' identified by 'lavenliu123';
+flush privileges;
+   #+END_SRC
+
+   查看当前数据库用户情况，然后执行对应命令授权如下：
+   #+BEGIN_SRC sql
+select host, user from mysql.user;
+   #+END_SRC
+
+   也可以使用create命令来创建用户，然后再使用grant进行授权，
+   #+BEGIN_SRC sql
+create user 'taoqi'@'localhost' identified by 'lavenliu'
+mysql> show grants for 'taoqi'@'localhost';
++--------------------------------------------------------------------------------------------------------------+
+| Grants for taoqi@localhost                                                                                   |
++--------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'taoqi'@'localhost' IDENTIFIED BY PASSWORD '*A40E77C07C6F60CCCBE9444D183CF0ED869B487C' |
++--------------------------------------------------------------------------------------------------------------+
+1 row in set (0.01 sec)
+grant all on dbname.* to 'taoqi'@'localhost';
+   #+END_SRC
+*** 授权局域网内主机远程连接数据库
+	一条命令的形式：
+	#+BEGIN_SRC sql
+# 使用%的格式
+grant all on *.* to 'taoqi'@'192.168.20.%' identified by 'lavenliu';
+# 使用子网掩码的格式
+grant all on *.* to 'taoqi'@'192.168.20.0/255.255.255.0' identified by 'lavenliu';
+	#+END_SRC
+
+	两条命令的形式，
+	#+BEGIN_SRC sql
+create user 'taoqi'@'192.168.20.%' identified by 'lavenliu';
+grant all on *.* to 'taoqi'@'192.168.20.0/255.255.255.0';
+flush privileges;
+	#+END_SRC
+** 使用revoke回收用户权限
+   #+BEGIN_SRC sql
+mysql> show grants for 'james'@'192.168.20.%';
++-----------------------------------------------------------------------------------------------------------------+
+| Grants for james@192.168.20.%                                                                                   |
++-----------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'james'@'192.168.20.%' IDENTIFIED BY PASSWORD '*6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9' |
+| GRANT ALL PRIVILEGES ON `liucc`.* TO 'james'@'192.168.20.%'                                                     |
++-----------------------------------------------------------------------------------------------------------------+
+2 rows in set (0.00 sec)
+revoke insert on *.* from 'james'@'192.168.20.%';
+mysql> show grants for 'james'@'192.168.20.%'\G
+#*************************** 1. row ***************************
+Grants for james@192.168.20.%: GRANT USAGE ON *.* TO 'james'@'192.168.20.%' IDENTIFIED BY PASSWORD '*6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9'
+#*************************** 2. row ***************************
+Grants for james@192.168.20.%: GRANT SELECT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, EVENT, TRIGGER ON `liucc`.* TO 'james'@'192.168.20.%'
+2 rows in set (0.00 sec)
+   #+END_SRC
+
+   权限ALL所包含的项为，
+   #+BEGIN_EXAMPLE
+SELECT
+INSERT
+UPDATE
+DELETE
+CREATE
+DROP
+REFERENCES
+INDEX
+ALTER
+CREATE TEMPORARY TABLES
+LOCK TABLES
+EXECUTE
+CREATE VIEW
+SHOW VIEW
+CREATE ROUTINE
+ALTER ROUTINE
+EVENT
+TRIGGER
+   #+END_EXAMPLE
+** 删除用户
+   #+BEGIN_SRC sql
+drop user "username"@"hostname";
+drop user ''@'localhost';
+flush privileges;
+# 如果drop删除不了（一般是特殊字符或大写），可以用下面的方式
+# 删除（以root用户，lavenliu主机为例）
+delete from mysql.user where user='root' and host='lavenliu';
+flush privileges;
+   #+END_SRC
+** 修改MySQL提示符
+   可以在MySQL数据库里直接修改，退出后再次登录失效，
+   #+BEGIN_SRC sql
+   prompt \u@lavenliu \r:\m:\s->
+   #+END_SRC
+
+   可以写到my.cnf里的[mysql]下面，
+   #+BEGIN_SRC sh
+[mysql]
+prompt=\\u@lavenliu \\r:\\m:\\s->
+   #+END_SRC
+** MySQL索引相关
+   索引就像书的目录一样，如果在字段上建立索引，那么以索引列为查询条件
+   时可以加快查询数据的速度，这是MySQL优化的重要内容之一。
+*** 主键索引
+	查询数据库，按主键查询是最快的，每个表只能有一个主键列，但是可以有多个普通
+	索引列。主键列要求列的所有内容必须唯一，而普通索引列不要求内容必须唯一。
+
+	主键就类似我们在学校学习时的学号一样，班级内是唯一的，整个表的每一
+	条记录的主键值在表内都是唯一的，用来唯一标识一条记录。
+
+	要创建主键索引或普通索引，都要在表的对应列上创建，可以对单列创建索
+	引，也可以对多列创建索引。
+
+	建立主键索引的方法：
+	1. 在建表时可以增加建立主键索引
+	   #+BEGIN_SRC sql
+drop table student;
+create table student(
+id int(4) not null auto_increment,
+name char(20) not null,
+age tinyint(2) not null default '0',
+dept varchar(16) default null,
+primary key(id),
+key index_name(name)
+);
+# primary key(id) <- 主键
+# key index_name(name) <- name字段普通索引，name字段的索引名为index_name
+# 优化：在唯一值多的列上建索引查询效率高
+mysql> desc student;
++-------+-------------+------+-----+---------+----------------+
+| Field | Type        | Null | Key | Default | Extra          |
++-------+-------------+------+-----+---------+----------------+
+| id    | int(4)      | NO   | PRI | NULL    | auto_increment |
+| name  | char(20)    | NO   | MUL | NULL    |                |
+| age   | tinyint(2)  | NO   |     | 0       |                |
+| dept  | varchar(16) | YES  |     | NULL    |                |
++-------+-------------+------+-----+---------+----------------+
+4 rows in set (0.01 sec)
+# PRI 主索引
+# MUL 普通索引
+# 提示：只有int类型且为primary key才可以使用auto_increment
+# 查看表的索引
+show index from student\G
+# *************************** 1. row ***************************
+       Table: student
+  Non_unique: 0
+    Key_name: PRIMARY
+Seq_in_index: 1
+ Column_name: id
+   Collation: A
+ Cardinality: 0
+    Sub_part: NULL
+      Packed: NULL
+        Null: 
+  Index_type: BTREE
+     Comment: 
+# *************************** 2. row ***************************
+       Table: student
+  Non_unique: 1
+    Key_name: index_name
+Seq_in_index: 1
+ Column_name: name
+   Collation: A
+ Cardinality: NULL
+    Sub_part: NULL
+      Packed: NULL
+        Null: 
+  Index_type: BTREE
+     Comment: 
+2 rows in set (0.00 sec)
+	   #+END_SRC
+	2. 建表后使用alter添加索引
+	   #+BEGIN_SRC sql
+alter table student add index index_dept(dept);
+# 删除索引
+alter table student drop index index_dept;
+	   #+END_SRC
+    3. 对字段的前n个字符创建普通索引
+	   #+BEGIN_SRC sql
+当遇到表中比较大的列时，列内容的前n个字符在所有内容中已经接近唯一时，
+这时可以对列的前n个字符建立索引，而无需对整个列建立索引，这样可以节省
+创建索引占用的系统空间，以及降低读取和更新维护索引消耗的系统资源。
+# 对字段的前n个字符创建普通索引的语法：
+create index index_name on test(name(8));
+# 在test表的name字段创建长度为8个字符的索引
+# 对student表的dept字段创建8个字符的索引
+mysql> alter table student drop index index_dept;
+Query OK, 0 rows affected (0.06 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+mysql> create index index_dept on student(dept(8));
+Query OK, 0 rows affected (0.01 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+mysql> desc student;
++-------+-------------+------+-----+---------+----------------+
+| Field | Type        | Null | Key | Default | Extra          |
++-------+-------------+------+-----+---------+----------------+
+| id    | int(4)      | NO   | PRI | NULL    | auto_increment |
+| name  | char(20)    | NO   | MUL | NULL    |                |
+| age   | tinyint(2)  | NO   |     | 0       |                |
+| dept  | varchar(16) | YES  | MUL | NULL    |                |
++-------+-------------+------+-----+---------+----------------+
+4 rows in set (0.00 sec)
+	   #+END_SRC
+*** 索引列的创建及生效条件
+   	问题1：既然索引可以加快查询速度，那么就给所有的列创建索引？
+   	#+BEGIN_EXAMPLE
+   	索引不但占用系统空间，更新数据库时还需要维护索引数据的，因此，
+   	索引是把双刃剑，并不是越多越好。例如：数十到几百行的小表无需建立
+   	索引，写多读少的业务尽量不要建立索引。
+   	#+END_EXAMPLE
+
+   	问题2：需要在哪些列上创建索引？
+   	#+BEGIN_EXAMPLE
+   	select user, host from mysql.user where host=...，
+   	索引一定要创建在where后的条件列上，
+   	而不是select后的选择数据的列。另外我们要尽量选择在唯一值多的大表上的列创建索引。
+   	#+END_EXAMPLE
+** 删除表中的数据
+  #+BEGIN_SRC sql
+use lavenliu;
+delete from test where id=1;
+delete from test where id>3;
+# 不加条件就是全部删除，是非常危险的操作，delete from test;
+  #+END_SRC
+
+  清空表中的数据：
+  #+BEGIN_SRC sql
+truncate table <tbname>;
+  #+END_SRC
+** 增删改表的字段
+  增加表字段的命令语法：
+  #+BEGIN_SRC sql
+alter table <tbname> add <字段> 类型 其他;
+  #+END_SRC
+
+  一个示例，在test表中新增字段sex、age、mail，类型分别为char(4), int(4), varchar(30)
+  #+BEGIN_SRC sql
+show create table test\G
+alter table test add sex char(4);
+desc test;
+# 默认新增的列增加到所有字段的结尾
+  #+END_SRC
+
+  在表中指定的位置新增字段，如在name列后面的位置，
+  #+BEGIN_SRC sql
+alter table test add age int(4) after name;
+desc test;
+  #+END_SRC
+
+  在第一列添加mail字段：
+  #+BEGIN_SRC sql
+alter table test add mail varchar(15) first;
+desc test;
+  #+END_SRC
+
+  生产环境多个复杂添加修改多字段信息的案例
+  1. 增加1个字段
+	 #+BEGIN_SRC sql
+alter table `tbname` add `some_field` varchar(100) default null comment 'xxx字段';
+	 #+END_SRC
+  2. 增加2个字段
+	 #+BEGIN_SRC sql
+alter table `tbname` add `some_field` varchar(1024) default null comment 'xxx字段', \
+add `other_field` varchar(1024) default null comment 'yyy字段';
+	 #+END_SRC
+  3. 改变字段
+	 #+BEGIN_SRC sql
+alter table `tbname` change tbname_state tbname_state tinyint comment '状态，默认 1=正常，0=失败';
+alter table `tbname` modify column `tbname_description` varchar(512) character set utf8 collate utf_general_ci not null comment '描述' after `tbname_title`;
+	 #+END_SRC
+  4. 修改字段类型
+ 	 #+BEGIN_SRC sql
+alter table test modify age char(4) after name;
+	 #+END_SRC
+  5. 修改字段名称
+	 #+BEGIN_SRC sql
+alter table test change age yourage char(4) after name;
+	 #+END_SRC
+** 更改表名
+  使用rename table进行表名的更改，
+  #+BEGIN_SRC sql
+rename table old_tbname to new_tbname;
+  #+END_SRC
+
+  还可以使用alter进行表名的更改，
+  #+BEGIN_SRC sql
+alter table old_tbname to new_tbname;
+  #+END_SRC
+** 删除表
+  #+BEGIN_SRC sql
+drop table tbname;
+  #+END_SRC
+** DML之修改表及企业严重故障案例解决实战
+  1. 不带条件更改所有表的记录
+	 #+BEGIN_SRC sql
+update test set tb_field='lavenliu'; # 将会把所有tb_field修改为lavenliu；
+# 如何避免这种情况出现呢，
+# 在命令行登录MySQL时，加上"-U"选项
+	 #+END_SRC
+* MySQL多实例
+** MySQL多实例介绍
+   多实例就是在一台机器上开启多个不同的服务端口（如：3306、3307），运
+   行多个MySQL服务进程，这些服务进程通过不同的socket监听不同的服务端口
+   来提供各自的服务。
+
+   这些MySQL多实例共用一套MySQL安装程序，使用不同（也可以相同）的
+   my.cnf配置文件、启动程序，数据文件。在提供服务时，多实例MySQL在逻辑
+   上看来是各自独立的，多个实例的自身是根据配置文件的对应设定值，来取
+   得服务器的相关硬件资源多少。
+
+   多个实例之间共用服务器的操作系统及硬件资源，如（CPU，Memory，
+   Disk等），逻辑上是独立的。
+
+   其实很多服务都可以配置多实例的，在门户网站用的更广泛，例如Nginx就可
+   以多实例，Apache、HAproxy、Redis及Memcached都可以多实例。
+** MySQL多实例的作用与问题
+   1. 有效利用服务器资源
+	  #+BEGIN_EXAMPLE
+	  当单个服务器资源有剩余时，可以充分利用剩余的资源提供更多的服务，且可以实现资源的逻辑隔离。
+	  #+END_EXAMPLE
+   2. 节约服务器资源
+	  #+BEGIN_EXAMPLE
+	  当公司资金紧张，但是数据库又需要各自尽量独立的提供服务，而且，需要主从复制等技术时，多实例就再好不过了。
+	  #+END_EXAMPLE
+   3. 资源互相抢占问题
+	  #+BEGIN_EXAMPLE
+	  当某个数据库实例并发很高或者慢查询时，整个实例会消耗整个更多的内存、CPU、磁盘IO资源，
+	  导致服务器上的其他数据库实例提供服务的质量一起下降。可以使用CGroup进行资源限制可以
+	  实现资源的均等分配，避免资源的抢占。
+	  #+END_EXAMPLE
+** MySQL多实例生产应用场景
+*** 资金紧张型公司的选择
+	当公司业务访问量不太大，又不舍得花钱，但又希望不同业务的数据库各自
+	尽量独立的提供服务互相不受影响，而且，需要主从复制等技术提供备份或
+	读写分离服务时，多实例就再好不过了。如：可以通过3台服务器部署6-9个
+	实例，交叉做主从同步备份及读写分离，实现6-9台服务器才有的效果。这
+	里要强调的是，所谓的尽量独立是相对的。
+*** 并发访问不是特别大的业务
+	当公司业务访问量不太大的时候，服务器的资源基本都是浪费的，这时就很
+	适合多实例的应用，如果对SQL语句优化做的比较好，MySQL多实例是一个很
+	值得使用的技术，即使并发很大，合理分配好系统资源以及搭配好服务，也
+	不会有太大问题。
+*** 门户网站应用MySQL多实例场景
+	百度搜索引擎的数据库就是多实例，一般是从库多实例，例如某部门例子，
+	IBM 48核CPU，内存96G，跑3-4个实例；Sina网也是用的多实例，内存48G左
+	右。门户网站使用多实例的目的是配硬件好的服务器，节省IDC机柜空间，
+	同时，跑多实例让硬件资源不浪费。
+
+	问题1：你们的数据库是多实例，跑几个实例？CPU、内存、磁盘类型、RAID
+	类型分别是如何配置的？
+	#+BEGIN_EXAMPLE
+	一般在1-4个实例之间居多。1-2个最多，因为大业务占用的机器比较多。机器是Dell R510居多，
+	CPU是E5-2620 48G内存，磁盘12*300G SAS，做RAID10.
+	#+END_EXAMPLE
+
+	问题2：Sina是编译安装DB？还是二进制的多？还是什么方式多？
+	#+BEGIN_EXAMPLE
+	编译安装之后，做成RPM包，统一使用。
+	#+END_EXAMPLE
+** MySQL多实例常见配置方案
+*** 多配置文件、多启动程序部署方案
+	多配置文件、多启动程序部署方案，是本文推荐的方案，通过配置多个配置
+	文件及多个启动程序来实现多实例的方案。
+*** 单一配置文件、单一启动程序多实例部署方案
+	MySQL官方文档提到的，单一配置文件、单一启动程序多实例部署方案，这
+	里不推荐使用该方案。
+
+	my.cnf配置文件样例：
+	#+BEGIN_EXAMPLE
+cat /data/mysql/my_multi.cnf
+[mysqld_multi]
+mysqld = /usr/bin/mysqld_safe
+mysqladmin = /usr/bin/mysqladmin
+user = mysql
+
+[mysqld1]
+socket = /var/lib/mysql/mysql.sock
+port = 3306
+pid-file = /var/lib/mysql/mysql.pid
+datadir = /var/lib/mysql/
+user = mysql
+
+[mysqld2]
+socket = /mnt/data/db1/mysql.sock
+port = 3302
+pid-file = /mnt/data/db1/mysql.pid
+datadir = /mnt/data/db1/
+user = mysql
+skip-name-resolve
+server-id = 10
+default-storage-engine=innodb
+innodb_buffer_pool_size=512M
+innodb_additional_mem_pool=10M
+default_character_set=utf8
+character_set_server=utf8
+relay-log-space-limit=3G
+expire_logs_day=20
+	#+END_EXAMPLE
+
+	启动程序
+	#+BEGIN_SRC sh
+mysqld_multi --config-file=/data/mysql/my_multi.cnf start 1,2
+	#+END_SRC
+
+	此方案说明：
+	缺点：耦合性太高，一个配置文件，不好管理。工作开发和运维的统一原则：降低耦合度。
+** 多实例部署实践
+*** 创建MySQL多实例数据文件目录
+   本文使用/data目录作为mysql多实例总的根目录，然后规划不同的数字（即
+   MySQL实例的端口号）作为/data下面的二级目录，不同的二级目录对应的数
+   字就作为MySQL实例的端口号，以区别不同的实例，数字对应的二级目录下包
+   含mysql的数据文件，配置文件以及启动文件等。
+   1. 这里以3306、3307两个实例为例，创建相关mysql多实例的目录
+	  #+BEGIN_SRC sh
+mkdir -p /data/{3306,3307}/data
+tree /data
+/data/
+├── 3306       <- 3306实例的目录
+│   └── data  <- 3306实例的数据文件目录
+└── 3307       <- 3307实例的目录
+    └── data   <- 3307实例的数据文件目录
+
+4 directories, 0 files
+# 一般两个实例就可以了
+	  #+END_SRC
+*** 创建MySQL多实例配置文件
+	MySQL数据库默认为用户提供了多个配置文件模板，用户可以根据服务器配
+	置来选择。这里为每个多实例建立一个配置文件，分别存放在对应的数据文
+	件data目录下，
+	#+BEGIN_SRC sh
+[root@mysql02 mysql-5.5.32]# ll !$
+ll support-files/my*.cnf
+-rw-r--r-- 1 root root  4759 Mar 24 11:47 support-files/my-huge.cnf
+-rw-r--r-- 1 root root 19809 Mar 24 11:47 support-files/my-innodb-heavy-4G.cnf
+-rw-r--r-- 1 root root  4733 Mar 24 11:47 support-files/my-large.cnf
+-rw-r--r-- 1 root root  4744 Mar 24 11:47 support-files/my-medium.cnf
+-rw-r--r-- 1 root root  2908 Mar 24 11:47 support-files/my-small.cnf
+# 注释heavy的配置文件
+	#+END_SRC
+	
+	两个实例的配置文件内容如下，实例1的配置文件，
+	#+BEGIN_SRC sh
+cat /data/3306/data/my.cnf
+[client]
+port = 3306
+socket = /data/3306/mysql.sock
+
+[mysql]
+no-auto-rehash
+
+[mysqld]
+user = mysql
+port = 3306
+socket = /data/3306/mysql.sock
+basedir = /application/mysql
+datadir = /data/3306/data
+open_files_limit = 1024
+back_log = 600
+max_connections = 800
+max_connect_errors = 3000
+table_cache = 614
+external-locking = FALSE
+max_allowed_packet = 8M
+sort_buffer_size = 1M
+join_buffer_size = 1M
+thread_cache_size = 100
+thread_concurrency = 2
+query_cache_size = 2M
+query_cache_limit = 1M
+query_cache_min_res_unit = 2k
+default_type_type = InnoDB
+thread_stack = 192K
+transaction_isolation = READ-COMMITTED
+tmp_table_size = 2M
+max_heap_table_size = 2M
+long_query_time = 1
+log_long_format
+log-error=/data/3306/error.log
+log-slow-queries = /data/3306/slow.log
+pid-file = /data/3306/mysql.pid
+log-bin = /data/3306/mysql-bin
+relay-log = /data/3306/relay-bin
+relay-log-info-file = /data/3306/relay-log.info
+binlog_cache_size = 1M
+max_binlog_cache_size = 1M
+max_binlog_size = 2M
+expire_logs_days = 7
+
+key_buffer_size = 16M
+read_buffer_size = 1M
+read_rnd_buffer_size = 1M
+bulk_insert_buffer_size = 1M
+myisam_sort_buffer_size = 1M
+myisam_max_sort_file_size = 10G
+myisam_max_extra_sort_file_size = 10G
+myisam_repair_threads = 1
+myisam_recover
+
+lower_case_table_names = 1
+skip-name-resolve
+slave-skip-errors = 1032,1062
+replicate-ignore-db = mysql
+
+server-id = 1
+
+innodb_additional_mem_pool_size = 4M
+innodb_buffer_pool_size = 32M
+innodb_data_file_path = ibdata1:128M:autoextend
+innodb_file_io_threads = 4
+innodb_thread_concurrency = 8
+innodb_flush_log_at_trx_commit = 2
+innodb_log_buffer_size = 2M
+innodb_log_file_size = 4M
+innodb_log_files_in_group = 3
+innodb_max_dirty_pages_pct = 90
+innodb_lock_wait_timeout = 120
+innodb_file_per_table = 0
+
+[mysqldump]
+quick
+max_allowed_packet = 2M
+
+[mysqld_safe]
+log-error=/data/3306/mysql_lavenliu3306.err
+pid-file=/data/3306/mysqld.pid
+	#+END_SRC
+
+	实例2的配置文件，
+    #+BEGIN_SRC sh
+###############################
+cat /data/3307/data/my.cnf
+[client]
+port = 3307
+socket = /data/3307/mysql.sock
+
+[mysql]
+no-auto-rehash
+
+[mysqld]
+user = mysql
+port = 3307
+socket = /data/3307/mysql.sock
+basedir = /application/mysql
+datadir = /data/3307/data
+open_files_limit = 1024
+back_log = 600
+max_connections = 800
+max_connect_errors = 3000
+table_cache = 614
+external-locking = FALSE
+max_allowed_packet = 8M
+sort_buffer_size = 1M
+join_buffer_size = 1M
+thread_cache_size = 100
+thread_concurrency = 2
+query_cache_size = 2M
+query_cache_limit = 1M
+query_cache_min_res_unit = 2k
+default_table_type = InnoDB
+thread_stack = 192K
+transaction_isolation = READ-COMMITTED
+tmp_table_size = 2M
+max_heap_table_size = 2M
+long_query_time = 1
+log_long_format
+log-error=/data/3307/error.log
+log-slow-queries = /data/3307/slow.log
+pid-file = /data/3307/mysql.pid
+log-bin = /data/3307/mysql-bin
+relay-log = /data/3307/relay-bin
+relay-log-info-file = /data/3307/relay-log.info
+binlog_cache_size = 1M
+max_binlog_cache_size = 1M
+max_binlog_size = 2M
+expire_logs_days = 7
+
+key_buffer_size = 16M
+read_buffer_size = 1M
+read_rnd_buffer_size = 1M
+bulk_insert_buffer_size = 1M
+myisam_sort_buffer_size = 1M
+myisam_max_sort_file_size = 10G
+myisam_max_extra_sort_file_size = 10G
+myisam_repair_threads = 1
+myisam_recover
+
+lower_case_table_names = 1
+skip-name-resolve
+slave-skip-errors = 1032,1062
+replicate-ignore-db = mysql
+
+server-id = 2
+
+innodb_additional_mem_pool_size = 4M
+innodb_buffer_pool_size = 32M
+innodb_data_file_path = ibdata1:128M:autoextend
+innodb_file_io_threads = 4
+innodb_thread_concurrency = 8
+innodb_flush_log_at_trx_commit = 2
+innodb_log_buffer_size = 2M
+innodb_log_file_size = 4M
+innodb_log_files_in_group = 3
+innodb_max_dirty_pages_pct = 90
+innodb_lock_wait_timeout = 120
+innodb_file_per_table = 0
+
+[mysqldump]
+quick
+max_allowed_packet = 2M
+
+[mysqld_safe]
+log-error=/data/3307/mysql_lavenliu3307.err
+pid-file=/data/3307/mysqld.pid
+	#+END_SRC
+
+*** 创建MySQL多实例启动脚本
+	实例1的启动脚本，
+	#+BEGIN_SRC sh
+cat /data/3306/mysql
+#!/bin/sh
+
+port=3306
+mysql_user="root"
+mysql_pwd="123456"
+cmd_path="/application/mysql/bin"
+mysql_sock="/data/${port}/mysql.sock"
+
+# startup function
+start_mysql()
+{
+    if [ ! -e "$mysql_sock" ]; then
+        printf "Starting MySQL...\n"
+        /bin/sh ${cmd_path}/mysqld_safe --defaults-file=/data/${port}/my.cnf &> /dev/null &
+    else
+        printf "MySQL is running...\n"
+        exit
+    fi
+}
+
+# stop mysql function
+stop_mysql()
+{
+    if [ ! -e "$mysql_sock" ]; then
+        printf "MySQL is stopped...\n"
+        exit
+    else
+        printf "Stoping MySQL...\n"
+        ${cmd_path}/mysqladmin -u ${mysql_user} -p${mysql_pwd} -S /data/${port}/mysql.sock shutdown
+    fi
+}
+
+# restart mysql function
+restart_mysql()
+{
+    printf "Restarting MySQL...\n"
+    stop_mysql
+    sleep 2
+    start_mysql
+}
+
+case $1 in
+    start)
+        start_mysql
+        ;;
+    stop)
+        stop_mysql
+        ;;
+    restart)
+        restart_mysql
+        ;;
+    *)
+        printf "Usage: /data/${port}/mysql {start|stop|restart}\n"
+esac
+	#+END_SRC
+
+	实例2的启动脚本，
+	#+BEGIN_SRC sh
+cat /data/3307/mysql
+#!/bin/sh
+
+port=3307
+mysql_user="root"
+mysql_pwd="123456"
+cmd_path="/application/mysql/bin"
+mysql_sock="/data/${port}/mysql.sock"
+
+# startup function
+start_mysql()
+{
+    if [ ! -e "$mysql_sock" ]; then
+        printf "Starting MySQL...\n"
+        /bin/sh ${cmd_path}/mysqld_safe --defaults-file=/data/${port}/my.cnf &> /dev/null &
+    else
+        printf "MySQL is running...\n"
+        exit
+    fi
+}
+
+# stop mysql function
+stop_mysql()
+{
+    if [ ! -e "$mysql_sock" ]; then
+        printf "MySQL is stopped...\n"
+        exit
+    else
+        printf "Stoping MySQL...\n"
+        ${cmd_path}/mysqladmin -u ${mysql_user} -p${mysql_pwd} -S /data/${port}/mysql.sock shutdown
+    fi
+}
+
+# restart mysql function
+restart_mysql()
+{
+    printf "Restarting MySQL...\n"
+    stop_mysql
+    sleep 2
+    start_mysql
+}
+
+case $1 in
+    start)
+        start_mysql
+        ;;
+    stop)
+        stop_mysql
+        ;;
+    restart)
+        restart_mysql
+        ;;
+    *)
+        printf "Usage: /data/${port}/mysql {start|stop|restart}\n"
+esac
+	#+END_SRC
+
+	最终的/data目录下的结构为：
+	#+BEGIN_SRC sh
+[root@mysql02 3307]# tree /data
+/data
+├── 3306
+│   ├── data
+│   ├── my.cnf
+│   └── mysql
+└── 3307
+    ├── data
+    ├── my.cnf
+    └── mysql
+
+4 directories, 4 files
+	#+END_SRC
+
+	特别说明：
+	1. 本文多实例启动文件的启动mysql服务实质命令
+	   #+BEGIN_SRC sh
+	   mysqld_safe --dafaults-file=/data/3306/my.cnf 2>&1 > /dev/null &
+	   mysqld_safe --dafaults-file=/data/3307/my.cnf 2>&1 > /dev/null &
+	   #+END_SRC
+	2. 本文多实例启动文件的停止mysql服务实质命令
+	   #+BEGIN_SRC sh
+	   mysqladmin -u root -p123456 -S /data/3306/mysql.sock shutdown
+	   mysqladmin -u root -p123456 -S /data/3307/mysql.sock shutdown
+	   #+END_SRC
+*** 配置MySQL多实例文件目录权限
+	#+BEGIN_SRC sh
+# 对/data目录授予mysql用户权限
+chown -R mysql.mysql /data
+find /data -type f -name "my.cnf" | xargs chmod 644
+find /data -type f -name "my.cnf" | xargs ls -l
+-rw-r--r-- 1 mysql mysql 1863 Mar 24 14:08 /data/3306/my.cnf
+-rw-r--r-- 1 mysql mysql 1863 Mar 24 14:09 /data/3307/my.cnf
+# 对mysql的启动脚本授权，授予700的权限，因为启动文件里有数据库管理员密码
+find /data -type f -name "mysql" | xargs ls -l
+-rwxr-xr-x 1 mysql mysql 1040 Mar 24 14:22 /data/3306/mysql
+-rwxr-xr-x 1 mysql mysql 1040 Mar 24 14:21 /data/3307/mysql
+find /data -type f -name "mysql" | xargs chmod 700
+find /data -type f -name "mysql" | xargs ls -l
+-rwx------ 1 mysql mysql 1040 Mar 24 14:22 /data/3306/mysql
+-rwx------ 1 mysql mysql 1040 Mar 24 14:21 /data/3307/mysql
+	#+END_SRC
+*** 配置MySQL命令的环境变量
+	如果不为MySQL的命令配置全局路径，就无法直接在命令行直接使用mysql命
+	令，只能写全路径/application/mysql/bin/mysql，这样带全路径的写法很
+	费劲，
+	#+BEGIN_SRC sh
+echo 'PATH=$PATH:/application/mysql/bin' >> ~/.bashrc
+echo 'export PATH' >> ~/.bashrc
+	#+END_SRC
+*** 初始化MySQL多实例的数据库文件
+	全部配置完毕了，就可以初始化数据库文件了，
+	1. 初始化MySQL数据库，以3306实例为例
+	   #+BEGIN_SRC sh
+cd /application/mysql/scripts
+./mysql_install_db --basedir=/application/mysql --datadir=/data/3306/data --user=mysql
+Installing MySQL system tables...
+OK
+Filling help tables...
+OK
+# 出现两个OK，说明初始化数据库成功
+[root@mysql02 scripts]# ll /data/3306/data/
+total 12
+drwx------ 2 mysql root  4096 Mar 24 14:51 mysql
+drwx------ 2 mysql mysql 4096 Mar 24 14:51 performance_schema
+drwx------ 2 mysql root  4096 Mar 24 14:51 test
+	   #+END_SRC
+	2. 启动两个实例
+	   #+BEGIN_SRC sh
+/data/3306/mysql start
+/date/3307/mysql start
+[root@mysql02 ~]# netstat -natup |grep 330
+tcp        0      0 0.0.0.0:3307                0.0.0.0:*                   LISTEN      29096/mysqld        
+tcp        0      0 0.0.0.0:3306                0.0.0.0:*                   LISTEN      28207/mysqld
+	   #+END_SRC
+	3. 登录MySQL多实例
+	   #+BEGIN_SRC sh
+# 下面是无密码情况下登录数据库的方法，使用-S选项及指定具体实例的套接字即可，
+# 不同实例的sock名字虽然相同，但是路径是不同的，
+mysql -S /data/3306/mysql.sock
+mysql -S /data/3307/mysql.sock
+	   #+END_SRC
+*** 设置多实例数据库密码
+	#+BEGIN_SRC sh
+mysqladmin -uroot password 123456 -S /data/3306/mysql.sock
+mysqladmin -uroot password 123456 -S /data/3306/mysql.sock
+	#+END_SRC
+*** 删除多余的MySQL数据库用户
+* 企业Linux运维场景数据同步方案
+** 文件级别的异步同步方案
+   1. scp/sftp/nc命令可以实现远程数据同步
+   2. 搭建ftp/http/svn/nfs服务器，然后在客户端上也可以把数据同步到服务器
+   3. 搭建Samba文件共享服务，然后在客户端上也可以把数据同步到服务器
+   4. 利用rsync/csync2/union等均可实现数据同步
+	  #+BEGIN_EXAMPLE
+	  提示：union可以实现双向同步，csync2可实现多机同步。
+	  以上文件同步方式如果结合定时任务或者inotify，sersync等工具，可以实现定时或实时的数据同步。
+	  #+END_EXAMPLE
+   5. 扩展思想：文件级别也可以利用mysql、mongodb等软件作为容器实现
+   6. 扩展思想：程序向两个服务器同时写数据，双写就是一个同步机制
+	  #+BEGIN_EXAMPLE
+	  特点：简单、方便、效率和文件系统级别要差一些，但是被同步的节点可以提供访问。
+	  软件的自身同步机制（mysql，oracle，mongodb，ttserver，redis...），文件放到数据库，
+	  同步到从库，再把文件拿出来。
+	  #+END_EXAMPLE
+   7. DRBD
+** 文件系统级别的异机同步方案
+   1. drbd基于文件系统同步，相当于网络RAID1，可以同步几乎任何业务数据。
+      MySQL数据库的官方推荐drbd同步数据，所有单点服务例如（NFS、MFS、
+      MySQL）等都可以用drbd。
+   2. 数据库同步方案
+	  1. 自身同步机制
+		 #+BEGIN_EXAMPLE
+		 mysql replication，MySQL主从复制（逻辑的SQL重写）物理复制方法。DRBD从库不提供读写。
+		 #+END_EXAMPLE
+	  2. 第三方drbd
+		 #+BEGIN_EXAMPLE
+		 参考URL：http://oldboy.51cto.com/2561410/1240412
+		 #+END_EXAMPLE
+* MySQL主从复制一些概念
+  主服务器/从服务器设置增加了健壮性。主服务器出现问题时，可以切换到从
+  服务器。
+
+  通过在主服务器和从服务器之间切分处理客户查询的负荷，可以得到更好的客
+  户响应时间。SELECT查询可以发送到从服务器以降低主服务器的查询处理负荷。
+  但修改数据的语句仍然应发送到主服务器，以便主服务器和从服务器保持同步。
+
+  MySQL提供了数据库的同步功能，这对实现数据库的冗灾、备份、恢复、负载
+  均衡等都是有极大帮助的。
+
+  MySQL的主从复制方案，和scp/rsync等文件级别同步是类似的，都是数据的传
+  输。只不过MySQL无需借助第三方工具，而是其自带的复制功能，有一点不同，
+  MySQL的主从复制并不是数据库磁盘上的文件直接拷贝复制，而是通过逻辑的
+  binlog日志复制到同步的数据库本地，然后读取里面SQL语句应用到数据库的
+  过程。
+** MySQL主从复制介绍
+   MySQL数据库支持单向、双向、链式级联等不同场景的复制。在复制过程中，
+   一台服务器充当主服务器（Master），而一个或多个其他服务器充当从服务
+   器（Slave）。
+
+   复制可以是单向：M-->S，也可以是双向M<-->M，当然也可以多M环状同步等。
+
+   如果设置了链式级联复制，那么，从（slave）服务器本身除了充当从服务器
+   外，也会同时充当其下面从服务器的主服务器。链式级联复制类似
+   A->B->C->D的复制形式。
+** MySQL主从复制原理介绍
+   MySQL的主从复制是一个异步的复制过程（虽然一般情况下感觉是实时同步
+   的），数据库数据从一个MySQL数据库（Master）复制到另一个MySQL数据库
+   （Slave ）。在Master与Slave之间实现整个主从复制的过程是由三个线程参
+   与完成的。其中两个线程（SQL线程和IO线程）在Slave端，另一个IO线程在
+   Master端。
+
+   要实现MySQL的主从同步，首先必须打开Master端的
+   binlog（mysql-bin.xxxxxx）功能，否则就无法实现主从复制。因为整个复
+   制过程实际上就是Slave从Master端获取binlog日志，然后再在Slave自身以
+   相同顺序执行获取的binlog日志中所记录的各种操作。
+
+   打开MySQL的binlog可以通过在MySQL的配置文件my.cnf中的[mysqld]配置下
+   设置“log-bin”参数，
+   #+BEGIN_SRC sh
+[mysqld]
+log-bin = /data/3306/mysql-bin
+   #+END_SRC
+** 复制如何工作
+   MySQL复制数据，总的来说，有三个步骤：
+   1. 在主库上把数据更改记录到二进制日志（Binary Log）中(这些记录被称
+      为二进制日志事件)。
+   2. 备库将主库上的日志复制到自己的中继日志（Relay Log）中。
+   3. 备库读取中继日志中的事件，将其重放到备库数据之上。
+
+   第一步是在主库上记录二进制日志。在每次准备提交事务完成数据更新前，
+   主库将数据更新的事件记录到二进制日志中。MySQL会按事务提交的顺序而非
+   每条语句的执行顺序来记录二进制日志。在记录二进制日志后，主库会告诉
+   存储引擎可以提交事务了。
+
+   下一步，备库将主库的二进制日志复制到其本地的中继日志中。首先，备库
+   会启动一个工作线程，称为I/O线程，I/O线程跟主库建立一个普通的客户端
+   连接，然后在主库上启动一个特殊的二进制转储（binlog dump）线程（该线
+   程没有对应的SQL命令），这个二进制转储线程会读取主库上二进制日志中的
+   事件。它不会对事件进行轮询。如果该线程追赶上了主库，它将进入睡眠状
+   态，直到主库发送信号量通知其有新的事件产生时才会被唤醒，备库I/O线程
+   会将接收到的事件记录到中继日志中。
+
+   备库的SQL线程执行最后一步，该线程从中继日志中读取事件并在备库执行，
+   从而实现备库数据的更新。当SQL线程追赶上I/O线程时，中继日志通常已经
+   在系统缓存中了，所以中继日志的开销很低。SQL线程执行的事件也可以通过
+   配置选项来决定是否写入其自己的二进制日志中。
+
+   这种复制架构实现了获取事件的重放事件的解耦，允许这两个过程异步进行。
+   也就是说I/O线程能够独立于SQL线程之外工作。但这种架构也限制了复制的
+   过程，其中最重要的一点是在主库上并发运行的查询在备库上只能串化执行，
+   因为只有一个SQL线程来重放中继日志的事件。
+* MySQL主从复制实践
+** 测试环境
+   这里使用同一台机器上的两个MySQL实例，
+   | 主机名               |             IP | 角色 | 端口 |
+   |----------------------+----------------+------+------|
+   | mysql02.lavenliu.com | 192.168.20.159 | 主库 | 3306 |
+   | mysql02.lavenliu.com | 192.168.20.159 | 从库 | 3307 |
+   | mysql02.lavenliu.com | 192.168.20.159 | 从库 | 3308 |
+
+   特别提示：
+   1. 一般常规做主从复制，主从服务器多数在不同的机器上，并且监听的端口均为默认的3306。
+   2. 本文的主从复制是针对前面的单机数据库多实例的环境来测试的。
+   3. 第1点虽然不在一台机器上，但是步骤和过程与第2点是一样的。
+   4. 我们在掌握了单数据库多实例的同步方法后，可以自己适当扩展，完成异机相同端口之间的主从复制。
+
+   查看当前系统环境，
+   #+BEGIN_SRC sh
+[root@mysql02 3308]# netstat -natup |grep 330
+tcp        0      0 0.0.0.0:3307                0.0.0.0:*                   LISTEN      29096/mysqld        
+tcp        0      0 0.0.0.0:3308                0.0.0.0:*                   LISTEN      32981/mysqld        
+tcp        0      0 0.0.0.0:3306                0.0.0.0:*                   LISTEN      31184/mysqld
+   #+END_SRC
+** 主从复制数据库之必备条件
+   1. 开启log-bin功能
+   2. 设置server-id参数
+
+   一些技巧：
+   1. log-bin及server-id两个参数要在[mysqld]下面配置。
+   2. server-id可以使用服务器IP地址的最后一个点分十进制表示，目的是避免不同主机或实例ID重复。0<server-id<2^32-1的自然数。
+   3. 要先在my.cnf配置文件中查找相关参数，并按要求修改。不存在时再添加参数，参数不能重复。
+   4. 修改my.cnf配置后需要重启数据库。
+
+   查看配置，
+   #+BEGIN_SRC sh
+egrep "log-bin|server-id" /data/{3306,3307,3308}/my.cnf
+/data/3306/my.cnf:log-bin = /data/3306/mysql-bin
+/data/3306/my.cnf:server-id = 1
+/data/3307/my.cnf:#log-bin = /data/3307/mysql-bin
+/data/3307/my.cnf:server-id = 2
+/data/3308/my.cnf:#log-bin = /data/3308/mysql-bin
+/data/3308/my.cnf:server-id = 3
+# 也可以登录到各MySQL实例进行查看
+[root@mysql02 ~]# for instance in 3306 3307 3308 ; do mysql -uroot -p123456 -S /data/${instance}/mysql.sock -e "select @@server_id;"; done
++-------------+
+| @@server_id |
++-------------+
+|           1 |
++-------------+
++-------------+
+| @@server_id |
++-------------+
+|           2 |
++-------------+
++-------------+
+| @@server_id |
++-------------+
+|           3 |
++-------------+
+   #+END_SRC
+
+   在主库设置同步所需的用户及权限，
+   #+BEGIN_SRC sql
+mysql -uroot -p123456 -S /data/3306/mysql.sock
+grant replication slave on *.* to 'repl'@'192.168.20.%' identified by 'replpass';
+flush privileges;
+select host,user from mysql.user;
+show grants for 'repl'@'192.168.20.%';
+   #+END_SRC
+** 对主数据库锁表只读（当前窗口不要关闭）
+	授权完毕，接下来主库进行锁表操作，
+    #+BEGIN_SRC sql
+flush table with read lock;
+show master status;
++------------------+----------+--------------+------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000004 |      337 |              |                  |
++------------------+----------+--------------+------------------+
+1 row in set (0.06 sec)
+mysqldump -uroot -p123456 -S /data/3306/mysql.sock -A -B --events | gzip > /opt/bak_$(date +%F).sql.gz
+ls -lh /opt/bak_2016-03-24.sql.gz
+-rw-r--r-- 1 root root 142K Mar 24 18:46 /opt/bak_2016-03-24.sql.gz
+# 备份完毕，可以再次查看Position位置号，看是否有变化
+mysql> show master status;
++------------------+----------+--------------+------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000004 |      337 |              |                  |
++------------------+----------+--------------+------------------+
+1 row in set (0.00 sec)
+# 然后，就可以解锁了
+mysql> unlock tables;
+Query OK, 0 rows affected (0.00 sec)
+# 这时在Master上可以创建几个库，
+create database lavenliu;
+create database taoqi;
+# 到3306实例的数据目录下查看有哪些文件
+[root@mysql02 ~]# cd /data/3306
+[root@mysql02 3306]# ll
+total 56
+drwxr-xr-x 5 mysql mysql  4096 Mar 24 18:21 data
+-rw-r--r-- 1 mysql mysql  1870 Mar 24 15:09 my.cnf
+-rwx------ 1 mysql mysql  1025 Mar 24 15:45 mysql
+-rw-rw---- 1 mysql mysql   264 Mar 24 15:42 mysql-bin.000001
+-rw-rw---- 1 mysql mysql   126 Mar 24 15:46 mysql-bin.000002
+-rw-rw---- 1 mysql mysql   126 Mar 24 18:21 mysql-bin.000003
+-rw-rw---- 1 mysql mysql   380 Mar 24 18:59 mysql-bin.000004
+-rw-rw---- 1 mysql mysql   107 Mar 24 18:59 mysql-bin.000005
+-rw-rw---- 1 mysql mysql   140 Mar 24 18:59 mysql-bin.index
+-rw-rw---- 1 mysql mysql     6 Mar 24 18:21 mysqld.pid
+-rw-r----- 1 mysql mysql 14691 Mar 24 18:27 mysql_lavenliu3306.err
+srwxrwxrwx 1 mysql mysql     0 Mar 24 18:21 mysql.sock
+[root@mysql02 3306]# cat mysql-bin.index 
+/data/3306/mysql-bin.000001
+/data/3306/mysql-bin.000002
+/data/3306/mysql-bin.000003
+/data/3306/mysql-bin.000004
+/data/3306/mysql-bin.000005
+	#+END_SRC
+** 还原主库的全备数据到从库
+	这时就可以在从库上还原数据了，
+	#+BEGIN_SRC sh
+cd /opt
+gzip -d bak_2016-03-24.sql.gz 
+mysql -uroot -p123456 -S /data/3307/mysql.sock < bak_2016-03-24.sql
+# 登录从库3307实例
+mysql -uroot -p -S /data/3307/mysql.sock
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| test               |
++--------------------+
+4 rows in set (0.04 sec)
+# 在主库上创建的lavenliu及taoqi库在从库上还没有
+mysql> select host,user from mysql.user;
++----------------------+------+
+| host                 | user |
++----------------------+------+
+| 127.0.0.1            | root |
+| 192.168.20.%         | repl | # 注意此行，新增的
+| ::1                  | root |
+| localhost            |      |
+| localhost            | root |
+| mysql02.lavenliu.com |      |
+| mysql02.lavenliu.com | root |
++----------------------+------+
+7 rows in set (0.00 sec)
+	#+END_SRC
+** 登录从库配置同步参数
+*** 常规情况MySQL从库连接主库的配置信息
+	 配置信息展示，
+	 #+BEGIN_SRC sh
+CHANGER MASTER TO
+MASTER_HOST='192.168.20.159',       <- 主库的IP
+MASTER_PORT=3306,                   <- 主库的端口，从库可以和主库不同
+MASTER_USER='repl',                 <- 主库上建立的用于复制的用户repl
+MASTER_PASSWORD='replpass',         <- 这里是repl用户的密码
+MASTER_LOG_FILE='mysql-bin.000004', <- 这里是show master status时看到的二进制日志文件名称
+MASTER_LOG_POS=337;                 <- 上述文件名称的二进制日志偏移量
+# 提示：
+# 如果在备份时加入了--master-data=1，则在恢复时就会直接执行带binlog文件及位置点的CHANGE MASTER
+# 语句，则此处的CHANGE MASTER执行不需要指定binlog文件及位置点了
+# 执行完毕，会在实例的数据目录里生成一个master.info的文件，该文件记录了连接主库的信息
+	 #+END_SRC
+
+	 好了，开始配置从库，
+	 #+BEGIN_SRC sql
+change master to 
+master_host='192.168.20.159',
+master_port=3306,
+master_user='repl',
+master_password='replpass',
+master_log_file='mysql-bin.000004',
+master_log_pos=337;
+	 #+END_SRC
+	 
+	 配置完毕，会在3307实例的数据目录下产生一个master.info的文件，
+	 #+BEGIN_SRC sh
+[root@mysql02 3307]# ll data/
+total 143372
+-rw-rw---- 1 mysql mysql 134217728 Mar 24 18:24 ibdata1
+-rw-rw---- 1 mysql mysql   4194304 Mar 24 18:24 ib_logfile0
+-rw-rw---- 1 mysql mysql   4194304 Mar 24 15:13 ib_logfile1
+-rw-rw---- 1 mysql mysql   4194304 Mar 24 15:13 ib_logfile2
+drwx------ 2 mysql mysql      4096 Mar 24 19:11 mysql
+drwx------ 2 mysql mysql      4096 Mar 24 14:52 performance_schema
+drwx------ 2 mysql mysql      4096 Mar 24 14:52 test
+[root@mysql02 3307]# ll data/
+total 143376
+-rw-rw---- 1 mysql mysql 134217728 Mar 24 18:24 ibdata1
+-rw-rw---- 1 mysql mysql   4194304 Mar 24 18:24 ib_logfile0
+-rw-rw---- 1 mysql mysql   4194304 Mar 24 15:13 ib_logfile1
+-rw-rw---- 1 mysql mysql   4194304 Mar 24 15:13 ib_logfile2
+-rw-rw---- 1 mysql mysql        82 Mar 24 19:35 master.info
+drwx------ 2 mysql mysql      4096 Mar 24 19:11 mysql
+drwx------ 2 mysql mysql      4096 Mar 24 14:52 performance_schema
+drwx------ 2 mysql mysql      4096 Mar 24 14:52 test
+[root@mysql02 3307]# cat data/master.info 
+18
+mysql-bin.000004
+337
+192.168.20.159
+repl
+replpass
+3306
+60
+0
+
+
+
+
+
+0
+1800.000
+
+0
+	 #+END_SRC
+
+	 这时，在从库上执行“start slave”就可以同步主库的数据了，同步之后，
+	 从库上应该出现"lavenliu"及"taoqi"这两个库了，
+	 #+BEGIN_SRC sql
+show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| lavenliu           |
+| mysql              |
+| performance_schema |
+| taoqi              |
+| test               |
++--------------------+
+6 rows in set (0.00 sec)
+# 还可以查看从库的同步信息
+mysql> show slave status\G
+************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 192.168.20.159
+                  Master_User: repl
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.000005
+          Read_Master_Log_Pos: 283
+               Relay_Log_File: relay-bin.000004
+                Relay_Log_Pos: 429
+        Relay_Master_Log_File: mysql-bin.000005
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+              Replicate_Do_DB: 
+          Replicate_Ignore_DB: mysql
+           Replicate_Do_Table: 
+       Replicate_Ignore_Table: 
+      Replicate_Wild_Do_Table: 
+  Replicate_Wild_Ignore_Table: 
+                   Last_Errno: 0
+                   Last_Error: 
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 283
+              Relay_Log_Space: 622
+              Until_Condition: None
+               Until_Log_File: 
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File: 
+           Master_SSL_CA_Path: 
+              Master_SSL_Cert: 
+            Master_SSL_Cipher: 
+               Master_SSL_Key: 
+        Seconds_Behind_Master: 0   <- 从库延迟的时间
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 0
+                Last_IO_Error: 
+               Last_SQL_Errno: 0
+               Last_SQL_Error: 
+  Replicate_Ignore_Server_Ids: 
+             Master_Server_Id: 1
+1 row in set (0.00 sec)
+	 #+END_SRC
+** 无需锁表的备份方案
+	在生产环境时，一般会每天备份一份完整数据，在备份时锁表备份并且记录
+	下备份时的binlog对应的文件以及位置点，这样在实现主从复制的时候，就
+	无需现锁表备份了，直接用夜里的全备即可完成主从同步的配置，另外，如
+	果没有全备，那么最好等到夜里进行全备，也可能需要申请停机时间。因为
+	锁表期间会影响业务。小规模就直接夜里mysqldump锁表备份即可，当然了
+	务必要记录binlog的位置或者增加--master-data=1。
+
+	无需锁表的mysqldump备份命令(加上-x参数)：
+	 1. myisam存储引擎企业生产备份命令
+		#+BEGIN_SRC sh
+mysqldump -uroot -p123456 -A -B -F --master-data=2 -x --events | gzip > /opt/all.sql.gz
+		#+END_SRC
+	 2. innodb存储引擎企业生产备份命令（推荐使用）
+		#+BEGIN_SRC sh
+mysqldump -uroot -p123456 -A -B -F --master-data=2 --events --single-transaction | gzip > /opt/all.sql.gz
+		#+END_SRC
+
+    --master-data的作用：
+	 1. 使用--master-data=2进行备份文件会增加如下内容（适合普通备份增量恢复）
+		#+BEGIN_SRC sh
+# --master-data以注释的形式记录master上的LOG_FILE及备份时的LOG_POS
+--                                                                                                                                   
+-- Position to start replication or point-in-time recovery from                                                                      
+--                                                                                                                                   
+
+-- CHANGE MASTER TO MASTER_LOG_FILE='mysql-bin.000005', MASTER_LOG_POS=107;
+		#+END_SRC
+	 2. 使用--master-data=1进行备份文件会增加如下内容（更适合主从复制）
+** MySQL主从同步配置小结
+   1. 准备两台数据库环境，或者单台多实例环境，能否正常启动和登录。
+   2. 配置my.cnf文件，主库配置log-bin和server-id参数；从库配置
+      server-id，不能和主库及其他从库一样，一般不开启从库的log-bin功能。
+      注意：配置参数后要重启数据库才生效。
+   3. 登录主库增加用于从库连接主库同步的账户并授权replication slave同步的权限。
+   4. 登录主库，整库锁表"flush table with read lock;"(窗口关闭后立即失
+      效，超时参数到了也失效)；然后执行"show master status"查看binlog
+      的位置状态。
+   5. 新开窗口，在系统命令行备份或导出原有的数据库数据，并拷贝到从库所
+      在的服务器目录。（如果数据量很大，并且允许停机，可以停机打包，而
+      不用mysqldump）
+   6. 解锁主库"unlock tables"。
+   7. 把主库导出的原有数据恢复到从库。
+   8. 根据主库的"show master status"查看到的binlog位置状态，在从库上执
+      行"change master to"语句。
+   9. 从库开启同步，"start slave"。
+   10. 从库执行"show slave status\G"检查同步状态，并在主库进行更新测试。
+** MySQL主从复制方案应用场景
+*** 场景1：从服务器作为主服务器的实时数据备份
+	主从服务器架构的设置，可以大大加强数据库架构的健壮性。例如：当主服
+	务器出现问题时，我们可以人工或自动切换到从服务器继续提供服务，此时
+	从服务器的数据和宕机时的主数据库几乎是一致的。
+
+	这类似NFS存储数据通过inotify+rsync同步到备份的NFS服务器非常类似，
+	只不过MySQL的复制方案是其自带的工具。
+
+	利用MySQL的复制功能做数据备份，在硬件宕机，服务故障的场景数据备份
+	是有效的，但对于人为的执行drop、delete等语句删除数据的情况，从库的
+	备份功能就没用了，因为从服务器也会执行删除语句。
+*** 场景2：主从服务器实现读写分离，从服务器实现负载均衡
+	主从服务器架构可通过程序（php、java）或代理软件（mysql-proxy、
+	amobe）实现对用户（客户端）的请求读写分离，即让从服务器仅仅处理用
+	户的select查询请求，降低用户查询响应时间及读写同时在主服务器带来的
+	压力。对应更新的数据（update、insert、delete）仍然交给主服务器处理，
+	确保主服务器和从服务器保持实时同步。
+
+	百度、淘宝、新浪等绝大多数的网站都是用户浏览页面大于用户发布内容，
+	因此通过在从服务器只接收读请求，就可以很好的减轻主库的读压力，且从
+	服务器可以很容易的扩展到多台，且可以加上LVS做负载均衡，效果就非常
+	棒了，这就是传说中的数据库读写分离架构。(一般3-5个从服务器)
+
+	[[./images/mysql_master_lvs_slave.png]]
+
+*** 场景3：把多个从服务器根据业务重要性进行拆分访问
+	可以把几个不同的从服务器，根据公司的业务进行拆分。例如：有为外部用
+	户提供查询服务的从服务器，有内部DBA用来数据备份的从服务器，还有为
+	公司内部人员提供访问的后台、脚本、日志分析及开发人员使用的从服务器。
+	这样的拆分除了减轻主服务器的压力外，使得数据库对外部用户浏览、对内
+	部用户业务处理及DBA人员备份等互不影响。具体可以用下面的简单架构来
+	说明：
+
+	[[./images/mysql_master_slave03.png]]
+** MySQL主从同步监控
+   主要监控下面三个状态，
+   #+BEGIN_SRC sh
+mysql -uroot -p123456 -S /data/3307/mysql.sock -e "show slave status\G" |egrep -i "_running|behind"
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+        Seconds_Behind_Master: 0
+   #+END_SRC
+** MySQL多实例切换配置
+   我们在/home/mysql/conf下保存着my1.cnf，my2.cnf，my3.cnf，my4.cnf。
+   针对每一个数据库实例都有一个对应的配置文件。各个配置文件中都保存的
+   是每个实例独立的配置。通过“实例切换配置”来切换到各个不同的实例。
+
+   我们在/home/mysql/bin下存放有四个文件my1，my2，my3，my4。用于切换到
+   各个实例的配置环境中。并且我们在profile中添加了对应的别名：
+   #+BEGIN_SRC sh
+alias my1=". /home/mysql/bin/my1"
+alias my2=". /home/mysql/bin/my2"
+alias my3=". /home/mysql/bin/my3"
+alias my4=". /home/mysql/bin/my4"
+   #+END_SRC
+
+   这里以my1为例，脚本内容如下：
+   #+BEGIN_SRC sh
+#!/bin/sh
+#****************************************************************#
+# ScriptName: my1
+#!/bin/sh
+#****************************************************************#
+# ScriptName: my1
+#             switch to mysql instance 1 environment
+# Author: pickup.li
+# Create Date: 2013-09-11
+# Modify Author:
+# Modify Date: 2013-09-11
+# Function:
+#***************************************************************#
+#set -x
+
+#### variable should change every instance
+INSTANCE_NO=1
+INSTANCE_PORT=3306
+
+#### variable should not change every instance
+export BASE_DIR=/usr/local/mysql
+export DATA_DIR=/home/mysql/data/mysqldata$INSTANCE_NO/
+export MYSQL_CONF=/home/mysql/conf/my$INSTANCE_NO.cnf
+export PS1='\n\e[1;37m[\e[m\e[1;31m\u\e[m\e[1;31m@\e[m\e[1;31m\h\e[m \e[1;31mMySQL_$INSTANCE_NO\e[m \e[4m`pwd`\e[m\e[1;37m]\e[m\e[1;36m\e[m\n\$
+'
+startmysql()
+{
+	cd $BASE_DIR/
+	$BASE_DIR/bin/mysqld_safe --defaults-file=$MYSQL_CONF &
+	cd -
+}
+alias stopmysql="$BASE_DIR/bin/mysqladmin -uroot --password='****' -h127.0.0.1 -P$INSTANCE_PORT shutdown"
+alias my="$BASE_DIR/bin/mysql --defaults-file=$MYSQL_CONF -uroot --password='****' -h127.0.0.1 -P$INSTANCE_PORT test --prompt='[\\v $(whoami)@$
+(hostname) $(pwd) \\u@\\h:\\d \\R:\\m:\\s]\\n>'"
+
+export PATH=$BASE_DIR/bin/:$PATH
+export LD_LIBRARY_PATH=$BASE_DIR/lib/:$BASE_DIR/lib/mysql
+export PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME%%.*}"; echo -ne "\007"'
+alias cdd="cd $DATA_DIR"
+alias cdb="cd $BASE_DIR"
+alias cdm="cd /home/mysql/"
+alias vi="vim"
+alias vie="vim $DATA_DIR/log/error.log"
+alias cate="cat $DATA_DIR/log/error.log"
+alias psm="ps -eo pid,cgroup,cmd|grep $BASE_DIR/bin/mysqld |grep -i mysql$INSTANCE_NO.cnf |grep -v grep"
+alias ll='ls -l -G'
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+   #+END_SRC
+
+   直接输入命令my1就可以切换到mysql实例1的环境下。此时可以直接输入my命
+   令登录第一个实例的mysql环境，输入stopmysql就可以停掉MySQL数据库，输
+   入startmysql就可以启动MySQL数据库。另外，还做了一些简单方便的命令，
+   以便管理：
+   #+BEGIN_EXAMPLE
+   cdd用于切换到实例的数据目录
+   cdm用于切换到MySQL根目录
+   cdb用于切换到MySQL的程序文件目录
+   psm用于输出MySQL数据库的进程和cgroup信息等
+   #+END_EXAMPLE
+** 快速做MySQL主从同步的方法
+   1. 主库备份时，使用如下的命令及参数(定时任务去做，一般半夜执行)
+	  #+BEGIN_SRC sh
+mysqldump -uroot -p123456 -S /data/3306/mysql.sock -A --events -B -x --master-data=1 | gzip > /opt/$(date +%F).sql.gz
+	  #+END_SRC
+   2. 从库上（白天做下面的步骤即可）
+	  #+BEGIN_SRC sh
+gzip -d 2016-03-25.sql.gz
+mysql -uroot -p123456 -S /data/3307/mysql.sock < 2016-03-25.sql
+mysql -uroot -p123456 -S /data/3307/mysql.sock <<EOF
+CHANGE MASTER TO 
+MASTER_HOST='192.168.20.159',
+MASTER_PORT=3306,
+MASTER_USER='repl',
+MASTER_PASSWORD='replpass';
+EOF
+# 这里并没有填写主库的日志文件及日志的位置号，主要是备份时加上了--master-data参数
+show slave status\G
+	  #+END_SRC
+** 从库记录binlog日志方法
+   从库需要记录binlog的应用场景说明：
+   1. 当前的从库还要作为其他从库的主库，例如：级联复制或者双主互为主从
+	  #+BEGIN_SRC sh
+# 从库记录binlog日志方法
+# 在从库的my.cnf中加入如下参数，然后，重启数据库服务即可生效
+log-slave-updates <- 必须要有这个参数
+log-bin=/data/3307/mysql-bin
+expire_logs_days=7 <- 相当于find /data/3307/ -type f -name "mysql-bin.000*" -mtime +7 | xargs rm -f
+	  #+END_SRC
+
+	  查看从库的配置信息，
+	  #+BEGIN_SRC sh
+egrep "log-bin|expire|log-slave" /data/3307/my.cnf
+log-bin = /data/3307/mysql-bin
+log-slave-updates
+expire_logs_days = 7
+	  #+END_SRC
+*** 实战配置级联复制
+	配置MySQL级联复制，3306->3307->3308
+	#+BEGIN_SRC sh
+# 目前3306与3307已是主从同步状态
+# 只需要配置3307到3308的同步复制即可
+mysql3307> show master status;
++------------------+----------+--------------+------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000002 |      107 |              |                  |
++------------------+----------+--------------+------------------+
+1 row in set (0.00 sec)
+
+# 查看是否有repl同步用户
+mysql3307> select host,user from mysql.user;
++----------------------+------+
+| host                 | user |
++----------------------+------+
+| 127.0.0.1            | root |
+| 192.168.20.%         | repl |
+| ::1                  | root |
+| localhost            |      |
+| localhost            | root |
+| mysql02.lavenliu.com |      |
+| mysql02.lavenliu.com | root |
++----------------------+------+
+7 rows in set (0.00 sec)
+
+# 在3308上进行操作
+mysql3308> select @@server_id;
++-------------+
+| @@server_id |
++-------------+
+|           3 |
++-------------+
+1 row in set (0.00 sec)
+
+mysql3308> change master to 
+    -> master_host='192.168.20.159',
+    -> master_port=3307,
+    -> master_user='repl',
+    -> master_password='replpass',
+    -> master_log_file='mysql-bin.000002',
+    -> master_log_pos=107;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> start slave;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> show slave status\G
+*************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 192.168.20.159
+                  Master_User: repl
+                  Master_Port: 3307
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.000002
+          Read_Master_Log_Pos: 107
+               Relay_Log_File: relay-bin.000002
+                Relay_Log_Pos: 253
+        Relay_Master_Log_File: mysql-bin.000002
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes
+              Replicate_Do_DB: 
+          Replicate_Ignore_DB: mysql
+           Replicate_Do_Table: 
+       Replicate_Ignore_Table: 
+      Replicate_Wild_Do_Table: 
+  Replicate_Wild_Ignore_Table: 
+                   Last_Errno: 0
+                   Last_Error: 
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 107
+              Relay_Log_Space: 403
+              Until_Condition: None
+               Until_Log_File: 
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File: 
+           Master_SSL_CA_Path: 
+              Master_SSL_Cert: 
+            Master_SSL_Cipher: 
+               Master_SSL_Key: 
+        Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 0
+                Last_IO_Error: 
+               Last_SQL_Errno: 0
+               Last_SQL_Error: 
+  Replicate_Ignore_Server_Ids: 
+             Master_Server_Id: 2
+1 row in set (0.00 sec)
+	#+END_SRC
+
+	在主库上分别查看主库下的从库都有哪些，
+    #+BEGIN_SRC sh
+# 在3306实例上进行查看
+mysql3306> show slave hosts;
++-----------+------+------+-----------+
+| Server_id | Host | Port | Master_id |
++-----------+------+------+-----------+
+|         2 |      | 3307 |         1 |
++-----------+------+------+-----------+
+1 row in set (0.00 sec)
+# 在3307实例上进行查看
+mysql3307> show slave hosts;
++-----------+------+------+-----------+
+| Server_id | Host | Port | Master_id |
++-----------+------+------+-----------+
+|         3 |      | 3308 |         2 |
++-----------+------+------+-----------+
+1 row in set (0.00 sec)
+	#+END_SRC
+
+	可以在3306上创建一个数据库进行查看，在3308上是否也有相同的库出现。
+** 实战配置MySQL双主主从复制
+   双主的实现方案：（高并发写的场景）
+   1. 让表的ID自增，然后主1 写1、3、5。。 主2 写2、4、6。。
+   2. 不让表的ID自增，然后通过WEB端程序去seq服务器取ID，写入双主。
+
+   *实现3306实例与3307实例的双主主从复制。*
+
+   通过MySQL参数配置使用主主前提：
+   1. 表的主键自增
+
+   3306实例配置文件更改：
+   #+BEGIN_SRC sh
+## m-m m1 start ########
+auto_increment_increment = 2 # 自增ID的间隔，如1、3、5，间隔为2
+auto_increment_offset = 1    # ID的初始位置
+log-slave-updates
+log-bin = /data/3306/mysql-bin
+expire_logs_days = 7
+
+binlog-ignore-db=information_schema
+binlog-ignore-db=mysql
+skip-slave-start
+## m-m m1 end #####
+   #+END_SRC
+
+   3307实例配置文件更改：
+   #+BEGIN_SRC sh
+## m-m m1 start ########
+auto_increment_increment = 2 # 自增ID的间隔，如2、4、6，间隔为2
+auto_increment_offset = 2    # ID的初始位置
+log-slave-updates
+log-bin = /data/3307/mysql-bin
+expire_logs_days = 7
+
+binlog-ignore-db=information_schema
+binlog-ignore-db=mysql
+skip-slave-start
+## m-m m1 end #####
+   #+END_SRC
+   
+   由于3306到3307已同步，现在要做的是把3307的进行全备，然后把数据导入
+   到3306实例上，
+   #+BEGIN_SRC sh
+mysqldump -uroot -p123456 -S /data/3307/mysql.sock -A --events -B -x --master-data=1 | gzip > /opt/3307_$(date +%F).sql.gz
+mysql -uroot -p123456 -S /data/3306/mysql.sock < 3307_2016-03-25.sql
+   #+END_SRC
+
+   然后，在3306上执行change master to操作：
+   #+BEGIN_SRC sh
+mysql -uroot -p123456 -S /data/3306/mysql.sock <<EOF
+change master to 
+master_host='192.168.20.159',
+master_port=3307,
+master_user='repl',
+master_password='replpass';
+EOF
+###########################
+# 3306实例执行start slave
+mysql -uroot -p123456 -S /data/3306/mysql.sock -e "start slave; show slave status\G"
+   #+END_SRC
+
+   现在分别在3306及3307实例上创建数据库测试是否同步，
+   #+BEGIN_SRC sql
+mysql3306> create database master3306;
+mysql3307> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| apple              |
+| cc                 |
+| lavenliu           |
+| liu                |
+| master1            |
+| mysql              |
+| performance_schema |
+| taoqi              |
+| test               |
++--------------------+
+10 rows in set (0.00 sec)
+mysql3307> create database master2;
+mysql3306> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| apple              |
+| cc                 |
+| lavenliu           |
+| liu                |
+| master1            |
+| master2            |
+| mysql              |
+| performance_schema |
+| taoqi              |
+| test               |
++--------------------+
+11 rows in set (0.00 sec)
+   #+END_SRC
+
+   创建一个表，
+   #+BEGIN_SRC sql
+create database lavenliu;
+use lavenliu;
+create table `t1` (
+`id` bigint(12) NOT NULL auto_increment,
+`name` varchar(12) NOT NULL,
+PRIMARY KEY (`id`));
+Query OK, 0 rows affected (0.05 sec)
+mysql> desc t1;
++-------+-------------+------+-----+---------+----------------+
+| Field | Type        | Null | Key | Default | Extra          |
++-------+-------------+------+-----+---------+----------------+
+| id    | bigint(12)  | NO   | PRI | NULL    | auto_increment |
+| name  | varchar(12) | NO   |     | NULL    |                |
++-------+-------------+------+-----+---------+----------------+
+2 rows in set (0.00 sec)
+   #+END_SRC
+
+   接着往t1表中插入数据，
+   #+BEGIN_SRC sql
+mysql3306> use lavenliu;
+mysql3306> insert into t1(name) values("laven");
+mysql3306> insert into t1(name) values("taoqi");
+mysql3306> insert into t1(name) values("liucc");
+mysql3306> select * from t1;
++----+-------+
+| id | name  |
++----+-------+
+|  1 | laven |
+|  3 | taoqi |
+|  5 | liucc |
++----+-------+
+#######################
+# 在3307上操作
+mysql3307> use lavenliu;
+mysql3307> insert into t1(name) values("ccliu");
+mysql3307> insert into t1(name) values("qitao");
+mysql3307> select * from t1;
++----+-------+
+| id | name  |
++----+-------+
+|  1 | laven |
+|  3 | taoqi |
+|  5 | liucc |
+|  6 | ccliu |
+|  8 | qitao |
++----+-------+
+   #+END_SRC
+** MySQL主从复制集群架构的数据备份策略
+   有主从复制了，还需要做定时全量加增量备份吗？答案是肯定的！
+
+   因为，如果主库有语句级误操作，例如：drop database lavenliu;从库也会
+   执行drop database lavenliu;这样MySQL主从库就都删除了该数据。
+
+   把从库作为数据库备份服务器时。
+
+   高并发业务场景备份时，可以选择在一台从库上备份，把从库作为数据库备份服务器时需要：
+   [[./images/mysql_backup_methods.png]]
+
+   1. 选择一台不对外服务的从库，确保和主库更新最接近，专门做数据备份用；
+   2. 开启从库的binlog功能；
+
+   备份时可以选择只停止SQL线程，停止应用SQL语句到数据库，IO线程保留工
+   作状态，执行命令为"stop slave sql_thread;"，（相当于在从库上进行锁
+   表的操作），备份方式可以采取mysqldump（数据量小于50G可以使用
+   mysqldump）逻辑备份或者直接物理备份，例如cp或tar，xtrabackup（第三
+   方备份工具）等。根据总的备份数据量的多少选择，把全备和binlog发送到
+   备份服务器上留存。
+** MySQL主从复制延迟问题原因及解决方案
+   网络、Master负载高、Slave太多、
+   1. 一个主库的从库太多会导致复制延迟
+	  #+BEGIN_EXAMPLE
+	  建议从库的数量3-5个为宜；要复制的从节点数量过多，会导致复制延迟。
+	  #+END_EXAMPLE
+   2. 从库硬件比主库差会导致复制延迟
+	  #+BEGIN_EXAMPLE
+	  查看Master和Slave的系统配置，由于机器配置的问题，包括磁盘IO、CPU、网卡等方面因素，
+	  也会造成复制的延迟，一般发生在高并发大数据量写入场景。
+	  #+END_EXAMPLE
+   3. 慢SQL语句过多
+	  #+BEGIN_EXAMPLE
+	  假如一条SQL语句执行时间的20秒，那么从执行完毕，到从库这边就延迟了20秒。
+	  
+	  SQL语句的优化一般要作为常规工作不断的监控和优化，如果是单个SQL语句较耗时的，
+	  可以修改分多次写入。通过看慢查询日志或show full processlist命令找出耗时较长的查询语句
+	  或者大的事务。
+	  #+END_EXAMPLE
+   4. 主从复制的设计问题
+	  #+BEGIN_EXAMPLE
+	  例如主从复制是单线程的，如果主库写并发太大，来不及传送到从库就会导致延迟。
+	  更高版本的MySQL可以支持多线程复制，或者门户网站自己开发多线程同步插件。
+	  #+END_EXAMPLE
+   5. 主从库之间的网络延迟
+	  #+BEGIN_EXAMPLE
+	  主从库的网卡、网线、连接的交换机等网络设备都可能成为复制的瓶颈，导致延迟发生。
+	  另外，跨公网主从复制很容易导致主从复制延迟。
+	  #+END_EXAMPLE
+   6. 主库读写压力大的时候会导致复制延迟
+	  #+BEGIN_EXAMPLE
+	  主库硬件要好一点，架构的前端要加buffer以及缓存层。
+	  #+END_EXAMPLE
+** read-only参数说明
+   '--read-only'参数选项可以让从服务器只允许来自从服务器线程或具有
+   SUPER权限的用户的更新。可以确保从服务器不接受来自用户端的更新。
+
+   *--read-only参数更新的条件：*
+   1. 具有SUPER权限的用户可以更新
+   2. 来自从服务器线程可以更新
+   3. 忽略授权库同步
+	  #+BEGIN_SRC sh
+主库配置：
+binlog-ignore-db=mysql
+replicate-ignore-db=mysql
+从库配置：
+replicate-ignore-db=mysql
+	  #+END_SRC
+** 同步指定的库与排除同步指定的库 - 参数说明
+*** do（同步指定库）
+	#+BEGIN_SRC sh
+binlog-do-db=db_lavenliu
+replicate-do-db=db_lavenliu # 如果需要跨数据库更新并且不想复制这些更新，不应使用该选项
+###########################
+replicate-do-table=db_lavenliu      # 允许跨数据库更新
+replicate-wild-do-table=db_lavenliu # 用于跨数据库更新
+	#+END_SRC
+*** ignore（排除指定库）
+	#+BEGIN_SRC sh
+binlog-ignore-db=mysql
+replicate-ignore-db=mysql # 如果需要跨数据库更新并且不想复制这些更新，不应使用该选项
+#############################
+replicate-ignore-table=mysql            # 该选项可以跨数据库进行更新
+replicate-wild-ignore-table=db_lavenliu # 该选项可以跨数据库进行更新
+	#+END_SRC
+* MySQL主从读写分离方案及授权
+** 通过程序实现读写分离（性能，效率最佳，推荐）
+   php和java程序都可以通过设置多个连接文件轻松实现对数据库的读写分离，
+   即当select时，就去连接读库的连接文件，当update、insert、delete时就连
+   写库的连接文件。
+
+   通过程序实现读写分离的缺点就是需要开发对程序改造，对下层不透明，但这
+   种方式更容易开发和实现，适合互联网场景。
+** 通过开源的软件实现读写分离
+   MySQL-proxy，amobe等代理软件也可以实现读写分离功能，这些软件的稳定性
+   和功能一般，不建议生产环境使用。普通公司常用的还是通过客户端程序实现
+   读写分离。
+** 大型门户独立开发DAL层综合软件
+   百度、阿里等大型门户会开发适合自己业务的读写分离、负载均衡器、监控报
+   警、自动扩容、自动收缩等一系列功能的DAL层软件。MySQL读写分离的基本逻
+   辑图展示如下：
+
+   [[./images/mysql_read_write_split.png]]
+** 读写分离集群-如何授权WEB用户访问
+   主库：：：
+   用户：web 密码：123 3306 192.168.20.158 lavenliu
+   权限：insert、update、select、delete
+   从库：：：
+   用户：web 密码：123 3306 192.168.20.159 lavenliu
+   权限：select
+
+   实现方法：
+   1. 主库创建完用户和权限，从库上revoke回收写的权限。
+	  #+BEGIN_SRC sql
+mysql_master> grant insert,update,delete,select on lavenliu.* to 'web'@'192.168.20.%';
+mysql_master> flush privileges;
+# 这时slave已经同步了master的授权信息，这时登录到slave上回收权限
+mysql_slave> revoke insert,update,delete on lavenliu.* from 'web'@'192.168.20.%';
+mysql_slave> flush privileges;
+	  #+END_SRC
+   2. 从库指定忽略授权表同步：replicate-ignore-db=mysql
+   3. 在从库上配置read-only参数（全局的参数）
+* MySQL灾难恢复
+* MySQL错误代码
+  如果不知道相应错误代码表示什么具体含义，可以使用perror查看，如不知道
+  1006错误代码的含义，可以使用如下命令查看，
+  #+BEGIN_SRC sh
+perror 1006
+MySQL error code 1006 (ER_CANT_CREATE_DB): Can't create database '%-.192s' (errno: %d)
+  #+END_SRC
+
+  一些常见的错误代码：
+  #+BEGIN_EXAMPLE
+  1005：创建表失败
+  1006：创建数据库失败
+  1007：数据库已存在，再次创建回出现此错误 <- 可以忽略此错误
+  1008：数据库不存在，删除数据库失败       <- 可以忽略此错误
+  1009：不能删除数据库文件导致删除数据库失败
+  1010：不能删除数据目录导致删除数据库失败
+  1011：删除数据库文件失败
+  1012：不能读取系统表中的记录
+  1020：记录已被其他用户修改
+  1021：硬盘剩余空间不足，请加大硬盘可用空间
+  1022：关键字重复，更改记录失败
+  1023：关闭时发生错误
+  1024：读文件错误
+  1025：更改名字时发生错误
+  1026：写文件错误
+  1032：记录不存在  <- 可以忽略此错误
+  1036：数据表是只读的，不能对它进行修改
+  1037：系统内存不足，请重启数据库或重启服务器
+  1038：用于排序的内存不足，请增大排序缓冲区
+  1040：已达到数据库的最大连接数，请加大数据库可用连接数
+  1041：系统内存不足
+  1042：无效的主机名
+  1043：无效连接
+  1044：当前用户没有访问数据库的权限
+  1045：不能连接数据库，用户名或密码错误
+  1048：地段不能为空
+  1049：数据库不存在
+  1050：数据表已存在
+  1051：数据表不存在
+  1054：字段不存在
+  1062：字段值重复，入库失败 <- 可以忽略此错误
+  1065：无效的SQL语句，SQL语句为空
+  1081：不能建立Socket连接
+  1114：数据表已满，不能容纳任何记录
+  1116：打开的数据表太多
+  1129：数据库出现异常，请重启数据库
+  1130：连接数据库失败，没有连接数据库的权限
+  1133：数据库用户不存在
+  1141：当前用户无权访问数据库
+  1142：当前用户无权访问数据表
+  1143：当前用户无权访问数据表中的字段
+  1146：数据表不存在
+  1147：未定义用户对数据表的访问权限
+  1149：SQL语句语法错误
+  1158：网络错误，出现读错误，请检查网络连接状况
+  1159：网络错误，读超时，请检查网络连接状况
+  1160：网络错误，出现读错误，请检查网络连接状况
+  1161：网络错误，写超时，请检查网络连接状况
+  1169：字段重复，更新记录失败
+  1177：打开数据表失败
+  1180：提交事物失败
+  1181：回滚事物失败
+  1203：当前用户和数据库建立的连接已到达数据库的最大连接数，请增大可用的数据库连接数或重启数据库
+  1205：加锁超时
+  1211：当前用户没有创建用户的权限
+  1216：外键约束检查失败，更新子表记录失败
+  1217：外键约束检查失败，删除或修改主表记录失败
+  1226：当前用户使用的资源已超过所允许的资源，请重启数据库或重启服务器
+  1227：权限不足，无权进行此操作
+  1235：MySQL版本过低，不具有本功能
+  1665：InnoDB的事务隔离级别是read commited或者read uncommited模式时，binlog不可以使用statement模式，"set global binlog_format=mixed;"
+  1666：Error executing row event；"stop slave; set global binlog_format=mixed; start slave; show slave status\G"
+  #+END_EXAMPLE
+* 遇到的问题
+** 因MySQL环境变量配置顺序导致的错误案例
+   特别强调：务必把MySQL命令路径放在PATH路径中其他路径到的前面，否则，
+   导致使用mysql等命令和编译安装的MySQL不是一个而导致错误。实际上就是
+   使用的yum安装的mysql客户端，访问编译安装的服务端，就可能出问题。
+** 主库"show master status"没输出
+   主要是因为主库的log-bin没有开启。
+** 1236错误
+   大多是mysql-bin.xxxxxx写的有问题。
+** MySQL从库复制故障案例
+   故障模拟： *在从库创建一个库，然后去主库创建同名的库来模拟数据冲突。*
+   模拟重现故障的能力是运维人员最重要的能力。
+
+   在从库创建一个名为"liu"的库，
+   #+BEGIN_SRC sql
+create database liu;
+   #+END_SRC
+
+   在主库也创建一个名为"liu"的库，
+   #+BEGIN_SRC sql
+create database liu;
+   #+END_SRC
+
+   在从库上查看从库的同步状态，
+   #+BEGIN_SRC sql
+show slave status\G
+*************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 192.168.20.159
+                  Master_User: repl
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: mysql-bin.000005
+          Read_Master_Log_Pos: 364
+               Relay_Log_File: relay-bin.000004
+                Relay_Log_Pos: 429
+        Relay_Master_Log_File: mysql-bin.000005
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: No
+              Replicate_Do_DB: 
+          Replicate_Ignore_DB: mysql
+           Replicate_Do_Table: 
+       Replicate_Ignore_Table: 
+      Replicate_Wild_Do_Table: 
+  Replicate_Wild_Ignore_Table: 
+                   Last_Errno: 1007
+                   Last_Error: Error 'Can't create database 'liu'; database exists' on query. Default database: 'liu'. Query: 'create database liu'
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 283
+              Relay_Log_Space: 703
+              Until_Condition: None
+               Until_Log_File: 
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File: 
+           Master_SSL_CA_Path: 
+              Master_SSL_Cert: 
+            Master_SSL_Cipher: 
+               Master_SSL_Key: 
+        Seconds_Behind_Master: NULL
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 0
+                Last_IO_Error: 
+               Last_SQL_Errno: 1007
+               Last_SQL_Error: Error 'Can't create database 'liu'; database exists' on query. Default database: 'liu'. Query: 'create database liu'
+  Replicate_Ignore_Server_Ids: 
+             Master_Server_Id: 1
+1 row in set (0.00 sec)
+   #+END_SRC
+   
+   *解决办法1：*
+   #+BEGIN_SRC sh
+stop slave; # 临时停止同步开关
+set global sql_slave_skip_counter=1; # 将同步指针向下移动一个(即跳过当前SQL语句)，如果多次不同步，可以重复操作。
+start slave;
+show slave status\G
+   #+END_SRC
+
+   *解决办法2：根据可以忽略的错误号事先在配置文件中配置跳过指定的不影响业务数据的错误*
+   #+BEGIN_SRC sh
+grep slave-skip /date/3306/my.cnf
+slave-skip-errors = 1007,1032,1062
+   #+END_SRC
+** 其他可能引起复制故障的问题
+   1. MySQL自身的原因及人为重复插入数据
+   2. 不同的数据库版本会引起不同步，低版本到高版本可以，但是高版本不能往低版本同步
+   3. MySQL的错误
+   4. binlog记录模式，例如：row level模式就比默认的语句模式要好
+* 一些问题
+** 如何从架构上解决数据库的瓶颈
+* MySQL面试题
+** 描述一下你维护的企业里MySQL服务架构
+   一主两从，
+** 网站打开慢，请给出排查方法，如果是因为数据库慢导致的，如何排查并解决，请分析并举例
+** 什么是数据库的事务，事务有哪些特性
+** MySQL有哪些常用的引擎？企业中如何批量更改表的引擎
+** MyISAM与InnoDB数据库引擎各有什么特点与区别，企业中如何选择
+** MySQL binlog的工作模式有哪些？各有什么特点，企业中如何选择
+** 如何分表分库备份及批量恢复（口述脚本实现过程）
+** 企业中mysqldump备份时使用-A -B参数，请问此时如何进行单表单库恢复
+** 企业场景不停不锁主库，不夜里操作，如何白天从容批量创建从库
+** 生产环境，一主多从环境，从库宕机，请问你如何恢复
+** 生产环境，一主多从环境，从库宕机，请问你如何恢复？注意要说完整过程
+** 解释下有关数据的ACID是什么意思
+** 企业生产MySQL如何优化
+** 企业生产MySQL如何设计备份方案？你是怎么做的
+** 企业中MySQL的root密码忘记了怎么解决，多实例密码忘记了又如何解决
+** 什么是MyISAM引擎？MyISAM与InnoDB数据库引擎特点与区别
+** 如何配置MySQL多实例
+** 工作中数据库被误操作执行了一个删除的SQL语句，你如何完整恢复丢失的数据
+** MySQL出现同步延迟有哪些原因？如何解决
+** 详细描述MySQL主从同步的原理及配置主从的完整步骤
+** MySQL如何实现双向互为主从复制A<-->B
+** MySQL如何实现级联同步A-->B-->C
+** MySQL主从复制故障如何解决？如何监控主从复制是否故障
+** MySQL Sleep线程过多如何解决
+** 如何调整已有MySQL数据库的字符集，例如：从UTF8改成GBK，请给出完整步骤
+** 请描述MySQL里中文数据乱码的背后原理，以及工作中如何防止数据库数据乱码
+** MySQL库授权test用户管理bbs库的所有表，192.168.20.0整个网段访问，密码是123456，请给出SQL语句（不低于2种方法）
+   #+BEGIN_SRC sql
+# 方法1：
+grant all on bbs.* to 'test'@'192.168.20.%' identified by '123456';
+flush privileges;
+# 方法2：
+grant all on bbs.* to 'test'@'192.168.20.0/255.255.255.0' identified by '123456';
+flush privileges;
+# 方法3
+create user 'test'@'192.168.20.%' identified by '123456';
+grant all on bbs.* to 'test'@'192.168.20.%';
+flush privileges;
+   #+END_SRC
+* MySQL资料
+  MySQL5.1中文手册
+  5 6 7 8 13 14 15章节需要看。
+** 主从进程中I/O线程状态
+   需要查看MySQL用户手册。
+   
+   以表格的形式总结。
+*** 查看MySQL线程同步状态的用途
+	通过MySQL线程同步状态可以看到同步是否正常进行，故障的位置是什么，
+	另外查看数据库同步是否完成，可用于主库宕机切换数据库或者人工数据库
+	主从切换迁移等。
+
+	例如：主库宕机选择最快的从库提升为主，就需要查看主从库的线程状态，
+	如果是主从复制正常情况进行角色切换，也需要查看主从库的线程状态，根
+	据复制状态确定更新是否完成。（一般主库先锁表）
+* 我的网站信息
+  主机管理控制台用户名：qxu2062670033
+
+  FTP登录用户名：qxu2062670033
+
+  MySQL数据名称：qdm219186507_db
+
+  MySQL数据库用户名：qdm219186507

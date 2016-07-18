@@ -1,0 +1,1348 @@
+#+TITLE: 我的Emacs
+#+AUTHOR: LavenLiu
+#+DATE: 2010-05-04
+#+EMAIL: ldczz2008@163.com 
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+* Emacs
+  Emacs不仅仅是个编辑器。
+
+  http://blog.csdn.net/csfreebird
+* CentOS6u5编译安装Emacs
+   以下为安装步骤：
+   
+   1. CentOS6u5安装时选择Basic及安装"Development Tools"
+	  #+BEGIN_SRC sh
+	  安装EPEL源
+      # rpm -ivh http://mirrors.ustc.edu.cn/fedora/epel//6/x86_64/epel-release-6-8.noarch.rpm
+	  #+END_SRC
+   2. 下载Emacs最新版本，这里使用的最新版本为24.5
+	  #+BEGIN_SRC sh
+yum install -y wget
+cd /usr/local/src
+wget http://mirrors.ustc.edu.cn/gnu/emacs/emacs-24.5.tar.gz
+	  #+END_SRC
+   3. 安装Emacs的依赖包
+	  #+BEGIN_SRC sh
+	  # yum install -y ncurses-devel
+      ----------以下为非必须----------
+      # yum install -y libpng-devel libjpeg-devel libtiff-devel
+	  #+END_SRC
+   4. 编译安装Emacs
+	  #+BEGIN_SRC sh
+	  # cd /usr/local/src/
+      # tar -xf emacs-24.5.tar.gz
+      # cd emacs-24.5
+      # ./configure
+      # make
+      # src/emacs -Q ; 测试make后的Emacs是否可用，非必须
+      # make install 
+	  #+END_SRC
+   5. 准备配置文件
+	  #+BEGIN_EXAMPLE
+	  # cat ~/.emacs
+	  (global-set-key "\C-h" 'backward-delete-char-untabify)
+	  (global-set-key "\d" 'delete-char)
+	  
+	  ;; disable the startup info
+	  (setq inhibit-startup-message t)
+	  
+	  (setq-default tab-width 4)
+	  
+	  (setq fill-column 70)
+	  
+	  ;; Display settings
+	  (display-time-mode t)
+	  (column-number-mode t)
+	  
+	  ;; 高亮显示选中块
+	  (transient-mark-mode t)
+	  
+	  ;; 支持外部复制粘贴
+	  (setq x-select-enable-clipboard t)
+	  
+	  ;; Show the patern parentheses
+	  ;; 显示括号匹配
+	  (show-paren-mode t)
+	  (setq show-paren-style 'parentheses)
+	  
+	  ;; multi windows settings
+	  ;;(require 'window-numbering)
+	  ;;(window-numbering-mode 1)
+
+	  ;; Time settings
+	  ;; 设置显示底边栏(时间，行列号)，字体
+      ;; (setq display-time-day-and-date t)
+	  (display-time-mode 1)
+	  (setq display-time-24hr-format t)
+	  (setq display-time-use-mail-icon t) ;; 邮件设置图标
+	  (setq frame-title-format "LavenLiu@%b")
+
+	  ;; GDB设置，多窗口GDB
+	  (setq gdb-many-windows t)
+	  
+	  ;; Syntax highlight
+	  (global-font-lock-mode t)
+	  
+	  ;; y|n represents yes|no
+	  ;; 设置用'y'或'n'代替'yes'或'no'
+	  (fset 'yes-or-no-p 'y-or-n-p)
+	  
+	  ;;;; yasnippet setting
+	  (add-to-list 'load-path "~/.emacs.d/elpa/yasnippet")
+	  (require 'yasnippet)
+	  (yas/global-mode 1)
+
+	  ;; stop auto save
+	  (setq auto-save-default nil)
+	  (setq make-backup-files nil)
+	  
+	  
+	  ;; turn on ruler
+	  ;;(ruler-mode 1)
+	  
+	  ;;这两句是我的全局配置，避免出现多语言混乱。
+	  ;; Encoding style
+	  (set-buffer-file-coding-system 'utf-8)
+	  (set default-buffer-file-coding-system 'utf-8)
+	  (set-terminal-coding-system 'utf-8)
+	  (set-language-environment 'UTF-8)
+	  (set-locale-environment "UTF-8")
+
+	  ;;
+	  (custom-set-variables
+	  ;; custom-set-variables was added by Custom.
+	  ;; If you edit it by hand, you could mess it up, so be careful.
+	  ;; Your init file should contain only one such instance.
+	  ;; If there is more than one, they won't work right.
+	  '(ansi-color-faces-vector
+	  [default default default italic underline success warning error])
+	  '(ansi-color-names-vector
+	  ["black" "red3" "ForestGreen" "yellow3" "blue" "magenta3" "DeepSkyBlue" "gray50"])
+	  '(auto-image-file-mode t)
+	  '(auto-save-default nil)
+	  '(c-label-minimum-indentation 4)
+	  '(column-number-mode t)
+	  '(compile-command "gcc -g -o")
+	  '(current-language-environment "UTF-8")
+	  '(custom-enabled-themes (quote (light-blue)))
+	  '(display-time-mode t)
+	  '(ede-auto-add-method (quote always))
+	  '(emms-lyrics-coding-system (quote gb2312))
+	  '(emms-lyrics-display-buffer t)
+	  '(emms-lyrics-display-on-minibuffer t)
+	  '(emms-player-list
+	  (quote
+      (emms-player-mpg321 emms-player-ogg123 emms-player-mplayer)))
+	  '(global-semantic-highlight-edits-mode t)
+	  '(global-semantic-highlight-func-mode t)
+	  '(global-semantic-idle-completions-mode t nil (semantic/idle))
+	  '(image-animate-loop t)
+	  '(jde-jdk-registry (quote (("1.7.0_75" . "/usr/lib/jdk1.7.0_75"))))
+	  '(make-backup-files nil)
+	  '(mew-addrbook-file "~/Mail/Addrbook")
+	  '(mew-mail-domain "163.com")
+	  '(mew-name "ldczz2008")
+	  '(mew-smtp-server "smtp.163.com")
+	  '(mew-use-auto-alias t)
+	  '(mew-user "ldczz2008")
+	  '(org-agenda-files (quote ("~/Desktop/iGTD/iGTD.org")))
+	  '(org-completion-use-ido t)
+	  '(org-modules
+	  (quote
+      (org-bbdb org-bibtex org-ctags org-docview org-gnus org-info org-irc org-mhe org-rmail org-w3m org-eshell org-mew org-toc)))
+	  '(org-startup-with-inline-images t)
+	  '(org-use-fast-todo-selection t)
+	  '(package-archives
+	  (quote
+      (("gnu" . "http://elpa.gnu.org/packages/")
+      ("melpa" . "http://melpa.org/packages/"))))
+	  '(safe-local-variable-values (quote ((TeX-master . t))))
+	  '(semantic-default-submodes
+	  (quote
+      (global-semantic-decoration-mode global-semantic-idle-completions-mode global-semantic-idle-scheduler-mode global-semanticdb-minor-mode global-semantic-idle-summary-mode global-semantic-mru-bookmark-mode)))
+	  '(semantic-idle-scheduler-idle-time 3)
+	  '(send-mail-function (quote smtpmail-send-it))
+	  '(show-paren-mode t)
+	  '(smtpmail-smtp-server "smtp.163.com")
+	  '(smtpmail-smtp-service 25)
+	  '(vc-annotate-color-map
+	  (quote
+      ((20 . "#ab4642")
+      (50 . "#dc9656")
+      (80 . "#f7ca88")
+      (110 . "#a1b56c")
+      (140 . "#86c1b9")
+      (170 . "#7cafc2")
+      (200 . "#ba8baf")
+      (230 . "#a16046")
+      (260 . "#181818")
+      (290 . "#282828")
+      (320 . "#383838")
+      (350 . "#585858"))))
+	  '(vc-annotate-very-old-color "#585858"))
+	  (custom-set-faces
+	  ;; custom-set-faces was added by Custom.
+	  ;; If you edit it by hand, you could mess it up, so be careful.
+	  ;; Your init file should contain only one such instance.
+	  ;; If there is more than one, they won't work right.
+	  '(default ((t (:family #("新宋体" 0 3 (charset chinese-gbk)) :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))
+	  
+	  ;; E-Mail settings
+	  (add-to-list 'load-path
+             (expand-file-name "~/.emacs.d/elpa/mew-20140901.1737/"))
+	  (autoload 'mew "mew" nil t)
+	  (autoload 'mew-send "mew" nil t)
+	  
+	  (if (boundp 'read-mail-command)
+      (setq read-mail-command 'mew))
+	  
+	  (autoload 'mew-user-agent-compose "mew" nil t)
+	  (if (boundp 'mail-user-agent)
+      (setq mail-user-agent 'mew-user-agent))
+	  (if (fboundp 'define-mail-user-agent)
+      (define-mail-user-agent
+      'mew-user-agent
+      'mew-user-agent-compose
+      'mew-draft-send-message
+      'mew-draft-kill
+      'mew-send-hook))
+
+	  ;; Highlight the selected region
+	  (transient-mark-mode t)
+	  
+	  ;; 设置光标和指针颜色
+	  (set-cursor-color "red")
+	  (set-mouse-color "goldenrod")
+	  
+	  ;; 设置选中区域的颜色
+	  (set-face-background 'region "yellow")
+	  
+	  ;; Add a blank line at the end of the file
+	  ;; 在文件末尾添加一空白行
+	  (setq require-final-newline t)
+	  (setq track-eol t)
+	  
+	  (add-to-list 'load-path "~/.emacs.d/elpa/pde/lisp")
+	  (load "pde-load")
+
+
+	  ;; ditaa block for org mode
+	  (org-babel-do-load-languages
+	  'org-babel-load-languages
+	  '((ditaa . t) ; this line activates ditaa
+	  (plantuml . t)
+	  (awk . t)
+	  (python . t)
+	  (perl . t)
+	  (ruby . t)
+	  (R . t)
+	  (sh . t)
+	  (gnuplot . t)
+	  (org . t)
+	  (java . t)
+	  (emacs-lisp . t)
+	  (calc . t)
+	  (sql . t)
+	  (dot . t)
+	  ))
+	  (setq org-ditta-jar-path (expand-file-name "~/.emacs.d/elpa/contrib/scripts/ditta.jar"))
+	  (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/elpa/contrib/scripts/plantuml.jar"))
+	  ;; org mode do not prompt me
+	  (setq org-confirm-babel-evaluate nil)
+	  (setq org-src-fontify-natively t)
+	  
+	  ;; ===============================================
+	  ;; my own functions
+	  (defun gtd ()
+	  (interactive)
+	  (find-file "~/Desktop/iGTD/iGTD.org")
+	  )
+	  
+	  ;; my own shortcuts
+	  (global-set-key "\C-cx" 'gtd)
+	  (global-set-key (kbd "M-g") 'goto-line)
+	  (global-set-key "\C-\\" 'set-mark-command)
+	  
+	  (defun read-only-if-symlink ()
+	  (if (file-symlink-p buffer-file-name)
+      ((progn )
+       (setq buffer-read-only t)
+       (message "File is a symlink"))))
+	  (add-hook 'find-file-hook 'read-only-if-symlink)
+	  
+	  (add-hook 'local-write-file-hooks 'update-writestamps)
+	  
+	  (defun update-writestamps ()
+	  "Find writestamps and replace them with the current time."
+	  (save-excursion
+      (save-restriction
+      (save-match-data
+        (widen)
+        (goto-char (point-min))
+        (while (search-forward "WRITESTAMP((" nil t)
+          (let ((start (point)))
+            (search-forward "))")
+            (delete-region start (- (point) 2))
+            (goto-char start)
+            (insert-date))))))
+	  nil)
+	  
+	  ;;; Auto complete mode
+	  (add-to-list 'load-path "~/.emacs.d/elpa/auto-complete")
+	  (require 'auto-complete)
+	  
+	  ;;; Python Jedi setup
+	  (add-to-list 'load-path "~/.emacs.d/elpa/python-environment")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/jedi")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/jedi-core")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/virtualenv")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/ctable")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/concurrent")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/deferred")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/epc")
+	  (add-to-list 'load-path "~/.emacs.d/elpa/popup")
+	  (require 'popup)
+	  (require 'ctable)
+	  (require 'concurrent)
+	  (require 'epc)
+	  (add-hook 'python-mode-hook 'jedi:setup)
+	  (autoload 'jedi:setup "jedi" nil t)
+	  (setq jedi:complete-on-dot t)
+
+	  (require 'cedet)
+	  (global-ede-mode 1)
+	  
+	  ;; My Own settings
+	  ;; easy keys for split windows
+	  (global-set-key (kbd "M-3") 'delete-other-windows) ; [Alt+] unsplit all
+	  (global-set-key (kbd "M-4") 'split-window-below)
+	  (global-set-key (kbd "M-$") 'split-window-right)
+	  (global-set-key (kbd "M-RET") 'other-window) ; [Alt+Return] move cursor to next pane
+	  (global-set-key (kbd "M-0") 'delete-window)  ; remove current pane
+	  #+END_EXAMPLE
+   6. 把.emacs.d目录放置到当前用户的家目录
+   7. 安装与Python相关的依赖包jedi
+	  #+BEGIN_SRC sh
+	  yum install python-pip
+      pip install ecdsa
+      pip install epc
+      pip install jedi
+	  #+END_SRC
+	  
+   以上几个步骤，已经完成Emacs的安装及Python编程环境的配置，接下来
+   Enjoy！
+* 如何获取帮助
+  4个常用的命令：
+  1. describe-key
+	 #+BEGIN_EXAMPLE
+	 根据按键找到与该按键绑定的函数
+	 组合键"C-h k"可以调用describe-key命令
+	 #+END_EXAMPLE
+  2. describe-function
+	 #+BEGIN_EXAMPLE
+	 查找函数的信息。
+	 组合键"C-h f"可以调用describe-function命令
+	 #+END_EXAMPLE
+  3. apropos-command
+	 #+BEGIN_EXAMPLE
+	 如果我们忘记了某一个命令，可以通过apropos-command命令来查找。
+	 组合键"C-h a"可以调用apropos-command命令
+	 #+END_EXAMPLE
+  4. describe-mode
+	 #+BEGIN_EXAMPLE
+	 在任何模式下，查看该模式的文档。
+	 组合键"C-h m"可以调用describe-mode命令。
+	 #+END_EXAMPLE
+* Emacs常用设置
+** Emacs命令行参数
+   | 短选项 | 长选项         | 说明                                            |
+   |--------+----------------+-------------------------------------------------|
+   | [-q]   | --no-init-file | 不加载用户的初始化文件                          |
+   | [-Q]   | --quick        | 与--no-init-file --no-site-file --no-splash相同 |
+** 自动添加右括号
+   当我们输入左括号的时候，可以自动插入右括号，设置如下：
+   #+begin_src emacs-lisp :tangle yes
+   (electric-pair-mode 1)
+   #+end_src
+** 禁用自动保存及备份文件
+   #+begin_src emacs-lisp :tangle yes
+   (setq make-backup-files nil)
+   (setq auto-save-default nil)
+   #+end_src
+** 设置Emacs默认窗口尺寸
+   在初始化文件里，添加如下代码：
+   #+begin_src emacs-lisp :tangle yes
+   ;; initial window
+   (setq initial-frame-alist
+     '(
+       (width . 102) ; character
+       (height . 54) ; lines
+       ))
+
+   ;; default/sebsequent window
+   (setq default-frame-alist
+     '(
+       (width . 100) ; character
+       (height . 52) ; lines
+       ))
+   #+end_src
+** 在字符界面下，如何使用菜单
+   调用menu-bar-open或F10即可。
+** Customizing the mode-line
+   The mode-line is the emacs 'status bar', the bar just above the
+   minibuffer that shows various pieces of information, such as the
+   buffer name, the major mode, maybe the current line number, some
+   indicators for active minor modes, and so on. As I'm looking at it,
+   it starts with 1<U:**- (which is: input-method:
+   latin-1-alt-postfix, buffer-coding-system: utf8-unix, line-ending:
+   unix-style, buffer is writable and buffer is modified – the
+   tooltips help).
+
+   As with just about anything in emacs, the mode-line can be
+   customized just the way you like. I give some example below, not
+   because I think it is necessarily the best way, but just to give
+   you a bit of an example to start with when making your own
+   best-mode-line-ever.
+
+   I'm not going through all the details of the example, but let me
+   highlight a few things that make it a bit easier to understand.
+
+   First of all, the mode-line can be customized by setting the
+   variable mode-line-format; this variable becomes buffer-local
+   automatically when changed, so if you want to set it for all
+   buffers, you'll need to use setq-default in your .emacs (or
+   equivalent). The format is quite similar to the one for
+   frame-title-format, which we discussed in setting the frame title a
+   while back.
+
+   mode-line-format is a list of items which are evaluated, and put
+   together as a string which then ends up as the mode-line
+   contents. These properties can be any string. The following types
+   of items can be used:
+
+   1. First, normal strings are just shown as-is;
+   2. Then, there are some special format parameters which will be
+      replaced with their value in the mode-line, from the
+      Emacs-documentation:
+	  #+BEGIN_SRC sh
+  %b -- print buffer name.      %f -- print visited file name.
+  %F -- print frame name.
+  %* -- print %, * or hyphen.   %+ -- print *, % or hyphen.
+        %& is like %*, but ignore read-only-ness.
+        % means buffer is read-only and * means it is modified.
+        For a modified read-only buffer, %* gives % and %+ gives *.
+  %s -- print process status.   %l -- print the current line number.
+  %c -- print the current column number (this makes editing slower).
+        To make the column number update correctly in all cases,
+        `column-number-mode' must be non-nil.
+  %i -- print the size of the buffer.
+  %I -- like %i, but use k, M, G, etc., to abbreviate.
+  %p -- print percent of buffer above top of window, or Top, Bot or All.
+  %P -- print percent of buffer above bottom of window, perhaps plus Top,
+        or print Bottom or All.
+  %n -- print Narrow if appropriate.
+  %t -- visited file is text or binary (if OS supports this distinction).
+  %z -- print mnemonics of keyboard, terminal, and buffer coding systems.
+  %Z -- like %z, but including the end-of-line format.
+  %e -- print error message about full memory.
+  %@ -- print @ or hyphen.  @ means that default-directory is on a
+        remote machine.
+  %[ -- print one [ for each recursive editing level.  %] similar.
+  %% -- print %.   %- -- print infinitely many dashes.
+Decimal digits after the % specify field width to which to pad.
+	  #+END_SRC
+* C编程环境配置
+* Lisp编程环境配置
+* Python编程环境配置
+** 准备工作
+   首先系统当中要安装pip等工具，方便安装python的一些工具包。
+   #+BEGIN_SRC sh
+wget https://bootstrap.pypa.io/ez_setup.py -O - | python
+easy_install pip
+yum install -y python-devel openssl-devel libffi-devel
+pip install rope==0.9.4
+pip install jedi==0.9.0
+pip install flake8
+pip install importmagic==0.1.6
+pip install autopep8==1.2.2
+pip install yapf==0.6.3
+pip install virtualenv==15.0.1
+   #+END_SRC
+** 安装ELPY
+   一个精简版的配置，
+   #+BEGIN_SRC sh
+(global-set-key "\C-h" 'backward-delete-char-untabify)
+(global-set-key "\d" 'delete-char)
+
+(setq inhibit-startup-message t)
+
+(setq-default tab-width 4)
+
+(setq fill-column 72)
+
+(require 'package)
+(add-to-list 'package-archives
+			 '("elpy" . "http://jorgenschaefer.github.io/packages/"))
+
+(add-to-list 'load-path "~/.emacs.d/elpa/pyvenv-1.9")
+(require 'pyvenv)
+(package-initialize)
+(elpy-enable)
+
+(global-set-key "\C-\\" 'set-mark-command)
+(fset 'yes-or-no-p 'y-or-n-p)
+   #+END_SRC
+** ELPY相关快捷键
+   1. 查看文档
+	  #+BEGIN_EXAMPLE
+	  光标放到某个库的函数上或某个库上，按组合键"C-c C-d"，即可在一个新开的窗口
+	  打开该库的所有帮助信息。
+	  #+END_EXAMPLE
+* Elisp
+** 绑定快捷键
+   #+begin_src emacs-lisp :tangle yes
+   (global-set-key (kbd "<f2>") 'xah-cut-line-or-region) ; cut
+   (global-set-key (kbd "<f3>") 'xah-copy-line-or-region) ; copy
+   (global-set-key (kbd "<f4>") 'yank) ; paste
+   #+end_src
+** 删除当前行或区域
+	#+begin_src emacs-lisp :tangle yes
+(defun xah-cut-line-or-region ()
+  "Cut current line, or text selection.
+When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
+
+URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
+Version 2015-06-10"
+  (interactive)
+  (if current-prefix-arg
+      (progn ; not using kill-region because we don't want to include previous kill
+        (kill-new (buffer-string))
+        (delete-region (point-min) (point-max)))
+    (progn (if (use-region-p)
+               (kill-region (region-beginning) (region-end) t)
+             (kill-region (line-beginning-position) (line-beginning-position 2))))))
+	#+end_src
+** 复制当前行或区域
+	#+begin_src emacs-lisp :tangle yes
+    (defun xah-copy-line-or-region ()
+  "Copy current line, or text selection.
+When called repeatedly, append copy subsequent lines.
+When `universal-argument' is called first, copy whole buffer (respects `narrow-to-region').
+
+URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
+Version 2015-09-18"
+  (interactive)
+  (let (ξp1 ξp2)
+    (if current-prefix-arg
+        (progn (setq ξp1 (point-min))
+               (setq ξp2 (point-max)))
+      (progn
+        (if (use-region-p)
+            (progn (setq ξp1 (region-beginning))
+                   (setq ξp2 (region-end)))
+          (progn (setq ξp1 (line-beginning-position))
+                 (setq ξp2 (line-end-position))))))
+    (if (eq last-command this-command)
+        (progn
+          (kill-append "\n" nil)
+          (forward-line 1)
+          (end-of-line)
+          (kill-append (buffer-substring-no-properties (line-beginning-position) (line-end-position)) nil)
+          (message "Line copy appended"))
+      (progn
+        (kill-ring-save ξp1 ξp2)
+        (if current-prefix-arg
+            (message "Buffer text copied")
+          (message "Text copied"))))))
+	#+end_src
+* .emacs配置文件
+  以下是自己在Windows系统及Gnu/Linux系统上，Emacs的配置文件。
+   
+  Emacs在Windows下，初始化文件的加载顺序：
+  1. [%HOME%/.emacs]
+  2. [%HOME%/.emacs.d/init.el]
+
+  需要事先新建HOME环境变量
+** Windows的配置文件
+	#+BEGIN_EXAMPLE
+(setq inhibit-startup-message t)
+	 
+(setq-default tab-width 4)
+
+(setq fill-column 70)
+
+;; Display settings
+(display-time-mode t)
+(column-number-mode t)
+
+;;(menu-bar-mode 0)
+;;(tool-bar-mode 0)
+;;(scroll-bar-mode 0)
+
+(transient-mark-mode t)
+
+(setq x-select-enable-clipboard t)
+
+;; Show the patern parentheses
+(show-paren-mode t)
+(setq show-paren-style 'parentheses)
+
+;; set time format
+(setq display-time-day-and-date t)
+(display-time-mode 1)
+(setq display-time-24hr-format t)
+(setq display-time-use-mail-icon t)
+
+;; set emacs title
+;; %b buffer-name
+(setq frame-title-format "LavenLiu@%b")
+
+;; Syntax highlight
+(global-font-lock-mode t)
+
+;; set image mode on
+(auto-image-file-mode t)
+(autoload 'thumbs "thumbs" "Preview images in a directory." t)
+
+;; y|n represents yes|no
+(fset 'yes-or-no-p 'y-or-n-p)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(TeX-PDF-mode t)
+ '(TeX-output-view-style
+   (quote
+	(("^dvi$" "^pstricks$\\|^pst-\\|^psfrag$" "dvips %d -o && start \"\" %f")
+	 ("^dvi$" "." "yap -1 %dS %d")
+	 ("^pdf$" "." "gsview64 \"\" %o")
+	 ("^html?$" "." "start \"\" %o"))))
+ '(TeX-show-compilation t)
+ '(TeX-source-correlate-method (quote synctex))
+ '(TeX-source-correlate-mode t)
+ '(TeX-source-correlate-start-server t)
+ '(auto-image-file-mode nil)
+ '(column-number-mode t)
+ '(current-language-environment "UTF-8")
+ '(display-time-mode t)
+ '(org-babel-load-languages (quote ((emacs-lisp))))
+ '(org-ditaa-jar-path "e:/emacs/share/emacs/24.5/lisp/contrib/scripts/ditaa.jar")
+ '(org-plantuml-jar-path
+   "e:/emacs/share/emacs/24.5/lisp/contrib/scripts/plantuml.jar")
+ '(python-shell-enable-font-lock nil)
+ '(python-shell-exec-path (quote ("C:/Python27")))
+ '(python-shell-prompt-detect-enabled nil)
+ '(safe-local-variable-values
+   (quote
+	((TeX-auto-save . t)
+	 (TeX-parse-self . t)
+	 (encoding . utf-8))))
+ '(show-paren-mode t)
+ '(package-archives
+   (quote
+	(("gnu" . "http://elpa.gnu.org/packages/")
+	 ("melpa" . "http://melpa.org/packages/"))))
+ '(thumbs-max-image-number 16))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:family #("新宋体" 0 3 (charset chinese-gbk)) :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))
+
+;; ========================================
+;; org-mode babel settings
+;; ========================================
+
+(setq org-export-babel-evaluate nil)
+(setq org-confirm-babel-evaluate nil)
+
+(org-babel-do-load-languages
+   'org-babel-load-languages
+   '(
+     (sh . t)
+     (python . t)
+     (R . t)
+     (ruby . t)
+     (ocaml . t)
+     (ditaa . t)
+     (dot . t)
+     (octave . t)
+     (sql . t)
+     (perl . t)
+     (screen . t)
+     (plantuml . t)
+     (lilypond . t)
+     (org . t)
+     (makefile . t)
+     ))
+(setq org-src-preserve-indentation t)
+(setq org-src-fontify-natively t)
+
+;; ========================================
+;; AucTeX settings
+;; ========================================
+(add-to-list 'load-path "~/.emacs.d/elpa/site-start.d")
+(load "auctex.el" nil t t)
+(load "preview-latex.el" nil t t)
+(if (string-equal system-type "windows-nt")
+    (require 'tex-mik))
+
+(setq TeX-auto-save t)
+(setq TeX-parse-self t)
+;;(reftex-moede t)
+
+(add-hook 'LaTeX-mode-hook 
+		  (lambda()
+			(add-to-list 'TeX-command-list '("XeLaTeX" "%`xelatex%(mode)%' %t" TeX-run-TeX nil t))
+			(setq TeX-command-default "XeLaTeX")
+			(setq TeX-save-query nil )
+			(setq TeX-show-compilation t)
+			))
+
+(add-hook 'latex-mode-hook 'turn-on-reftex)
+(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq reftex-plug-into-auctex t)
+
+(setq-default TeX-master nil)
+
+
+;; ========================================
+;; Slime env settings
+;; ========================================
+(load (expand-file-name "~/quicklisp/slime-helper.el"))
+;; Replace "sbcl" with the path to your implementation
+(setq inferior-lisp-program "sbcl")
+
+
+;; ====================================================
+;; yasnippet
+;; ====================================================
+(add-to-list 'load-path "~/.emacs.d/elpa/yasnippet")
+(require 'yasnippet)
+(yas/initialize)
+(yas/load-directory "~/.emacs.d/elpa/yasnippet/snippets")
+
+;; ====================================================
+;; python complete mode
+;; ====================================================
+;;; jedi
+
+(add-to-list 'load-path "~/.emacs.d/elpa/jedi")
+(add-to-list 'load-path "~/.emacs.d/elpa/jedi-core")
+(add-to-list 'load-path "~/.emacs.d/elpa/virtualenv")
+(add-to-list 'load-path "~/.emacs.d/elpa/ctable")
+(add-to-list 'load-path "~/.emacs.d/elpa/concurrent")
+(add-to-list 'load-path "~/.emacs.d/elpa/deferred")
+(add-to-list 'load-path "~/.emacs.d/elpa/epc")
+(add-to-list 'load-path "~/.emacs.d/elpa/popup")
+(require 'popup)
+(require 'ctable)
+(require 'concurrent)
+(require 'epc)
+(add-hook 'python-mode-hook 'jedi:setup)
+(autoload 'jedi:setup "jedi" nil t)
+(setq jedi:complete-on-dot t)
+
+
+;;; Auto complete mode
+(add-to-list 'load-path "~/.emacs.d/elpa/auto-complete")
+(require 'auto-complete-config)
+(add-to-list 'ac-dictionary-directories "./ac-dict")
+(ac-config-default)
+
+
+;; ====================================================
+;; ============  My Own Fucntions =====================
+;; ====================================================
+(defun gtd ()
+  (interactive)
+  (find-file "~/iGTD/iGTD.org")
+  )
+
+
+;; Personal Menu settings
+(define-key-after global-map [menu-bar gtd]
+  (cons "iGTD" (make-sparse-keymap "iGTD")))
+(define-key global-map [menu-bar gtd gtd]
+  '(menu-item "iGTD" gtd
+			  :help "Hip, yeah!"))
+(define-key global-map [menu-bar gtd separator-replace-tags]
+  '(menu-item "--"))
+
+;; ========================================
+;; Personal shortcuts define
+;; ========================================
+(global-set-key (kbd "M-g") 'goto-line)
+(global-set-key "\C-\\" 'set-mark-command)
+(global-set-key "\C-cx" 'gtd)
+
+;; font-size settings
+(global-set-key (kbd "C-+") 'text-scale-increase)
+(global-set-key (kbd "C--") 'text-scale-decrease)
+
+;; color theme
+(add-to-list 'load-path "~/.emacs.d/color-theme")
+(require 'color-theme)
+(color-theme-initialize)
+(color-theme-comidia)
+(put 'downcase-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
+
+;; graphviz mode
+(load-file "~/.emacs.d/graphviz-dot-mode.el")
+	 #+END_EXAMPLE
+** Gnu/Linux的配置文件
+*** 服务器的Emacs配置
+	 #+BEGIN_EXAMPLE
+(global-set-key "\C-h" 'backward-delete-char-untabify)
+(global-set-key "\d" 'delete-char)
+
+;; disable the startup info
+(setq inhibit-startup-message t)
+
+(setq-default tab-width 4)
+
+(setq fill-column 70)
+
+;; Display settings
+(display-time-mode t)
+(column-number-mode t)
+
+;; 高亮显示选中块
+(transient-mark-mode t)
+
+;; 支持外部复制粘贴
+(setq x-select-enable-clipboard t)
+
+;; Show the patern parentheses
+;; 显示括号匹配
+(show-paren-mode t)
+(setq show-paren-style 'parentheses)
+
+;; multi windows settings
+;;(require 'window-numbering)
+;;(window-numbering-mode 1)
+
+;; Time settings
+;; 设置显示底边栏(时间，行列号)，字体
+;; (setq display-time-day-and-date t)
+(display-time-mode 1)
+(setq display-time-24hr-format t)
+(setq display-time-use-mail-icon t) ;; 邮件设置图标
+(setq frame-title-format "LavenLiu@%b")
+
+;; GDB设置，多窗口GDB
+(setq gdb-many-windows t)
+
+;; Syntax highlight
+(global-font-lock-mode t)
+
+;; y|n represents yes|no
+;; 设置用'y'或'n'代替'yes'或'no'
+(fset 'yes-or-no-p 'y-or-n-p)
+
+  ;;;; yasnippet setting
+(add-to-list 'load-path "~/.emacs.d/elpa/yasnippet")
+(require 'yasnippet)
+(yas/global-mode 1)
+
+;; stop auto save
+(setq auto-save-default nil)
+(setq make-backup-files nil)
+
+
+;; turn on ruler
+;;(ruler-mode 1)
+
+;;这两句是我的全局配置，避免出现多语言混乱。
+;; Encoding style
+(set-buffer-file-coding-system 'utf-8)
+(set default-buffer-file-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-language-environment 'UTF-8)
+(set-locale-environment "UTF-8")
+
+;;
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ansi-color-faces-vector
+   [default default default italic underline success warning error])
+ '(ansi-color-names-vector
+   ["black" "red3" "ForestGreen" "yellow3" "blue" "magenta3" "DeepSkyBlue" "gray50"])
+ '(auto-image-file-mode t)
+ '(auto-save-default nil)
+ '(c-label-minimum-indentation 4)
+ '(column-number-mode t)
+ '(compile-command "gcc -g -o")
+ '(current-language-environment "UTF-8")
+ '(custom-enabled-themes (quote (light-blue)))
+ '(display-time-mode t)
+ '(ede-auto-add-method (quote always))
+ '(emms-lyrics-coding-system (quote gb2312))
+ '(emms-lyrics-display-buffer t)
+ '(emms-lyrics-display-on-minibuffer t)
+ '(emms-player-list
+   (quote
+    (emms-player-mpg321 emms-player-ogg123 emms-player-mplayer)))
+ '(global-semantic-highlight-edits-mode t)
+ '(global-semantic-highlight-func-mode t)
+ '(global-semantic-idle-completions-mode t nil (semantic/idle))
+ '(image-animate-loop t)
+ '(jde-jdk-registry (quote (("1.7.0_75" . "/usr/lib/jdk1.7.0_75"))))
+ '(make-backup-files nil)
+ '(mew-use-auto-alias t)
+ '(org-completion-use-ido t)
+ '(org-modules
+   (quote
+    (org-bbdb org-bibtex org-ctags org-docview org-gnus org-info org-irc org-mhe org-rmail org-w3m org-eshell org-mew org-toc)))
+ '(org-startup-with-inline-images t)
+ '(org-use-fast-todo-selection t)
+ '(package-archives
+   (quote
+    (("gnu" . "http://elpa.gnu.org/packages/")
+     ("melpa" . "http://melpa.org/packages/"))))
+ '(safe-local-variable-values (quote ((TeX-master . t))))
+ '(semantic-default-submodes
+   (quote
+    (global-semantic-decoration-mode global-semantic-idle-completions-mode global-semantic-idle-scheduler-mode global-semanticdb-minor-mode global-semantic-idle-summary-mode global-semantic-mru-bookmark-mode)))
+ '(semantic-idle-scheduler-idle-time 3)
+ '(send-mail-function (quote smtpmail-send-it))
+ '(show-paren-mode t)
+ '(vc-annotate-color-map
+   (quote
+    ((20 . "#ab4642")
+     (50 . "#dc9656")
+     (80 . "#f7ca88")
+     (110 . "#a1b56c")
+     (140 . "#86c1b9")
+     (170 . "#7cafc2")
+     (200 . "#ba8baf")
+     (230 . "#a16046")
+     (260 . "#181818")
+     (290 . "#282828")
+     (320 . "#383838")
+     (350 . "#585858"))))
+ '(vc-annotate-very-old-color "#585858"))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:family #("新宋体" 0 3 (charset chinese-gbk)) :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))
+
+;; Highlight the selected region
+(transient-mark-mode t)
+
+;; 设置光标和指针颜色
+(set-cursor-color "red")
+(set-mouse-color "goldenrod")
+
+;; 设置选中区域的颜色
+(set-face-background 'region "yellow")
+
+;; Add a blank line at the end of the file
+;; 在文件末尾添加一空白行
+(setq require-final-newline t)
+(setq track-eol t)
+
+(add-to-list 'load-path "~/.emacs.d/elpa/pde/lisp")
+(load "pde-load")
+
+
+;; ditaa block for org mode
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((ditaa . t) ; this line activates ditaa
+   (plantuml . t)
+   (awk . t)
+   (python . t)
+   (perl . t)
+   (ruby . t)
+   (R . t)
+   (sh . t)
+   (gnuplot . t)
+   (org . t)
+   (java . t)
+   (emacs-lisp . t)
+   (calc . t)
+   (sql . t)
+   (dot . t)
+   ))
+(setq org-ditta-jar-path (expand-file-name "~/.emacs.d/elpa/contrib/scripts/ditta.jar"))
+(setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/elpa/contrib/scripts/plantuml.jar"))
+;; org mode do not prompt me
+(setq org-confirm-babel-evaluate nil)
+(setq org-src-fontify-natively t)
+
+
+;; my own shortcuts
+(global-set-key "\C-cx" 'gtd)
+(global-set-key (kbd "M-g") 'goto-line)
+(global-set-key "\C-\\" 'set-mark-command)
+
+(defun read-only-if-symlink ()
+  (if (file-symlink-p buffer-file-name)
+      ((progn )
+       (setq buffer-read-only t)
+       (message "File is a symlink"))))
+(add-hook 'find-file-hook 'read-only-if-symlink)
+
+(add-hook 'local-write-file-hooks 'update-writestamps)
+
+;;; Auto complete mode
+(add-to-list 'load-path "~/.emacs.d/elpa/auto-complete")
+(require 'auto-complete)
+
+;;; Python Jedi setup
+(add-to-list 'load-path "~/.emacs.d/elpa/python-environment")
+(add-to-list 'load-path "~/.emacs.d/elpa/jedi")
+(add-to-list 'load-path "~/.emacs.d/elpa/jedi-core")
+(add-to-list 'load-path "~/.emacs.d/elpa/virtualenv")
+(add-to-list 'load-path "~/.emacs.d/elpa/ctable")
+(add-to-list 'load-path "~/.emacs.d/elpa/concurrent")
+(add-to-list 'load-path "~/.emacs.d/elpa/deferred")
+(add-to-list 'load-path "~/.emacs.d/elpa/epc")
+(add-to-list 'load-path "~/.emacs.d/elpa/popup")
+(require 'popup)
+(require 'ctable)
+(require 'concurrent)
+(require 'epc)
+(add-hook 'python-mode-hook 'jedi:setup)
+(autoload 'jedi:setup "jedi" nil t)
+(setq jedi:complete-on-dot t)
+
+(require 'cedet)
+(global-ede-mode 1)
+
+;; My Own settings
+;; easy keys for split windows
+(global-set-key (kbd "M-3") 'delete-other-windows) ; [Alt+] unsplit all
+(global-set-key (kbd "M-4") 'split-window-below)
+(global-set-key (kbd "M-$") 'split-window-right)
+(global-set-key (kbd "M-RET") 'other-window) ; [Alt+Return] move cursor to next pane
+(global-set-key (kbd "M-0") 'delete-window)  ; remove current pane
+	 #+END_EXAMPLE
+*** 我的Ubuntu配置
+** Python编程环境配置 - jedi
+	#+BEGIN_EXAMPLE
+;;; Auto complete mode
+(add-to-list 'load-path "~/.emacs.d/elpa/auto-complete")
+(require 'auto-complete)
+
+;;; Python Jedi setup
+(add-to-list 'load-path "~/.emacs.d/elpa/python-environment")
+(add-to-list 'load-path "~/.emacs.d/elpa/jedi")
+(add-to-list 'load-path "~/.emacs.d/elpa/jedi-core")
+(add-to-list 'load-path "~/.emacs.d/elpa/virtualenv")
+(add-to-list 'load-path "~/.emacs.d/elpa/ctable")
+(add-to-list 'load-path "~/.emacs.d/elpa/concurrent")
+(add-to-list 'load-path "~/.emacs.d/elpa/deferred")
+(add-to-list 'load-path "~/.emacs.d/elpa/epc")
+(add-to-list 'load-path "~/.emacs.d/elpa/popup")
+(require 'popup)
+(require 'ctable)
+(require 'concurrent)
+(require 'epc)
+(add-hook 'python-mode-hook 'jedi:setup)
+(autoload 'jedi:setup "jedi" nil t)
+(setq jedi:complete-on-dot t)
+	#+END_EXAMPLE
+* Org-Mode
+** 基本使用
+   1. 基本介绍
+	  #+BEGIN_EXAMPLE
+	  *   一级标题
+	  **  二级标题
+	  *** 三级标题
+	  #+END_EXAMPLE
+
+   *这是加粗显示*
+   /这是斜体显示/
+   _这是下划线显示_
+   +这是删除线显示+
+
+** 超链接
+   #+BEGIN_EXAMPLE
+   [[link][description]] or [[link]]
+   #+END_EXAMPLE
+** 自定义CSS样式
+   #+begin_src emacs-lisp :tangle yes
+   #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+   #+end_src
+** Org Babel设置
+	#+BEGIN_EXAMPLE
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((ditaa . t) ; this line activates ditaa
+   (plantuml . t)
+   (awk . t)
+   (python . t)
+   (perl . t)
+   (ruby . t)
+   (R . t)
+   (sh . t)
+   (gnuplot . t)
+   (org . t)
+   (java . t)
+   (emacs-lisp . t)
+   (calc . t)
+   (sql . t)
+   (dot . t)
+   ))
+(setq org-ditta-jar-path (expand-file-name "~/.emacs.d/elpa/contrib/scripts/ditta.jar"))
+(setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/elpa/contrib/scripts/plantuml.jar"))
+;; org mode do not prompt me
+(setq org-confirm-babel-evaluate nil)
+(setq org-src-fontify-natively t)	
+	#+END_EXAMPLE
+** LaTeX设置
+   在Emacs的Org-mode下，可以很方便地导出TeX格式，下面是我的org-mode里
+   的设置。导出之后的tex文件，需要进行少许的修改，把原来的
+   documentclass由"article"改为"ctexart"就可以了。
+   #+begin_src emacs-lisp :tangle yes
+   #+LaTeX_CLASS: article
+   #+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+   #+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+   #+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+   #+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+   #+LaTeX_HEADER: \setmonofont{Courier New}
+   #+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+   #+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+   #+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+   #+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+   #+LaTeX_HEADER: \usepackage{color,graphicx}
+   #+LaTeX_HEADER: \usepackage[table]{xcolor}
+   #+LaTeX_HEADER: \usepackage{colortbl}
+   #+LaTeX_HEADER: \usepackage{listings}
+   #+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+   #+end_src
+* YAsnippet
+  可以自定义snippet，使用"M-x yas-new-snippet"来创建新的snippet。编辑
+  完毕，使用"C-c C-c"按键来保存。
+** cc-mode
+** sh-mode
+*** for
+	 #+BEGIN_SRC sh
+# -*- mode: snippet -*-
+# name: for loop
+# key: for
+# --
+for ${1:var} in ${2:stuff}; do
+    ${3:what}
+done
+$0
+	 #+END_SRC
+*** if
+	 #+BEGIN_SRC sh
+# -*- mode: snippet -*-
+# name: if
+# key: if
+# --
+if [ ${1:$? -ne 0} ]; then
+    ${2:do}
+fi
+$0
+	 #+END_SRC
+*** ife
+	 #+BEGIN_SRC sh
+# -*- mode: snippet -*-
+# name: ife
+# key: ife
+# --
+if ${1:cond}; then 
+    ${2:stuff}
+else 
+    ${3:other}
+fi
+$0
+	 #+END_SRC
+*** while
+	 #+BEGIN_SRC sh
+# -*- mode: snippet -*-
+# name: while loop
+# key: while
+# --
+while ${1:true}
+do
+    ${2:do what}
+done
+$0
+	 #+END_SRC
+*** !
+*** function
+** python-mode
+* calc
+** 概述
+   "Calc" 是 emacs 自带的一个计算器，提供了许多方便的数值计算功能，可以
+   让你在不离开 emacs 的情况下进行计算。但 calc 与 gnome 环境下的
+   gcalctool 或者 windows 自带的计算器不同，它不是一个掌上计算器的模拟
+   程序，操作不像上述两个计算器那样直观，需要记忆一些指令，相应的，提供
+   的功能也更加强大了一些。
+** 打开计算器
+   'C-x * c'：打开计算器。
+   'C-x * t'：打开计算器，同时也打开 calc 的在线帮助。
+** 基本运算
+*** 逆波兰表达式
+   	calc 按照逆波兰表达式的方式进行计算。比如，你要计算2+3的结果，要按
+   	照如下顺序在 calc 的 buffer 中输入：
+   	2 <RET> 3 <RET> +
+   	(<RET> 表示回车)
+   	假设，你当前输入了：
+   	1 <RET> 2 <RET> 3 <RET>
+   	然后，输入加号 '+'，那么 calc 将会计算 2+3 的结果， 并保持数字1不
+   	变，calc 的 buffer 中会剩下 1,5两个数字。此时，再次输入'+'， calc
+   	会计算 1+5 的结果，此时 calc 的 buffer 中只剩下一个数字 ‘6’。
+   	很多时候，可以省略一个<RET>，比如计算2+3时，你可以省略第二个<RET>，
+   	只输入：
+   	2 <RET> 3 +
+*** 基本运算符号
+   	'+'：加号
+   	'-'：减号
+   	'*'：乘号
+   	'/'：除号
+   	'%'：取余，比如6%5=1, 30%4=2
+   	'&'：取倒数
+   	'^'：幂运算，当然也可以用做开方运算，比如4^0.5=2
+   	 
+*** 代数运算
+   	当我们只是想简单的对一系列数字进行代数运算时，使用逆波兰表达式不是
+   	很直观，因此， calc 提供了一个更加直接的指令：
+   	' （就是分号旁边的那个按键）
+   	比如，在 calc 中按“'”，然后输入算式：
+   	(3^2 + 4^2) ^ 0.5
+   	calc 会直接给出答案：5。
+** 数制转换
+   在 calc 中使用指令d2,d8,d0,d6可以在2进制，8进制，10进制，16进制之间
+   切换（d2 就是先按'd'，再按'2'，其他也以此类推）。calc 默认是使用10进
+   制进行计算。当进入2进制，8进制，16进制模式时，mode line上会给
+   出'Bin'，'Otc'，'Hex'字样的提示，默认的10进制模式是不会有任何提示的。
+   当进入任何一种进制模式的时候，输入的数字都是以10进制模式输入的。比如
+   在16进制模式下，输入：
+   10 <RET>
+   此时，calc中显示的数字是'A'，而不是16进制的10。
+   如果你想按照当前的进制输入数字，需要在键入数字前按‘#’，比如，在16进
+   制模式下输入：
+   #10 <RET>
+   此时，calc中显示的数字就是16进制的10,而不是A。
+** 三角运算
+*** 逆波兰表达式下的运算符
+   	S：正弦
+   	C：余弦
+   	T：正切
+   	比如，想计算30度角的正弦值，输入：
+   	30 <RET> S
+   	（可以省略 <RET>）
+   	calc 会给出答案：0.5
+*** 在代数模式下的运算符
+   	sin：正弦
+   	cos：余弦
+   	tan：正切
+   	比如，输入
+   	’sin(30)^2+cos(30)^2
+   	我这里的calc给出答案：
+   	0.999999999999
+*** 弧度制和角度制的转换
+   	m r：进入弧度制（mode line 上显示 Rad）
+   	m d：进入角度制（mode line 上显示 Deg）
+   	 
+** 向量运算与矩阵运算
+   输入向量与矩阵的方法很简单。
+   比如，输入一个三维向量：
+   [ 1 <RET> 2 <RET> 3 <RET> ]
+   此时，calc 中就会显示：
+   [1, 2, 3]
+   （实际上最后一个<RET>可以省略）
+   输入矩阵的方法与向量类似，比如，我们输入一个2x2的矩阵：
+   [ [ 1 <RET> 2 <RET> ] [ 3 <RET> 4 <RET> ] ]
+   此时， calc 中会显示：
+   [ [ 1, 2 ]
+     [ 3, 4 ] ]
+   calc中专门的矩阵运算法则我没有研究过，我自己平常会用到的，也就是矩阵
+   求逆。只需输入一个矩阵，然后按“&”就可以了（还记得“&”么？如果对数字使
+   用“&”运算，就是求倒数，对于矩阵，就是求逆）。
+
+** 复制，删除，撤销
+   输入一个数字（或矩阵），然后按<RET>，可以复制该数字（或矩阵）到整个
+   运算堆栈的最顶部。
+   Backspace 或 Del 可以删除运算堆栈最顶部的数字（或矩阵）。
+   用U或者C-_或者M-x calc-undo可以在计算器中执行撤销操作
+** 定义函数
+   在 calc 中你可以定义自己的函数。定义函数的指令是：
+   Z F
+   比如，先输入一个公式：
+   'a + 2b
+   然后键入：
+   Z F m
+   再回答几个 minibuffer 中提出的问题，就定义了一个以 'z m'为快捷键的函
+   数了。 
+   此时，再输入两个数字：
+   1 <RET> 2 <RET>
+   然后按：
+   z m
+   就会按照公式计算出1+2*2的结果，也就是5。
+
+   使用指令：
+   Z P
+   可以把函数保存到文件，这样在以后的 emacs 会话中都可以使用这个函数。
+   比如，输入：
+   Z P m
+   可以把刚才定义的函数'z m'保存到由变量 calc-settings-file 指定的文件
+   中。以后每次进入 calc 时，保存在这只文件中的函数也会被自动加载。
+   calc-settings-file 的默认值是"~/.calc.el"，我通常喜欢把它挪到
+   .emacs.d 里面：
+   (setq calc-settings-file "~/.emacs.d/.calc.el")
+
+* GDB
+  查看源码：
+  1. 查看源代码：l
+  2. 查看指定范围的代码(如第3行到第5行)：l 3,5
+  3. 查看指定函数的代码(如main函数)：l main
+  4. 修改源码显示行数(一次显示30行)：set listsize 30
+
+  断点：
+  1. 设置函数断点(在main函数处设置断点)： b main
+  2. 在某一行设置断点(在第13行设置断点)： b 13
+  3. 设置临时断点(中断后失效)： tbreak main
+  4. 查看所有断点： info breakpoints 或info b
+  5. 删除断点(删除第3个断点，可以是一个范围，如delete 1-3)： delete 3
+  6. 禁用断点（可以是一个范围，如disable 1-3）： disable 2
+  7. 启用断点(可以是一个范围，如enable 1-3)： enable 2
+  8. 忽略2号中断1次： ignore 2 1
+
+  执行：
+  1. 单步执行（跟踪到函数内部，Step In）： s
+  2. 继续执行直到当前函数结束(Setup Out)： finish
+  3. 继续执行（直到下一个断点）： continue c
+
+  堆栈：
+  变量和参数：
+  内存及寄存器：
+  反汇编：
+  进程：
+  线程：
+* 邮件设置

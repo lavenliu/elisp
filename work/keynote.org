@@ -1,0 +1,85 @@
+#+TITLE: Keynote
+#+AUTHOR: LavenLiu
+#+DATE: 2010-08-20
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* 认识界面
+  Standard 4：3 1024*768 （默认的幕布的分辨率）
+
+  Wide 1080p
+
+  在平坦的路面上曲折前行
+* 参考线与对齐
+  非常实用的参考线
+
+  Command-R出现标尺。
+
+  选中需要对齐的对象，右键选择对齐。
+
+  图片的尺寸大小设置及居中对齐。
+* 次序
+  透明度
+
+  在一页幻灯片中要展示很多内容，次序要设置很好。演示前一个内容时，œ可
+  以把其他的元素给隐去。
+
+  透明度为10%。
+
+  后一个元素的出现时，前一个元素自动隐去。“Build Order”，“With Build
+  1”，“Delay 0s”。
+
+  当所有的点都演示完毕，可以把所有的元素都同时呈现出来，可以把此时的幻灯片内容完全
+  复制一份放到紧接着的下一张并把效果设置为“dissolve”。
+* 纵深关系
+  显示次序的问题，也就是图层的问题。
+
+  “Send to Back” “Send to Front”
+* 一致性和完整性
+* 字体
+  尽量不使用软件的默认字体。
+* 背景
+  选择合适的背景。
+
+  可以根据要演示的内容进行合理的背景选择。比如要介绍书籍，可以选择书架这样的背景。
+* 更美观的字体
+  最好不要做倒影。
+* 取色
+  可以让字体的颜色与某个对象的颜色进行匹配。使用放大镜进行取色，可以让文字选取适当的颜色。
+* 图片
+  比较好的图片资源网站：
+  1. http://www.shutterstock.com
+  2. http://www.dreamstime.com
+  3. http://istockphoto.com
+** 图片的裁剪与修饰
+   选中图片，点击“Image”，“Edit Mask”。
+
+   尽量不使用图片的倒影。原貌呈现就可以了。
+
+   “Instant Alpha”可以去除图片背景。

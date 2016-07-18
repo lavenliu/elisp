@@ -1,0 +1,1330 @@
+* Zabbix
+  Zabbix的主动监控与被动监控都是从被监控端来看的。Nagios的主动监控与被
+  动监控同样也是如此。
+** 监控系统应该具备的功能
+   1. Data gathering
+	  #+BEGIN_EXAMPLE
+Gathered using various methods, including SNMP, native agents, IPMI and others
+	  #+END_EXAMPLE
+   2. Alerting
+	  #+BEGIN_EXAMPLE
+Gathered data can be compared data can be compared to thresholds and alerts sent
+out using different channels like e-mail or SMS.
+	  #+END_EXAMPLE
+   3. Data storage
+	  #+BEGIN_EXAMPLE
+Once we have gathered the data it doesn't make sense to throw it away, so we will
+often want to store it for later analysis.
+	  #+END_EXAMPLE
+   4. Visualisation
+	  #+BEGIN_EXAMPLE
+Humans are better at distinguishing visualised data, especially when there is
+huge amounts of data.
+	  #+END_EXAMPLE
+** What can be monitored on the web
+   1. Response time
+   2. Download speed
+   3. Response code
+   4. Avalibility of certain content
+   5. Complex web scenarios with login and logout capability
+   6. Support for HTTP and HTTPs
+** Zabbix组件概述
+*** Zabbix Server
+	负责接收agent发送的报告信息的核心组件，所有配置、统计数据及操作数据均由其组织进行。
+*** Database Storage
+	专用于存储所有配置信息，以及由zabbix收集的数据。
+*** Web Interface
+	Zabbix的GUI接口，通常与Server运行在同一台主机上。
+*** Proxy
+	可选组件，常用于分布监控环境中，代理Server收集部分被监控端的监控数据并统一发往Server端。
+*** Agent
+	部署在被监控主机上，负责收集本地数据并发往Server端或Proxy端。
+** Zabbix常用的术语
+*** 主机（Hosts）
+	要监控的网络设备，可由IP或DNS名称指定。
+*** 主机组（host group）
+	主机的逻辑容器，可以包含主机和模板，但同一个组内的主机和模板不能互
+	相链接；主机组通常在给用户或用户组指派监控权限时使用。
+*** 监控项（items）
+	一个特定监控指标的相关的数据，这些数据来自于被监控对象；对于items
+	是Zabbix进行数据收集的核心，没有items，将没有数据；相对某监控对象
+	来说，每个item都有“key”进行标识。一个key可以理解为一个item的唯一标
+	识，可以接受任意参数。
+*** 触发器（triggers）
+	一个表达式，用于评估某监控对象的某特定item内所接收到的数据是否在河
+	里范围内，即阈值；接收到的数据量大于阈值时，触发器状态将从“OK”转变
+	为“Problem”，当数据量再次回归到合理范围时，其状态将从“Problem”转换
+	回“OK”。
+**** 创建触发器
+	 1. “监控项”仅负责数据收集，而通常收集数据的目的还包括在某指标对应
+        的数据超出合理范围时给相关人员发送告警信息，“触发器”正是用于监
+        控项所收集的数据定义阈值。
+	 2. 每一个触发器仅能关联至一个监控项，但可以为一个监控项同时使用多个触发器。事实上，
+		为一个监控项定义多个具有不同阈值的触发器，可以实现不同级别的报警功能。
+	 3. 一个触发器由一个表达式构成，它定义了监控项所采取的数据的一个阈值。
+	 4. 一旦某次采集的数据超出了此触发器定义的阈值，触发器状态将会转换为“Problem”；而当
+		采集的数据再次回归至合理范围时，其状态将重新返回到“OK”。
+
+     触发器界面里的含义说明，
+	 #+BEGIN_EXAMPLE
+Name: 触发器名称，可以使用宏，如$1, $2, ..., $9等
+Expression：逻辑表达式，用于评估触发器状态；
+Multiple PROBLEM events generation：依赖于当前触发器的“Problem”状态生成其他事件
+Description：当前触发器的描述信息
+URL：在screen的“Status of Trigger”中显示的内容的链接
+Severity：当前触发器的严重级别
+Enabled：是否启用当前触发器
+	 #+END_EXAMPLE
+**** 触发器表达式
+	 1. 触发器表达式高度灵活，可以创建出非常复杂的测试条件
+	 2. 基本的触发器表达式格式
+		#+BEGIN_SRC sh
+{<server>:<key>.<function>(<parameter>)}<operator><constant>
+  + server: 主机名；
+  + key: 主机上关链的相应监控项的key；
+  + function：评估采集到的数据是否在合理范围内时所使用的函数，其评估过程可以根据采取的数据、
+              当前时间及其它因素进行；
+  + 目前，触发器所支持的函数有avg, count, change, date, dayofweek, delta, diff,
+    iregexp, last, max, min, nodata, now, sum等；
+  + parameter：函数参数；大多数数值函数可以接受秒数为其参数，而如果在数值参数之前使用“#”做为
+               前缀，则表示为最近几次的取值，如sum(300)表示300秒内所有取值之和，而
+               sum(#10)则表示最近10次取值之和；
+  + 此外，avg, count, last, min和max还支持使用第二个参数，用于完成时间限定；
+    例如，max(1h,7d)将返回一周之前的那个小时的最大值；
+  + operator：表达式所支持的运算符机器功能如下表所示
+		#+END_SRC
+
+        | PRIORITY | OPERATOR  | DEFINITION         |
+        |----------+-----------+--------------------|
+        |        1 | /         | Division           |
+        |        2 | *         | multiplication     |
+        |        3 | -         | Arithmetical minus |
+        |        4 | +         | Arithmetical plus  |
+        |        5 | <         | Less than          |
+        |        6 | >         | More than          |
+        |        7 | #         | Not equal          |
+        |        8 | \=        | Is equal           |
+        |        9 | &         | Logical AND        |
+        |       10 | Pipe line | Logical OR         |
+
+		一个例子，
+		#+BEGIN_SRC sh
+{www.lavenliu.com:system.cpu.load[all,avg1].last(0)}>3
++ 表示主机www.lavenliu.com上所有CPU的过去1分钟内的平均负责的最后一次取值大于3时将触发状态变换
++ 对last函数来说，last(0)相当于last(#1)
+		#+END_SRC
+*** 事件（events）
+	即发生的一个值得关注的事情，例如触发器的状态转变，新的agent或重新
+	上线的agent的自动注册等。
+
+	Zabbix的事件是基于时间戳进行标记的，它们是采取动作（action）如发送邮件通知的基础，其
+	主要来源于三种途径：
+	1. 触发器（triggers）事件：触发器状态每次发生改变，都会生成相应“事件”，且通常包含详细信息，
+	   如发生的时间及新的状态等；
+	2. 发现（discovery）事件：Zabbix会周期性地扫描“网络发现规则”中指定的IP范围，一旦发现
+	   主机或服务，就会生成一个或几个发现事件；
+	3. 发现事件有8类：Service Up、Service Down、Host Up、Host Down、Service Discovered、
+	   Service Lost、Host Discovered和Host Lost；
+	4. 主动agent自动发现事件（也称为“自动注册事件”）：当一个此前状态未知的主动agent发起检测
+	   请求时会自动生成此类事件；
+
+    因此，Zabbix的通知机制也称为基于事件的通知机制，也只有理解了事件本身，才能定制出
+	符合需求的通知系统。
+*** 动作（actions）
+	指对于特定事件事先定义的处理方法，通过包含操作（如发送通知）和条件（何时执行操作）。
+
+	在配置好监控项和触发器之后，一旦正常工作中的某触发器状态发生改变，一般意味着有异常
+	情况发生，此时通常需要采取一定的动作（action），如告警或者执行远程命令等。
+
+	并非所有的触发器状态发生改变的场景都需要对其进行干预，如转变为“OK”状态时，相应地，
+	如果触发器的状态转变为“Problem”，就需要告知所有关心其相关监控指标的人员了。
+
+	通知（notification）是Zabbix中最常用的“动作”之一。
+
+	action的几个要点：
+	1. condition
+	2. operation（remote command，send message）
+	3. triggers（定义某个item的阈值）
+*** 报警升级（escalation）
+	发送警报或执行远程命令的自定义方案，如每隔5分钟发送一次警报，共发送5次等。
+*** 媒介（media）
+	发送通知的手段或通道，如Email，Jabber或SMS等。
+
+	在Zabbix中，媒介是指发送通知信息的通道，其通常有以下几种类型：
+	1. E-mail：电子邮件，即通知邮件的方式传送通知消息；
+	2. SMS：手机短信，即通过连接至Zabbix服务器GSM Modem发送通知；
+	3. Jabber：jabber消息；Jabber是一个开放的、基于XML的协议，能够实现基于Internet
+	   或LAN的即时通讯服务；
+	4. 自定义的通知脚本：以上方式不能满足需求时，Zabbix可以调用位于其配置文件“AlertScriptPath”变量所定义的
+	   脚本查找目录中的脚本来完成通知功能。
+*** 通知（notification）
+	通过选定的媒介向用户发送的有关某事件的信息。
+*** 远程命令（remote command）
+	预定义的命令，可在被监控主机处于某特定条件下时自动执行。
+*** 模板（template）
+	用于快速定义被监控主机的预设条目集合，通常包含了items、triggers、
+	graphs、screens、application以及low-level discovery rule；模板可以
+	直接链接至单个主机；
+*** 应用（application）
+	一组items的集合。
+*** web场景（web scennario）
+	用于检测web站点可用性的一个或多个HTTP请求。
+*** 前端（frontend）
+	Zabbix的web接口
+*** 宏（macros）
+   	1. 宏是一种抽象（Abstration），它根据一系列预定义的规则替换一定的文本模式，
+	   而解释器或编译器在遇到宏时会自动进行这一模式替换
+   	2. 类似地，Zabbix基于宏保存预设文本模式，并且在调用时将其替换为其中的文本；
+   	3. Zabbix有许多内置的宏，如{HOST.NAME}, {HOST.IP}
+	   {TRIGGER.DESCRIPTION}, {TRIGGER.NAME}, {TRIGGER.EVENTS.ACK}等；
+
+    为了更强的灵活性，Zabbix还支持在全局、模板或主机级别使用用户自定义宏（user macro）。
+	
+	用户自定义宏要使用"{$MACRO}"这种特殊的语法格式。
+
+	宏可以应用在item keys和descriptions，triggers名称和表达式、主机接口IP/DNS及端口，
+	discovery机制的snmp协议的相关信息中等。
+
+	宏的名称只能使用大写字母、数字及下划线
+
+	宏的替换顺序：
+	1. 首先是主机级别的宏；
+	2. 其次是当前主机上一级模板中（直接链接至主机的模板）的宏，多个一级模板按其ID号排序；
+	3. 再接着是二级模板中的宏；而后依次类推；
+	4. 最后检查的是全局宏；
+	5. Zabbix如果无法查找到某主机定义使用的宏，则不会对其进行替换操作。要使用用户自定义宏，
+	   有以下两种途径：
+	   1. 全局宏：“Administration”，“General”，“Macros”；
+	   2. 主机或模板级别的宏：编辑相应主机或模板的属性即可；
+*** User Parameter
+	用户自定义参数。语法为，
+	#+BEGIN_SRC sh
+UserParameter=<key>,<command>
+# A user parameter also contains a key
+# The key will be necessary when configuring on item
+# Note: 需要重启Zabbix客户端；在Zabbix服务端获取数据；
+# command的结果会发送到Zabbix服务端，
+# command的返回结果不能超过512KB
+# /bin/sh是命令解释器
+# 一个例子
+# UserParameter=mysql.ping,mysqladmin -uroot ping | grep -c alive
+# The agent will return '1', if MySQL server is alive, '0' otherwise
+	#+END_SRC
+
+	通信核心是通过Key来完成的。
+
+	在客户端自定义脚本；然后在客户端的配置文件里定义key；服务端获得客户端自定义的key。
+	#+BEGIN_SRC sh
+UserParameter=memory.free,/usr/bin/free |awk '/^Mem:/ { print $4 }'
+	#+END_SRC
+
+	脚本可以传入参数，这样一个脚本可以做很多事情。如果被调用命令本身有$符号，则在命令使用两个$。
+	#+BEGIN_SRC sh
+# 如果key要接收参数，要使用[*]的方式
+UserParameter=key[*],command
+UserParameter=memory.usage[*],/bin/cat /proc/meminfo |awk '/$1:/ { print $$2 }'
+	#+END_SRC
+
+	一个Key可以对应N多item，可以向key传入不同的参数实现。
+
+	一个实际的例子，监控Nginx的状态，在安装Nginx的客户端添加如下的设置，
+	#+BEGIN_SRC sh
+UserParameter=Nginx.active[*],/usr/bin/curl -s "http://$1:$2/status" |awk '/Active/ { print $NF }'
+UserParameter=Nginx.reading[*],/usr/bin/curl -s "http://$1:$2/status" |grep 'Reading' | cut -d" " -f2
+UserParameter=Nginx.writing[*],/usr/bin/curl -s "http://$1:$2/status" |grep 'Writing' | cut -d" " -f4
+UserParameter=Nginx.waiting[*],/usr/bin/curl -s "http://$1:$2/status" |grep 'Waiting' | cut -d" " -f6
+UserParameter=Nginx.accepted[*],/usr/bin/curl -s "http://$1:$2/status" |awk '/^[ \t]+[0-9]+[ \t]+[0-9]+[ \t]+[0-9]+/ { print $$1 }'
+UserParameter=Nginx.handled[*],/usr/bin/curl -s "http://$1:$2/status" |awk '/^[ \t]+[0-9]+[ \t]+[0-9]+[ \t]+[0-9]+/ { print $$2 }'
+UserParameter=Nginx.requests[*],/usr/bin/curl -s "http://$1:$2/status" |awk '/^[ \t]+[0-9]+[ \t]+[0-9]+[ \t]+[0-9]+/ { print $$3 }'
+	#+END_SRC
+
+	在Zabbix GUI界面里添加Item，并添加Graph，查看图形。
+
+	脚本只能返回一个值。脚本的存放位置
+	#+BEGIN_SRC sh
+Server: /usr/lib/zabbix/externalscripts
+Client: /etc/zabbix/externalscripts
+	#+END_SRC
+
+	作业：自写UserParameter去监控varnish服务的连接数，命中率。写一个能接收参数的脚本。
+* 业务监控
+  业务指标 -> 流量分析 -> 舆论监控
+** 一些名词
+   + SEO - (Search Engin Optimization)
+   + PR  - ()
+   + PV  - (Page View)
+	 #+BEGIN_EXAMPLE
+	 PV(访问量):即页面浏览量或点击量，用户每次刷新即被计算一次。
+
+	 PV的具体的度量方法就是从浏览器发出一个网络服务器的请求(Request)，
+	 网络服务器接到这个请求后，会将该请求对应的一个网页(Page)发送给
+	 浏览器，从而产生一个PV。那么在这里只要是这个请求发送给了浏览器，
+	 无论这个页面是否完全打开(下载完成)，那么都是应当计为一个PV。
+	 #+END_EXAMPLE
+   + IP  - (独立IP)
+	 #+BEGIN_EXAMPLE
+	 某IP地址的计算机访问网站的次数。是网站分析的一个重要指标。00:00-24:00内
+	 相同IP地址被计算为一次。
+	 #+END_EXAMPLE
+   + UV  - (Unique Visitor)
+
+	 UV(独立访客)：即Unique Visitor，访问网站的一台电脑客户端为一个访
+	 客。00:00-24:00内相同的客户端只被计算一次。
+
+	 UV(独立访客)：独立的自然人访问，一个人访问记一个UV，通过不同技
+	 术方法来记录，实际会有误差。
+** 统计工具
+   + piwik
+   + 监控宝
+   + Smokeping
+* 应用监控
+** Apache状态监控
+   要有mod_status及mod_info模块。
+
+   打开Apache自身的监控，修改配置文件：
+   #+BEGIN_EXAMPLE
+<Location /server-status>
+	SetHandler server-status
+	Order deny,allow
+	Deny from all
+	Allow from 192.168.56.1
+</Location>
+ExtendedStatus On
+<Location /server-info>
+	SetHandler server-info
+	Order deny,allow
+	Deny from all
+	Allow from 192.168.56.1
+</Location>
+   #+END_EXAMPLE
+
+生产环境不建议打开ExtendedStatus，浪费机器性能。
+
+	#+BEGIN_EXAMPLE
+	# ab -c100 -n1000 http://192.168.56.101/
+	#+END_EXAMPLE
+** Memcached状态监控
+   监控的指标：
+   1. curr_connections
+   2. 缓存的命中率
+   3. Memcached的网卡流量
+
+   获取状态，
+   #+BEGIN_SRC sh
+telnet 192.168.20.135 11211
+stats
+   #+END_SRC
+** Nginx状态监控
+	打开Nginx自身的监控，修改配置文件：
+	#+BEGIN_EXAMPLE
+location /nginxstatus {
+	stub_status on;
+	access_log  on;
+# auth_basic "nginx status";
+#auth_basic_user_file /usr/local/nginx/conf/.htpasswd;
+}	
+	#+END_EXAMPLE
+
+	监控页面信息说明：
+	#+BEGIN_EXAMPLE
+	Active connections: 当前Nginx正处理的活动连接数
+	server accepts handled requests：总共处理了$1个连接，
+	                                 成功创建$2次握手(证明中间没有失败的)，
+	                                 总共处理了$3个请求(平均每次握手处理了2.94个数据请求)
+	Reading：Nginx当前读取到客户端的Header信息数
+	Writing：Nginx当前返回给客户端的Header信息数
+	Waiting：开启keep-alive的情况下，这个值等于active-(reading + writing)，
+	         意思就是Nginx已经处理完正在等候下一次请求指令的驻留连接
+	#+END_EXAMPLE
+	生产建议开启长连接，TIME_WAIT将会很多。
+** Redis状态监控
+   监控的指标：
+   1. 状态
+   2. 内存使用
+   3. 主从状态(如果有)
+   4. 连接数
+
+   获取状态，
+   #+BEGIN_SRC sh
+redis-cli info
+   #+END_SRC
+
+   Redis中文文档，redisdoc.com
+* 单机监控
+** CPU
+   1. CPU调度器
+   2. 上下文切换
+   3. 运行队列
+   4. CPU使用率
+** 性能基准线
+   1. Run Queues - 每个处理器应该运行队列不超过1-3个线程。如，一个双
+	  核处理器应该运行队列不要超过6个线程
+   2. CPU Utiliation - 如果一个CPU被充分使用，利用率分类之间均衡的比
+	  例应该是
+	  + 65% - 70% User Time
+	  + 30% - 35% System Time
+	  + 0%  -  5% Idle Time
+   3. Context Switches - 上下文切换的数目直接关系到CPU的使用率，如果
+	  CPU利用率保持在上述均衡状态时，大量的上下文切换是正常的
+* Zabbix的组件
+ 1. Zabbix Server
+
+	Zabbix的控制中心，收集数据，写入数据。
+	#+BEGIN_EXAMPLE
+	This is the centre of the Zabbix software. The Server can
+	remotely check networked services (such as web servers and mail
+	servers) using simple service checks, but it is also the central
+	component to which the Agents will report availability and
+	integrity information and statistics. The Server is the central
+	repository in which all configuration, statistical and
+	operational data are stored, and it is the entity in the Zabbix
+	software that will actively alert administrators when problems
+	arise in any of the monitored systems.
+
+	Zabbix can also perform agent-less monitoring and also monitor 
+	network devices using SNMP agents. 
+	#+END_EXAMPLE
+ 2. Zabbix Proxy
+	#+BEGIN_EXAMPLE
+	The Proxy is an optional part of Zabbix deployment. The Proxy
+	collects performance and availability data on behalf of Zabbix
+	Server. All collected data is buffered locally and transferred to
+	Zabbix Server the Proxy belongs to.
+	
+	Zabbix Proxy is an ideal solution for a centralized monitoring of
+	remote locations, branches, networks having no local
+	administrators.
+	
+	Zabbix Proxies can also be used to distribute load of a single
+	Zabbix Server. In this case, only Proxies collect data thus making
+	processing on the Server less CPU and disk I/O hungry.
+	#+END_EXAMPLE
+	
+	Zabbix Proxy的两种工作模式：
+	1. active模式
+	   #+BEGIN_EXAMPLE
+	   默认的工作模式，效率高
+	   #+END_EXAMPLE
+	2. passive模式
+	   #+BEGIN_EXAMPLE
+	   该模式适合在对安全性有要求的场景下使用
+	   #+END_EXAMPLE
+ 3. Zabbix Agent
+
+	部署在被监控服务器上的一个进程，负责和Zabbix Server交互，执行命令。
+ 
+	#+BEGIN_EXAMPLE
+	In order to actively monitor local resources and applications (such
+	as harddrives, memory, processor statistics etc.) on networked
+	systems, those systems must run the Zabbix Agent. The Agent will
+	gather operational information from the system on which it is
+	running, and report these data to the Zabbix for further
+	processing. In case of failures (such as a harddisk running full,
+	or a crashed service process), the Zabbix Server can actively alert
+	the administrators of the particular machine that reported the
+	failure.
+
+	The Zabbix Agents are extremely efficient because of use of native
+	system calls for gathering statistical information.
+	#+END_EXAMPLE
+ 4. Zabbix Web Interface
+	#+BEGIN_EXAMPLE
+	In order to allow easy access to the monitoring data and the
+	configuration of Zabbix from anywhere and from any platform, the
+	Web-based Interface is provided. The Interface is a part of the
+	Zabbix Server, and is usually (but not necessarily) run on the
+	same physical machine as the one running the Zabbix Server.
+
+	Zabbix front-end must run on the same physical machine 
+	if SQLite is used. 
+	#+END_EXAMPLE
+ 5. Host
+	#+BEGIN_EXAMPLE
+	广义上的服务器，在少部分时间会指代包括交换机在内的，被Zabbix监控
+	的实体。
+	#+END_EXAMPLE
+ 6. Item
+	#+BEGIN_EXAMPLE
+	对于某一个指标的监控，对应的是Items。比如某台服务器的CPU负载就是
+	一个Item。
+	#+END_EXAMPLE
+ 7. Trigger
+	#+BEGIN_EXAMPLE
+	一些逻辑规则的组合，它有三个值：正常、异常、未知	 
+	#+END_EXAMPLE
+ 8. Action
+	#+BEGIN_EXAMPLE
+	当Trigger符合某个值的时候，Zabbix会进行的操作，比如最常见的发邮件。
+	#+END_EXAMPLE
+	
+ #+BEGIN_EXAMPLE
+																						    |	  +----------------+
+																						    |	  |				   |
+																						    |	  |	Alert		   |
+																						    |	  +----------------+
+ +-----------+		 +--------------+		   +--------------+			+---------------+	|
+ |			  |		 |				|		   |			  |			|				|	|
+ |	 Host	  |----->|   Item	    |--------->|  Trigger     |-------->+	 Action	    |	|
+ |			  |		 |				|		   |			  |			|				|	|
+ +-----------+		 +--------------+		   +------+-------+			+---------------+	|
+													 |										|	 +----------------+
+													 |										|	 |				  |
+													 v										|	 |	Command		  |
+											  +------+-------+								|	 |				  |
+											  |			     |								|	 +----------------+
+											  |	Event	     |
+											  |			     |
+											  +--------------+
+ #+END_EXAMPLE
+
+* 安装
+** 测试环境
+   | 主机名                |             IP | 备注          |
+   |-----------------------+----------------+---------------|
+   | master01.lavenliu.com | 192.168.20.134 | Zabbix Server |
+   | minion01.lavenliu.com | 192.168.20.135 | Zabbix Agent  |
+   | minion02.lavenliu.com | 192.168.20.136 | Zabbix Agent  |
+** 源码方式安装
+   服务端源码安装：
+  #+BEGIN_SRC sh
+./configure --enable-server \
+--enable-agent \
+--with-mysql \
+--with-net-snmp \
+--with-libcurl \
+--with-libxml2 \
+--with-unixodbc
+  #+END_SRC
+
+   要监控WEB页面，要开启Zabbix服务端的libcul。
+
+   如果仅按照Server，并支持将数据放入MySQL数据库中，可使用类似如下编译命令，
+   #+BEGIN_SRC sh
+./configure --enable-server \
+--with-mysql \
+--with-net-snmp \
+--with-libcurl \
+--with-libxml2 \
+--with-unixodbc
+   #+END_SRC
+
+   如果仅安装proxy，并支持将数据放入MySQL数据库中，可使用类似如下编译命令，
+   #+BEGIN_SRC sh
+./configure --enable-proxy \
+--with-mysql \
+--with-net-snmp \
+--with-libcurl \
+--with-libxml2 \
+--with-ssh2 \
+--with-unixodbc
+   #+END_SRC
+
+   编译完成之后，
+   #+BEGIN_SRC sh
+make
+make install
+   #+END_SRC
+
+   客户端源码安装：
+  #+BEGIN_SRC sh
+  ./configure --enable-agent
+  #+END_SRC
+
+   若configure无误，则出现以下界面：
+  #+BEGIN_EXAMPLE
+  ***********************************************************
+  *            Now run 'make install'                       *
+  *                                                         *
+  *            Thank you for using Zabbix!                  *
+  *              <http://www.zabbix.com>                    *
+  ***********************************************************
+  #+END_EXAMPLE
+
+  1. 准备数据库
+	 #+BEGIN_SRC bash
+	 shell> mysql -u<username> -p<passwor>
+	 mysql> create database zabbix character set utf8;
+	 mysql> quit;
+	 shell> rpm -ql zabbix-server-mysql
+	 /usr/sbin/zabbix_server_mysql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/create
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/create/data
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/create/data/data.sql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/create/data/images_mysql.sql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/create/schema
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/create/schema/mysql.sql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.6
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.6/mysql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.6/mysql/patch.sql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.8
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.8/mysql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.8/mysql/patch.sql
+	 /usr/share/doc/zabbix-server-mysql-1.8.22/upgrades/dbpatches/1.8/mysql/upgrade
+
+	 shell> cd /usr/share/doc/zabbix-server-mysql-1.8.22/create/schema
+	 shell> cat mysql.sql | mysql -u<username> -p<password> zabbix
+	 shell> cd ../data 
+	 shell> cat data.sql | mysql -u<username> -p<password> zabbix
+	 shell> cat images_mysql.sql | mysql -u<username> -p<password> zabbix
+	 #+END_SRC
+  2. Configure /etc/services
+	 On CentOS 6u5 box, had configured.
+	 #+BEGIN_EXAMPLE
+	 zabbix-agent    10050/tcp  Zabbix Agent
+	 zabbix-agent    10050/udp  Zabbix Agent
+	 zabbix-trapper  10051/tcp  Zabbix Trapper
+	 zabbix-trapper  10051/udp  Zabbix Trapper 
+	 #+END_EXAMPLE
+  3. Configure /etc/zabbix/zabbix_agentd.conf 
+	 #+BEGIN_EXAMPLE
+	 You need to configure this file for every host with
+	 zabbix_agentd installed. The file should contain the IP address
+	 of the Zabbix server. Connections from other hosts will be
+	 denied. You may take misc/conf/zabbix_agentd.conf as example.
+	 #+end_example
+  4. Configure /etc/zabbix/zabbix_server.conf
+	 #+BEGIN_EXAMPLE
+	  For small installations (up to ten monitored hosts), default
+	  parameters are sufficient. However, you should change default
+	  parameters to maximize performance of Zabbix. See section
+	  [Performance tuning] for more details. You may take
+	  misc/conf/zabbix_server.conf as example.
+	 #+end_example
+  5. Install Php 
+	 #+BEGIN_EXAMPLE
+	 yum -y install gd php-gd gd-devel \
+	 php-xml php-common php-mbstring php-ldap \
+	 php-pear php-xmlrpc php-imap
+	 #+END_EXAMPLE
+  6. Problem
+	 + 时区问题
+	   #+BEGIN_EXAMPLE
+	   PHP的时区问题，修改/etc/php.ini 
+	   Time_Zone = "Asia/Shanghai"
+	   
+	   Zabbix web安装时，遇到php的配置不正确，可以根据其建议值进行设置。
+	   #+END_EXAMPLE
+
+	 + mysqlclient问题
+	   #+BEGIN_EXAMPLE
+	   configure: error: Not found mysqlclient library
+	   # yum install -y mysql-devel
+	   #+END_EXAMPLE
+
+	 + libxml2问题
+	   #+BEGIN_EXAMPLE
+	   LIBXML2 library not found
+	   # yum install libxml2-devel
+	   #+END_EXAMPLE
+
+	 + net-snmp问题
+	   #+BEGIN_EXAMPLE
+	   Invalid Net-SNMP directory - unable to find net-snmp-config
+	   # yum install -y net-snmp-devel
+	   #+END_EXAMPLE
+
+	 + libcur问题
+	   #+BEGIN_EXAMPLE
+	   Curl library not found
+	   # yum install -y libcurl-devel
+	   #+END_EXAMPLE
+
+	 + unixODBC问题
+	   #+BEGIN_EXAMPLE
+	   # yum install -y unixODBC-devel
+	   #+END_EXAMPLE
+** YUM方式安装
+*** 服务端安装
+	 #+BEGIN_SRC sh
+yum install -y zabbix22-server-mysql zabbix22-web-mysql
+	 #+END_SRC
+	 
+	 初始化MySQL数据库，
+	 #+BEGIN_SRC sql
+mysql> create database zabbix character set utf8 collate utf8_bin;
+mysql> create database zabbix character set utf8 collate utf8_general_ci;
+mysql> grant all privileges on zabbix.* to 'zabbix'@'localhost' identified by 'zabbix';
+mysql> exit
+	 #+END_SRC
+
+	 导入Zabbix的初始化数据，
+	 #+BEGIN_SRC sh
+rpm -ql zabbix22-dbfiles-mysql
+/usr/share/doc/zabbix22-dbfiles-mysql-2.2.11
+/usr/share/doc/zabbix22-dbfiles-mysql-2.2.11/COPYING
+/usr/share/zabbix-mysql
+/usr/share/zabbix-mysql/data.sql
+/usr/share/zabbix-mysql/images.sql
+/usr/share/zabbix-mysql/schema.sql
+/usr/share/zabbix-mysql/upgrades
+/usr/share/zabbix-mysql/upgrades/1.6
+/usr/share/zabbix-mysql/upgrades/1.6/patch.sql
+/usr/share/zabbix-mysql/upgrades/1.8
+/usr/share/zabbix-mysql/upgrades/1.8/patch.sql
+/usr/share/zabbix-mysql/upgrades/1.8/upgrade
+/usr/share/zabbix-mysql/upgrades/2.0
+/usr/share/zabbix-mysql/upgrades/2.0/patch.sql
+/usr/share/zabbix-mysql/upgrades/2.0/rc4_rc5.sql
+/usr/share/zabbix-mysql/upgrades/2.0/upgrade
+
+cd /usr/share/zabbix-mysql
+mysql -uroot zabbix < schema.sql
+mysql -uroot zabbix < images.sql
+mysql -uroot zabbix < data.sql
+	 #+END_SRC
+
+	 编辑Zabbix Server配置文件，
+	 #+BEGIN_SRC sh
+vi /etc/zabbix/zabbix_server.conf
+DBHost=localhost
+DBName=zabbix
+DBUser=zabbix
+DBPassword=zabbix
+	 #+END_SRC
+
+	 修改完毕，启动Zabbix服务，
+	 #+BEGIN_SRC sh
+/etc/init.d/zabbix-server start
+	 #+END_SRC
+
+	 修改PHP相关的配置,配置文件为php.ini，
+	 #+BEGIN_SRC sh
+max_execution_time 300
+memory_limit 128M
+post_max_size 16M
+upload_max_filesize 2M
+max_input_time 300
+date.timezone = Asia/Shanghai
+	 #+END_SRC
+*** 客户端安装
+	客户端的安装：
+	#+BEGIN_EXAMPLE
+	# yum install -y zabbix22-agent
+	#+END_EXAMPLE
+* 使用Zabbix
+** 添加Hosts
+** 添加Items
+** 设置Triggers
+** 模板
+** zabbix_get
+   在Zabbix的服务端使用zabbix_get命令。
+   #+BEGIN_SRC sh
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,user]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,system]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,nice]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,idle]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,iowait]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,hardirq]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,softirq]
+   zabbix_get -s 192.168.56.102 -k system.cpu.util[,steal]
+   #+END_SRC
+** Agent方式数据采集
+   1. Network
+	  + Packets/bytes transfered
+	  + Errors/dropped packets
+	  + Collisions
+   2. CPU
+	  + Load average
+	  + CPU idle/usage
+   3. Memory
+	  + Free/used memory
+	  + Swap/pagefile utilization
+   4. Disk
+	  + Space free/used
+	  + Read and write I/O
+   5. Service
+	  + Process status
+	  + Process memory usage
+	  + Service status(ssh, ntp, ldap, http, etc)
+	  + Windows service status
+	  + DNS resolution
+	  + TCP connectivity
+	  + TCP response time
+   6. File
+	  + File size/time
+	  + File exists
+	  + Checksum
+	  + MD5 hash
+	  + RegExp search
+   7. Log
+	  + Text log
+	  + Windows eventlog
+   8. Other
+	  + System uptime
+	  + System time
+	  + Users connected
+	  + Performance counter (Windows)
+** Zabbix发现
+   发现的前提，
+   1. agent
+   2. agentless
+   3. SNMP
+
+   网络发现是Zabbix最具特色的功能之一，它能够根据用户事先定义的规则自
+   动添加监控的主机或服务等。这样的好处为：
+   1. speed up zabbix deployment
+   2. simplify administration
+   3. use zabbix in rapidly changing environments without excessive
+      administration
+
+   Zabbix的网络发现功能可基于如下信息进行：
+   1. IP ranges
+   2. Availability of external services (ftp, ssh, web, pop3, imap,
+      tcp, etc)
+   3. Information received from zabbix agent
+   4. Information received from SNMP agent
+
+   发现之后，接下来怎么做呢？
+   添加主机：定义接口 关联模板 
+
+   发现的两个阶段：发现，action
+
+   发现阶段的action是指主机上线事件。
+
+   网络发现中可以执行的Actions，
+   1. 网络发现中的事件可以触发action，从而自动执行指定的操作，如
+	  1. sending notifications
+	  2. adding/removing hosts
+	  3. enabling/disabling hosts
+	  4. adding hosts to group
+	  5. removing hosts from a group
+	  6. linking hosts to/unlinking from a template
+	  7. executing remote scripts
+   2. 这些事件的配置还可以基于设备的类型、IP、状态、上线/离线等进行配置
+
+   网络发现：接口添加
+   1. 网络发现中添加主机时会自动创建interface
+	  1. the services detected，例如，如果基于SNMP检测成功，则会创建
+         SNMP接口；
+	  2. 如果某服务同时响应给了agent和SNMP，则两种接口都会创建；
+	  3. 如果同一种发现机制（如agent）返回了非唯一数据，则第一个接口被
+         识别为默认，其他的为额外接口；
+	  4. 即便是某主机开始时只有agent接口，后来又通过了SNMP发现了它，同
+         样会为其添加额外的SNMP接口；
+	  5. 不同的主机如果返回了相同的数据，则第一个主机将被添加，余下的
+         主机会被当做第一个主机的额外接口；
+
+   "Configuration" "Discovery" "Create discovery rule"
+
+   步骤：
+   1. 要有模板（如test template），在新建的模板中新建item（如memory相关的），然后添加triggers，添加graphs。
+   2. "Configuration" "Discovery" "Create discovery"
+	  + Name: linux in localnet
+	  + No proxy
+	  + IP range: 192.168.20.100-200
+	  + Delay: 30
+	  + Checks: New 
+		- Check type: Zabbix agent
+		- Port range: 10050
+		- Key: memory.usage[MemFree]
+
+   上面的步骤只是添加发现，发现之后要把机器添加进来，接着定义actions， “Configuration” “Actions” “Event source” “Discovery”， “Create action”
+   1. Name：auto discovery localnet Linux
+   2. Conditions
+	  1. New condition：
+		 1. Host IP：192.168.20.100-200 Add
+		 2. Discovery status： Discovered
+		 3. Discovery rule：填写上面创建的discovery rule
+   3. Operations：一旦发现怎么做
+	  1. Action operations：Add host
+	  2. Operation details：
+		 1. Operation type： Link to template
+		 2. Link with templates
+** 自动注册
+   1. Zabbix支持active agent的自动注册（auto-registration）功能，通常用于此前故障的agent重新上线时的场景；
+   2. 也可基于active agent的自动注册机制添加被动检测，这会通过active agent注册时提供的“ListenIP”和“ListenPort”进行；
+   3. Server端在收到自动注册请求后以接收到的IP和port为接口属性；
+
+   Configuration actions event source (auto registeration) create action
+   只定义Operations，无需定义conditions（add host，link to template），此外，还需要配置agent的工作属性，并重启agent，
+   #+BEGIN_SRC sh
+zabbix_agentd.conf
+ServerActive=192.168.20.134
+# 指向Zabbix server
+   #+END_SRC
+** Web监控
+   Zabbix还可以进行web站点的可用性检测
+
+   1. 创建web监控需要先定义一个web方案（scenarios）
+	  1. web方案包括一个或多个HTTP请求或步骤（step）
+	  2. 步骤（step）的执行过程按照预先定义的顺序进行执行
+   2. 通过web监控可以获取如下信息
+	  1. 整个web方案中所有的step的平均下载速度
+	  2. 失败的步骤号
+	  3. 失败的报错信息
+   3. 在web方案的具体步骤中，可以按需使用如下信息
+	  1. 该step的下载速度
+	  2. response时间
+	  3. response状态码
+   4. Zabbix可以检测获取到的HTML页面中是否包含预设的字符串，也可以实现登录和页面点击
+
+   创建Web方案，
+   1. 创建web方案的前提需要创建一个适用的application
+   2. 可以在hosts或templates上创建应用
+   3. 如果在templates上创建应用，则需要将此templates链接至要监控其web的主机上，方能使用此application
+
+   configuration Hosts，创建application
+   在Configuration Web，create 
+   1. Application： web scenarios
+   2. Name：web monitoring
+   3. Authentication：None
+   4. Update interval（in sec）：10
+   5. Agent：IE9
+   6. Active
+
+   监控哪个页面：
+   Steps：
+   1. Name：Home
+   2. URL：http://192.168.20.135/index.html
+   3. Timeout：5
+   4. Required status：200
+   5. Add
+
+   接着添加，test.html，
+
+   方案创建完成后，Zabbix将会自动在链接的application中添加如下监控项，
+   1. download speed for scenario <Scenario>
+   2. failed step of scenario <Scenario>
+   3. last error message of scenario <Scenario>
+** 问题列表
+* SNMP基本使用
+  SNMP(Simple Network Management Protocol)简单网络管理协议。
+  
+  监控一般分为监控端和被监控端。
+
+  通常监控端（NMS）不但负责监控，还负责存储监控的数据。
+
+  监控端根据什么判断被监控端有异常。
+
+  监控端通常的工作：
+  1. 定期到被监控端采集数据
+  2. 获取被监控端数据的方法
+
+  SNMP大致有三个版本，最常用的是v2c版本，v1与v2版本不是很安全（传输是
+  明文），而v3却用得很少。
+
+  Nagios只关心正常与否的状态；依赖关系，如果一个交换机出故障，则只报交
+  换机的故障，而不会报与交换机相关联的设备的故障。
+** snmpwalk
+   #+BEGIN_EXAMPLE
+   snmpwalk -v 2c -c public 192.168.56.101 system
+   SNMPv2-MIB::sysDescr.0 = STRING: Linux python 2.6.32-573.12.1.el6.x86_64 #1 SMP Tue Dec 15 21:19:08 UTC 2015 x86_64
+   SNMPv2-MIB::sysObjectID.0 = OID: NET-SNMP-MIB::netSnmpAgentOIDs.10
+   DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (7416) 0:01:14.16
+   SNMPv2-MIB::sysContact.0 = STRING: Root <root@localhost> (configure /etc/snmp/snmp.local.conf)
+   SNMPv2-MIB::sysName.0 = STRING: python
+   SNMPv2-MIB::sysLocation.0 = STRING: Unknown (edit /etc/snmp/snmpd.conf)
+   SNMPv2-MIB::sysORLastChange.0 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORID.1 = OID: SNMP-MPD-MIB::snmpMPDMIBObjects.3.1.1
+   SNMPv2-MIB::sysORID.2 = OID: SNMP-USER-BASED-SM-MIB::usmMIBCompliance
+   SNMPv2-MIB::sysORID.3 = OID: SNMP-FRAMEWORK-MIB::snmpFrameworkMIBCompliance
+   SNMPv2-MIB::sysORID.4 = OID: SNMPv2-MIB::snmpMIB
+   SNMPv2-MIB::sysORID.5 = OID: TCP-MIB::tcpMIB
+   SNMPv2-MIB::sysORID.6 = OID: IP-MIB::ip
+   SNMPv2-MIB::sysORID.7 = OID: UDP-MIB::udpMIB
+   SNMPv2-MIB::sysORID.8 = OID: SNMP-VIEW-BASED-ACM-MIB::vacmBasicGroup
+   SNMPv2-MIB::sysORDescr.1 = STRING: The MIB for Message Processing and Dispatching.
+   SNMPv2-MIB::sysORDescr.2 = STRING: The MIB for Message Processing and Dispatching.
+   SNMPv2-MIB::sysORDescr.3 = STRING: The SNMP Management Architecture MIB.
+   SNMPv2-MIB::sysORDescr.4 = STRING: The MIB module for SNMPv2 entities
+   SNMPv2-MIB::sysORDescr.5 = STRING: The MIB module for managing TCP implementations
+   SNMPv2-MIB::sysORDescr.6 = STRING: The MIB module for managing IP and ICMP implementations
+   SNMPv2-MIB::sysORDescr.7 = STRING: The MIB module for managing UDP implementations
+   SNMPv2-MIB::sysORDescr.8 = STRING: View-based Access Control Model for SNMP.
+   SNMPv2-MIB::sysORUpTime.1 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.2 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.3 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.4 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.5 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.6 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.7 = Timeticks: (6) 0:00:00.06
+   SNMPv2-MIB::sysORUpTime.8 = Timeticks: (6) 0:00:00.06
+   #+END_EXAMPLE
+* 报警设置
+  自带的三个是不能使用的。要自定义。
+
+  #+BEGIN_SRC sh
+[root@minion02 ~]# mysqladmin ping |grep -c alive
+1
+  #+END_SRC
+
+  在Zabbix的客户端的配置文件里设置，
+  #+BEGIN_SRC sh
+# 找到UserParameter
+UserParameter=mysql_alive,mysqladmin ping | grep -c alive
+  #+END_SRC
+
+  修改完毕，重启zabbix-agentd，
+  #+BEGIN_SRC sh
+/etc/init.d/zabbix-agentd restart
+  #+END_SRC
+
+  接下来在Zabbix服务端进行简单的测试，
+  #+BEGIN_SRC sh
+zabbix_get -s 192.168.20.136 -k mysql_alive
+1
+  #+END_SRC
+
+  接下来到“Configuration”，“Hosts”，点击某台被监控端的Items，然后选择
+  右上角的“Create item”。
+
+  创建完毕，接下来创建触发器，选择“Triggers”，点击右上角的“Create trigger”。
+
+  Item及Trigger自定义完毕，接下来设置报警媒介。
+
+  设置Actions，
+  
+  发送邮件时，可以精简信息，不然信息费会上升的（短信有字符数限制）。
+
+  From 1
+  To   1
+  ------
+  报警只发一次，
+
+  
+  From 1
+  To   n
+  -------
+  如果报警不解决，会报警n次；
+
+  From 2
+  To   n
+  -------
+  第一次报警不发，第二次开始发。
+
+
+  自定义报警类型是在Server端；自定义Key是在客户端；
+
+  修改server端的配置文件，
+  #+BEGIN_SRC sh
+# AlertScriptPath
+AlertScriptsPath=/var/lib/zabbixsrv/alertscripts
+  #+END_SRC
+  
+  开始编写脚本，
+  #+BEGIN_SRC sh
+cd /var/lib/zabbixsrv/alertscripts/
+# 脚本必须支持三个参数
+# $1 - 邮箱地址或手机号
+# $2 - 消息标题
+# $3 - 消息内容
+#
+# 建议生产环境，短信平台。
+# 
+vim send_mail.sh
+#!/bin/bash
+
+MAIL_TITLE=$2
+MAIL_CONTENT=$3
+
+echo "$MAIL_CONTENT" | /bin/mail -s "$MAIL_TITLE" $1
+echo "$1 $2 $3" >> /tmp/baojing
+  #+END_SRC
+
+  接下来在“Administration”，“Media types”中，找到右上角的“Create media type”，
+  名称随便填写，
+  类型：脚本
+  脚本名称：send_mail.sh（填写脚本的名称即可）
+
+  接下来在“Configuration”，“Actions”
+
+  在“Send only to”下拉菜单中选择“send_mail”，然后点击“Update”，“Save”。
+
+  接下来到minion02机器上把MySQL给停止，验证是否发送报警邮件，
+  #+BEGIN_SRC sh
+mysqladmin stop
+  #+END_SRC
+
+  如果不发邮件，请查看Zabbix的日志。
+
+* 自定义模板
+  #+BEGIN_SRC sh
+#!/bin/bash
+################################################################################
+# $Name:         zabbix_linux_plugin.sh
+# $Version:      v1.0
+# $Function:     zabbix plugin
+# $Author:       Laven Liu
+# $organization: www.lavenliu.cn
+# $Create Date:  2016-07-08
+# $Description:  Monitor Linux Service Status
+
+tcp_status_fun() {
+	TCP_STAT=$1
+	ss -ant | awk 'NR>1 {++s[$1]} END {for (k in s) print k,s[k]}' > /tmp/netstat.tmp
+
+	TCP_STAT_VALUE=$(grep "$TCP_STAT" /tmp/netstat.tmp | cut -d' ' -f2)
+	if [ -z $TCP_STAT_VALUE ]; then
+		TCP_STAT_VALUE=0
+	fi
+	echo $TCP_STAT_VALUE
+}
+
+nginx_status_fun() {
+	NGINX_PORT=$1
+	NGINX_COMMAND=$2
+
+	nginx_active() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2> /dev/null | grep 'Active' | awk '{ print $NF }'
+	}
+
+	nginx_reading() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2> /dev/null | grep 'Reading' | awk '{ print $2 }'
+	}
+
+	nginx_writing() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2>/dev/null |grep 'Writing' | awk '{ print $4 }'
+	}
+
+	nginx_waiting() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2>/dev/null |grep 'Waiting' | awk '{ print $6 }'
+	}
+
+	nginx_accepts() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2>/dev/null | awk NR==3 |awk '{ print $1 }'
+	}
+
+	nginx_handled() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2>/dev/null | awk NR==3 |awk '{ print $2 }'
+	}
+
+	nginx_requests() {
+		/usr/bin/curl "http://127.0.0.1:"$NGINX_PORT"/nginx_status/" 2>/dev/null | awk NR==3 |awk '{ print $3 }'
+	}
+
+	case $NGINX_COMMAND in
+		active)
+			nginx_active;
+			;;
+		reading)
+			nginx_reading;
+			;;
+		writing)
+			nginx_writing;
+			;;
+		accepts)
+			nginx_accepts;
+			;;
+		handled)
+			nginx_handled;
+			;;
+		requests)
+			nginx_requests;
+	esac
+}
+
+memcached_status_fun() {
+	M_PORT=$1
+	M_COMMAND=$2
+
+	echo -e "stats\nquit" | nc 127.0.0.1 "$M_PORT" | grep "STAT $M_COMMAND" |awk '{ print $3 }'
+}
+
+redis_status_fun() {
+	R_PORT=$1
+	R_COMMAND=$2
+	(echo -en "INFO \r\n"; sleep 1;) | nc 127.0.0.1 "$R_PORT" > /tmp/redis_"$R_PORT".tmp
+	REDIS_STAT_VALUE=$(grep ""$R_COMMAND":" /tmp/redis_"$R_PORT".tmp | cut -d':' -f2)
+	echo $REDIS_STAT_VALUE
+	}
+
+main() {
+	case $1 in
+		tcp_status)
+			tcp_status_fun $2;
+			;;
+		nginx_status)
+			nginx_status_fun $2 $3;
+			;;
+		memcached_status)
+			memcached_status_fun $2 $3;
+			;;
+		redis_status)
+			redis_status_fun $2 $3;
+			;;
+		*)
+			echo $"Usage: $0 {tcp_status key|memcached_status key|nginx_status key|redis_status key}"
+	esac
+}
+
+main $1 $2 $3
+  #+END_SRC
+
+
+  创建模板，
+  “Configuration”“Templates”，“Create template”
+
+  创建模板，添加应用，添加项
+
+  #+BEGIN_SRC sh
+# 把脚本放到客户端，
+cat zabbix-linux-plugin.conf
+UserParameter=linux_status[*],/etc/zabbix/zabbix_linux_plugin.sh "$1" "$2" "$3"
+# 要确保脚本可以执行，且路径正确。
+  #+END_SRC
+
+  在server端测试，
+  #+BEGIN_SRC sh
+zabbix_get -s 192.168.20.135 -k linux_status[tcp_status,TIME-WAIT]
+  #+END_SRC
+
+
+Care and diligence bring luck.[谨慎和勤奋，带来好运气。]
+* Zabbix API的简单使用
+  Zabbix API提供两项主要功能：
+  1. 远程管理Zabbix配置；
+  2. 与第三方软件进行集成；
+  3. 远程检索配置和历史数据；
+
+  API采用JSON-RPC实现，这意味着调用任何函数，都需要发送POST请求，输入
+  输出数据都是以JSON格式。大致工作流如下：
+  1. 准备JSON对象，它描述了我们想要做什么（创建主机、获取图像、更新监控项等）；
+  2. 采用POST方法向http://<zabbix_server>/zabbix/api_jsonrpc.php发送JSON对象；
+  3. 获取JSON格式响应；
+  4. HTTP Header Content-Type必须为“application/jsonrequest”、“application/json-rpc”、“application/json”其中之一。
+** API使用
+*** 身份验证
+	任何Zabbix API客户端在真正工作之前都需要验证它自身。在这里是采用
+	User.login方法。这个方法接受一个用户名和密码作为参数并返回验证ID，
+	一个安全哈希串用于持续的API调用（在使用User.logout之前该验证ID均有
+	效）。具体Python代码auth.py如下：
+	#+BEGIN_SRC python
+#!/usr/bin/env python2.7
+#coding=utf-8
+
+import json
+import urllib2
+
+# based url and required header
+url = "http://master01.lavenliu.com/zabbix/api_jsonrpc.php"
+header = {"Content-Type": "application/json"}
+# auth user and password
+data = json.dumps(
+    {
+	"jsonrpc": "2.0",
+	"method": "user.login",
+	"params": {
+	    "user": "admin",
+	    "password": "zabbix"
+	},
+	"id": 0
+    })
+
+# create request object
+request = urllib2.Request(url,data)
+for key in header:
+    request.add_header(key,header[key])
+    # auth and get authid
+    try:
+	result = urllib2.urlopen(request)
+    except URLError as e:
+	print "Auth Failed, Please Check Your Name And Password:",e.code
+    else:
+	response = json.loads(result.read())
+	result.close()
+	print "Auth Successful. The Auth ID Is:",response['result']
+	#+END_SRC
+
+	运行该脚本，
+	#+BEGIN_SRC sh
+python zabbix_api01.py
+Auth Successful. The Auth ID Is: a2229192626d9d69d28db1f4924e4da6
+	#+END_SRC
+
+	可以看到，zabbix_api01.py成功连接并认证。现在有了验证ID，它能够在
+	新的API调用中被重用。
+
+	可以在命令行使用curl，
+	#+BEGIN_SRC sh
+curl -i -X POST \
+-H 'Content-Type:application/json' \
+-d '{"jsonrpc": "2.0", 
+"method": "user.authenticate",
+"params": {
+    "user": "admin", 
+    "password": "zabbix"}, 
+"auth": null, 
+"id":0}' http://192.168.20.134/zabbix/api_jsonrpc.php
+#
+HTTP/1.1 200 OK
+Date: Mon, 11 Jul 2016 06:42:23 GMT
+Server: Apache/2.2.15 (CentOS)
+X-Powered-By: PHP/5.3.3
+Content-Length: 68
+Connection: close
+Content-Type: application/json
+
+{"jsonrpc":"2.0","result":"86fdaf3aa20b93bfd259e0e3fb294e79","id":0}
+	#+END_SRC
+*** 一般操作
+	这里举例说明如何获取监控主机列表host list。这段脚本需要采用
+	zabbix_api01.py中获取的验证ID并执行host.get方法来获取主机列表。来
+	看具体代码get_host.py:
+	#+BEGIN_SRC python
+cat get_host.py
+#!/usr/bin/env python2.7
+#coding=utf-8
+
+import json
+import urllib2
+
+# based url and required header
+url = "http://master01.lavenliu.com/zabbix/api_jsonrpc.php"
+header = {"Content-Type": "application/json"}
+# request json
+data = json.dumps(
+{
+	"jsonrpc": "2.0",
+	"method": "host.get",
+	"params": {
+	    "output": ["hostid","name"],
+	    "filter": {"host":""}
+	},
+	"auth": "a2229192626d9d69d28db1f4924e4da6", # the auth id is what auth script returns, remeber it is string
+	"id": 1,
+})
+# create request object
+request = urllib2.Request(url,data)
+for key in header:
+    request.add_header(key,header[key])
+# get host list
+try:
+	result = urllib2.urlopen(request)
+except URLError as e:
+	if hasattr(e, 'reason'):
+	    print 'We failed to reach a server.'
+	    print 'Reason: ', e.reason
+	elif hasattr(e, 'code'):
+	    print 'The server could not fulfill the request.'
+	    print 'Error code: ', e.code
+else:
+    response = json.loads(result.read())
+    result.close()
+    print "Number Of Hosts: ", len(response['result'])
+
+    for host in response['result']:
+		print "Host ID:",host['hostid'],"Host Name:",host['name']
+	#+END_SRC
+
+	执行结果为：
+	#+BEGIN_SRC sh
+[root@master01 ~]# python get_host.py
+Number Of Hosts:  3
+Host ID: 10084 Host Name: Zabbix server
+Host ID: 10105 Host Name: Minion01
+Host ID: 10106 Host Name: Minion02
+	#+END_SRC
+* 遇到的问题
+  查看当前系统的TCP/UDP连接状态
+  #+BEGIN_EXAMPLE
+  netstat -n |awk '/^tcp/ { ++state[$NF] } END { for (key in state) print key, state[key]}'
+  or
+  ss -ant |awk 'NR>1 { ++s[$1] } END { for (k in s) print k, s[k]}'
+  #+END_EXAMPLE
+
+  nmon && nmon_analyser
+
+  服务端建议使用源码安装 && 客户端建议使用RPM包安装

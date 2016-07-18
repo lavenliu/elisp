@@ -1,0 +1,236 @@
+#+TITLE: SVN版本控制
+#+AUTHOR: LavenLiu
+#+DATE: 2015-12-30
+#+EMAIL: ldczz2008@163.com
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* SVN简介
+  Subversion是一个自由且开源的版本控制系统。在Subversion管理下，文件和
+  目录都可以超越时空，即Subversion允许数据恢复到早起版本，或者是检查数
+  据修改的历史。
+** SVN基本流程
+   1. 初始化取出（checkout）版本库（repos），建立本地工作目录拷贝
+      （Working Copy）
+   2. 与版本库（repos）同步（update），保证将要进行的编辑是最新版本
+   3. 编辑源代码（包括创建、修改、删除等）
+   4. 与版本库（repos）同步（update），提交（commit）之前先要同步到最
+      新的版本，保证所有在自己之前的有关提交已经在本地有所知晓
+   5. 解决冲突（resolve conflict）
+   6. 提交（commit），建议写上上次提交或变更内容的摘要，便于以后查阅
+   7. 再次执行步骤2
+
+   每次开始新的编辑前的同步版本库（repos）很重要。
+** checkout
+  #+BEGIN_SRC sh
+  mkdir /root/Zillion
+  svn co "https://61.153.100.206/svn/zillion/"
+  #+END_SRC
+** update
+   #+BEGIN_SRC sh
+   cd /root/Zillion/zillion
+   svn update
+   #+END_SRC
+* 配置并启动SVN
+   建立SVN版本库数据存储根目录（svndata）及用户、密码权限目录
+   （svnpasswd）。
+   #+BEGIN_SRC sh
+# 数据存储根目录
+mkdir -p /application/svndata
+# 用户、密码权限目录
+mkdir -p /application/svnpasswd
+   #+END_SRC
+
+   启动SVN服务指定服务的SVN根目录，
+   #+BEGIN_SRC sh
+svnserve -d -r /application/svndata 
+lsof -i:3609
+COMMAND  PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+svnserve 915 root    3u  IPv4   8366      0t0  TCP *:svn (LISTEN)
+   #+END_SRC
+* 建立项目版本库
+  创建一个新的Subversion项目sadoc，其实，类似sadoc这样的项目可以创建
+  多个，每个项目对应不同的代码，这里只是以创建一个项目为例演示：
+  #+BEGIN_SRC sh
+svnadmin create /application/svndata/sadoc
+ls -ld /application/svndata/sadoc
+  #+END_SRC
+* 修改svnserve.conf配置文件
+  配置要定格写，
+  #+BEGIN_SRC sh
+# 第12行
+anon-access = none
+# 第13行
+auth-access = write
+# 第20行
+password-db = /application/svnpasswd/passwd
+# 第27行
+authz-db = /application/svnpasswd/authz
+  #+END_SRC
+
+  编辑密码文件，
+  #+BEGIN_SRC sh
+cd /application/svndata/sadoc/conf
+mv auth passwd /application/svnpasswd
+cd /application/svnpasswd
+[root@rsync-client01 svnpasswd]# cat passwd 
+[users]
+lavenliu = lavenliu123
+taoqi = 123
+  #+END_SRC
+* SVN术语
+  #+BEGIN_EXAMPLE
+  trunk  主干
+  branch 分支
+  tag    打标记
+  #+END_EXAMPLE
+* Linux客户端使用SVN
+   #+BEGIN_SRC sh
+svn co svn://192.168.56.200/sadoc/ /sadoc/ --username=lavenliu --password=lavenliu123
+
+-----------------------------------------------------------------------
+ATTENTION!  Your password for authentication realm:
+
+   <svn://192.168.56.200:3690> 8c817aef-a2cf-4dee-8b02-485abce4a50f
+
+can only be stored to disk unencrypted!  You are advised to configure
+your system so that Subversion can store passwords encrypted, if
+possible.  See the documentation for details.
+
+You can avoid future appearances of this warning by setting the value
+of the 'store-plaintext-passwords' option to either 'yes' or 'no' in
+'/root/.subversion/servers'.
+-----------------------------------------------------------------------
+Store password unencrypted (yes/no)? yes
+A    /sadoc/stu01
+A    /sadoc/stu01/php.txt
+A    /sadoc/stu01/bash_triangle02.png
+A    /sadoc/stu01/stu01.txt
+A    /sadoc/stu02
+A    /sadoc/stu02/php.txt
+Checked out revision 6.
+# 在SVN服务器上，可以查看其文件仓库下的文件
+[root@rsync-client01 ~]# svn list file:///application/svndata/sadoc/ --verbose
+      6 stu02                 Mar 11 13:21 ./
+      5 stu01                 Mar 11 13:20 stu01/
+      6 stu02                 Mar 11 13:21 stu02/
+cd /sadoc/stu02
+touch {a..z}
+[root@rsync-client01 stu02]# svn add *
+[root@rsync-client01 stu02]# svn commit -m "lavenliu data"
+Adding         stu02/a
+Adding         stu02/b
+Adding         stu02/c
+Adding         stu02/d
+Adding         stu02/e
+Adding         stu02/f
+Adding         stu02/g
+Adding         stu02/h
+Adding         stu02/i
+Adding         stu02/j
+Adding         stu02/k
+Adding         stu02/l
+Adding         stu02/m
+Adding         stu02/n
+Adding         stu02/o
+Adding         stu02/p
+Adding         stu02/q
+Adding         stu02/r
+Adding         stu02/s
+Adding         stu02/t
+Adding         stu02/u
+Adding         stu02/v
+Adding         stu02/w
+Adding         stu02/x
+Adding         stu02/y
+Adding         stu02/z
+Transmitting file data ..........................
+Committed revision 7.
+   #+END_SRC
+   
+   可以在Windows客户端进行查看。使用svn update
+* SVN结合httpd
+  在服务端需要安装mod_dav_svn模块，
+  #+BEGIN_SRC sh
+yum install -y httpd
+yum install -y mod_dav_svn
+  #+END_SRC
+
+  修改/etc/httpd/conf.d/subversion.conf文件，内容如下：
+  #+BEGIN_SRC sh
+egrep -v "^#|^$" /etc/httpd/conf.d/subversion.conf
+LoadModule dav_svn_module     modules/mod_dav_svn.so
+LoadModule authz_svn_module   modules/mod_authz_svn.so
+LoadModule ssl_module modules/mod_ssl.so
+<VirtualHost *:443>
+ServerName svn.fbs.com:443
+<Location /repos>
+   DAV svn
+   SVNParentPath /application/svndata
+   # Limit write permission to list of valid users.
+   AuthType Basic
+   AuthName "Subversion Authentication"
+   SVNPathAuthz on
+   AuthBasicProvider file
+   AuthUserFile /application/svnpasswd/svn_auth_users
+   Require valid-user
+</Location>
+SSLEngine on
+SSLCertificateFile "/etc/httpd/server.crt"
+SSLCertificateKeyFile "/etc/httpd/server.key"
+</VirtualHost>
+  #+END_SRC
+
+  生成https所需要的证书及签名文件，
+  #+BEGIN_SRC sh
+openssl genrsa -out /etc/httpd/server.key 1024
+openssl req -new -key /etc/httpd/server.key -out /etc/httpd/server.csr
+openssl req -x509 -days 365 -key /etc/httpd/server.key -in /etc/httpd/server.csr -out /etc/httpd/server.crt
+  #+END_SRC
+
+  生成/application/svnpasswd/svn_auth_users密码文件，
+  #+BEGIN_SRC sh
+# 第一次创建用户使用-c的选项，如果再次新增用户可以不加-c选项
+htpasswd -cm /application/svnpasswd/svn_auth_users lavenliu
+# 添加另外一个用户
+htpasswd -m /application/svnpasswd/svn_auth_users taoqi
+  #+END_SRC
+
+  这里要注意文件的权限问题，要确保apache用户可以读取密码文件。
+* SVN上线解决方案说明
+* Misc
+  SVN客户端密码保存地点：
+  #+BEGIN_SRC sh
+  /c/Users/<username>/AppData/Roaming/Subversion/auth/svn.simple
+  #+END_SRC
+* 遇到的问题
+  以下是遇到的一些问题，一一罗列出来。
+** 编码错误
+   如果文件名包含中文，则由Windows导入到Linux时，一般会造成乱码。这时
+   不管我们在Windows或Linux的SVN客户端上提交我们的代码时，都会出现不能
+   提交的现象或者提示编码错误等问题。

@@ -1,0 +1,1569 @@
+#+TITLE: Python
+#+AUTHOR: LavenLiu
+#+DATE: 2010-05-04
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) ZY(y) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+* 需要记住的
+  1. 记住：一切数据都是对象
+  2. 记住：一切变量都是对数据对象的一个引用
+  3. 分析：python内部的引用计数。sys.getrefcount
+
+  引用：当数据对象赋值给某个变量时，则该变量引用了该数据对象。
+
+  伴随一生：
+  1. 三个内置必须用熟，type，help，dir
+  2. 用内置去自学str对象
+
+  type可以查看指定变量的类型；
+
+  help可以查看指定模块的文档；
+
+  dir可以指定模块有哪些属性；
+
+  动态语义 在赋值时确定数据类型。
+
+  变量之赋值一切皆为引用，动态性与动态类型为何不在动态。
+
+** 数据类型的组成
+   组成的3部分：
+   1. 身份 id方法来看一看它的唯一标识符，内存地址靠这个
+   2. 类型 type来看一看
+   3. 值 数据项
+** 数据类型的可变与不可变
+   1. 不可变类型：int, string, tuple
+   2. 可变类型：list，tuple，dict
+* virtualenv
+  #+BEGIN_SRC python
+pip install virtualenv
+virtualenv py2_env
+virtualenv -p /usr/local/bin/python3 py3_env
+
+source py3_env/bin/active
+  #+END_SRC
+* Emacs之Python开发环境搭建
+* Python编程规范
+  | Type                       | Public             | Internal                                                          |
+  |----------------------------+--------------------+-------------------------------------------------------------------|
+  | Modules                    | lower_with_under   | _lower_with_under                                                 |
+  | Packages                   | lower_with_under   |                                                                   |
+  | Classes                    | CapWords           | _CapWords                                                         |
+  | Exceptions                 | CapWords           |                                                                   |
+  | Functions                  | lower_with_under() | _lower_with_under()                                               |
+  | Global/Class Constants     | CAPS_WITH_UNDER    | _CAPS_WITH_UNDER                                                  |
+  | Global/Class Variables     | lower_with_under   | _lower_with_under                                                 |
+  | Instance Variables         | lower_with_under   | _lower_with_under (protected) or __lower_with_under (private)     |
+  | Method Names               | lower_with_under() | _lower_with_under() (protected) or __lower_with_under() (private) |
+  | Function/Method Parameters | lower_with_under   |                                                                   |
+  | Local Variables            | lower_with_under   |                                                                   |
+* 数据结构和算法
+** 解压序列赋值给多个变量
+   任何的序列(或者是可迭代对象)可以通过一个简单的赋值语句解压并赋值给
+   多个变量。 唯一的前提就是变量的数量必须跟序列元素的数量是一样的。
+   
+   如果变量个数和序列元素的个数不匹配，会产生一个异常。
+#+BEGIN_SRC python :results output :session
+data = [ 'ACME', 50, 91.1, (2012, 12, 21) ]
+name, shares, price, date = data
+name
+date
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_EXAMPLE
+: 
+: 'ACME'
+: (2012, 12, 21)
+#+END_EXAMPLE
+
+#+BEGIN_SRC python :results output :session
+name, shares, price, (year, mon, day) = data
+year
+mon
+day
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+ : 
+ : 2012
+ : 12
+ : 21
+#+END_EXAMPLE
+
+	实际上，这种解压赋值可以用在任何可迭代对象上面，而不仅仅是列表或者
+	元组。 包括字符串，文件对象，迭代器和生成器。
+#+BEGIN_SRC python :results output :session
+s = 'Hello'
+a, b, c, d, e = s
+a
+b
+e
+#+END_SRC
+
+#+RESULTS:
+: 
+: 'H'
+: 'e'
+: 'o'
+
+	有时候，你可能只想解压一部分，丢弃其他的值。对于这种情况Python并没
+	有提供特殊的语法。 但是你可以使用任意变量名去占位，到时候丢掉这些
+	变量就行了。
+#+BEGIN_SRC python :results output :session
+data = ['ACME', 50, 90.1, (2015,12,29)]
+_, shares, price, _ = data
+shares
+price
+#+END_SRC
+
+#+RESULTS:
+: 
+: >>> 50
+: 90.1
+
+** 解压可迭代对象赋值给多个变量
+   如果一个可迭代对象的元素个数超过变量个数时，会抛出一个ValueError。
+   Python的星号表达式可以用来解决这个问题。
+
+   比如，你在学习一门课程，在学期末的时候， 你想统计下家庭作业的平均
+   成绩，但是排除掉第一个和最后一个分数。如果只有四个分数，你可能就直
+   接去简单的手动赋值， 但如果有24个呢？这时候星号表达式就派上用场了：
+   #+BEGIN_SRC python
+	def drop_first_last(grades):
+        first, *middle, last = grades
+        return avg(middle)
+   #+END_SRC
+
+   另外一种情况，假设你现在有一些用户的记录列表，每条记录包含一个名字、
+   邮件，接着就是不确定数量的电话号码。 你可以像下面这样分解这些记录：
+#+BEGIN_SRC python :results output :session
+record = ('Laven', 'ldczz2008@163.com', '13166668888', '13855558888')
+user, email, *phone_numbers = record
+#+END_SRC
+
+#+RESULTS:
+: 
+: File "<stdin>", line 1
+:     user, email, *phone_numbers = record
+:                  ^
+: SyntaxError: invalid syntax
+
+* 简单聊聊
+  Why：为什么选择Python
+  Python是一种解释型、面向对象、动态数据类型的高级程序设计语言
+
+  Tiobe的趋势
+  PYPL的趋势
+  GitHub的开源项目
+  最赚钱
+
+  How：怎么学？
+  专心看视频，电脑实际操作，做作业，想一想，跟大家分享
+
+  What：学什么？
+  #+BEGIN_SRC python
+    #!/usr/bin/env python
+    # -*- coding: utf-8 -*-
+
+    # bubble sort algorithm
+    def bubble_sort(nums):
+        for j in xrange(len(numbers), -1, -1):
+            for i in xrange(0, j - 1, 1):
+                if nums[i] > nums[i+1]:
+                    nums[i], nums[i+1] = nums[i+1], nums[i]
+
+    # test
+    if __name__ == '__main__':
+        numbers = [[9, 23, 12, 32, 12], ['2', '3', '3', '6'], ['b', 'a', 'w']]
+  #+END_SRC
+* 数字
+  #+BEGIN_SRC python
+  #!/usr/bin/env python
+  import random
+
+  secret = random.randint(1, 100)
+  guess, tries = 0, 0
+
+  while guess != secret and tries < 6:
+	  print 
+  #+END_SRC	   
+* 字符串
+  ASCII UNICODE UTF8到底是啥。
+
+  python默认的文件编码是ascii
+
+  len之注意
+
+  转义符让文本更好处理，要转义的字符前面加个反斜杠
+
+  字符串前面跟着的小尾巴到底是什么东西
+** 切片及索引
+   #+BEGIN_SRC python
+s = "use python do something"
+s[1], s[-1], s[1:6:2], s[1:], s[:-1], s[:]
+s[1:] # 从1开始到最后
+# 两个常用的方法
+split
+join
+[start:stop:step]
+   #+END_SRC
+** 常用方法集合
+   #+BEGIN_SRC python
+"let us " + s, s * 2
+s.upper()
+s.find("pa")
+s.replace('python', 'java')
+print "%s like %s" % ('we', 'python')
+   #+END_SRC
+** 转义 r''
+   #+BEGIN_SRC python
+s = "C:\newpython", print s, len(s)
+r'\n' 前缀字符串，不考虑转义
+s = r"C:\newpython"
+   #+END_SRC
+** Unicode u''
+** re模块
+   #+BEGIN_SRC python
+import re
+Regular Expression
+re.match(p, text) # 只找头部
+re.search(p, text) # 搜索所有
+re.findall(p, text) 
+re.split(p, text)
+re.sub(p, s, text)
+
+pattern = re.compile(p)
+results = pattern.match(text)
+   #+END_SRC
+*** 正则表达式
+	11个元字符, \, ^, $, ., |, ?, *, +, (), [], {},
+	
+	特殊含义, \ .
+
+	可选 | []
+	重复 * + ? {} (贪婪模式)
+	6个字符类 \d \D \s \S \w \W
+	4个位置类 \b \B \A \Z (^, $)
+	分组 ()
+
+	编译选项： I L M S U X
+
+	一个例子：
+	#+BEGIN_SRC python
+#!/usr/bin/env python
+# coding: utf-8
+
+import re
+text = 'c++ python2 python3 perl ruby lua java javascript php4 php5 c'
+
+#match,search,findall,split,sub
+re.match(r'java',text)
+re.search(r'java',text)
+
+re.match(r'c++',text)
+re.match(r'c\+\+',text)
+
+
+print re.findall(r'python',text)
+print re.split(r' perl ',text)
+print re.sub(r'ruby','fortran',text)
+
+
+# ^   start
+# $   end
+# .   except \n
+print re.findall(r'^c..',text)
+print re.findall(r'c+',text)
+print re.findall(r'c\++',text)
+print re.findall(r'c$',text)
+
+# +   1-inf
+# *   0-inf
+# ?   0-1, 
+# []  or
+# {}  repeat
+# [^] not
+print re.findall(r'p+',text)
+print re.findall(r'p[a-zA-Z]+',text)  #{1,}
+print re.findall(r'p[a-zA-Z]*',text)  #{0,}
+print re.findall(r'p[a-zA-Z]?',text)  #{0,1}
+print re.findall(r'p[a-zA-Z0-9]{3,}',text)  #{,1}
+
+print re.findall(r'c[a-zA-Z]*',text)  #{,inf}
+print re.findall(r'c[^a-zA-Z]*',text)  #{,inf}
+
+# |   or
+print re.findall(r'[pj][a-zA-Z]+',text)  #{,inf}
+# |重写上面的pattern
+
+print re.findall(r'p[^0-9]+|j[a-zA-Z]+',text)   
+print re.findall(r'p[^0-9 ]+|j[a-zA-Z]+',text) 
+
+# \w  [a-zA-Z0-9_], \W
+# \d  [0-9], \D
+# \s  [ \t\n\r\f\v], \S
+print re.findall(r'p\w+',text)
+print re.findall(r'p\w+\d',text)
+print re.findall(r'p\w+[0-9]',text)
+print re.findall(r'p\w{5,9}',text)
+
+# \b  word boundary
+# \B  not \b
+# \A  input start, ^
+# \Z  input end, $
+print re.findall(r'\bp[^0-9]',text)
+print re.findall(r'p[^0-9]\b',text)
+print re.findall(r'p[^0-9]\b',text)
+
+# *?  0~inf non-greedy
+# +?  1~inf non-greedy
+# 贪婪模式尽可能多的匹配
+# 非贪婪模式尽可能少的匹配
+print re.findall(r'p[a-z]*',text)
+print re.findall(r'p[a-z]*?',text)
+print re.findall(r'p[a-z]+\b',text)
+print re.findall(r'p[a-z]+?\b',text)
+
+# ()  group
+# (?P<name>pattern)
+a=re.search(r'(p[a-zA-Z]+)([0-9])','python2',re.X)
+print a.group(1), a.group(2)
+
+a=re.search(r'(?P<name>p[a-zA-Z]+)(?P<version>[0-9])','python2')
+print a.group('name'), a.group('version')
+print a.groupdict()
+
+pattern = re.compile(r'(?P<name>p[a-zA-Z]+)(?P<version>[0-9])')
+results = pattern.search('python2')
+print results.groupdict()
+results = pattern.search('python3')
+print results.groupdict()
+results = pattern.search('php4')
+print results.groupdict()
+
+#########################################
+for t in text.split(' '):
+    results = pattern.search(t)
+    if results:
+      print results.groupdict()
+      
+
+###########################################
+a = re.compile(r"""\d +  # 整数部分
+                   \.    # 小数点
+                   \d *  # 小数部分
+                """, re.X)
+b = re.compile(r"\d+\.\d*")
+	#+END_SRC
+
+	编译选项，
+    | 选项           | 说明                                                                     |
+    |----------------+--------------------------------------------------------------------------|
+    | I (IGNORECASE) | 忽略大小写                                                               |
+    | L (LOCALE)     | 使预定字符类\w \W \b \B \s \S取决于当前区域设定                          |
+    | M (MULTILINE)  | 多行模式，改变'^'和'$'的行为                                             |
+    | S (DOTALL)     | 点任意匹配模式，改变'.'的行为                                            |
+    | U (UNICODE)    | 使预定字符类\w \W \b \B \s \S \d \D取决于Unicode定义的字符属性           |
+    | X (VERBOSE)    | 详细模式。这个模式下，正则表达式可以是多行，忽略空白字符，并可以加入注释 | 
+  
+* 日期和时间
+** datetime
+   日期： datetime.date.today()
+   日期和时间: datetime.datetime.now()
+   1000天之后是哪一天： datetime.timedelta(days=1)
+   打印格式的问题： isoformat(), strftime()
+   字符串转换: strptime()
+** time
+   datetime.time(16, 10, 10)
+   time.time() # 实际时间
+   time.clock() # CPU时间
+   time.sleep() # 以秒为单位
+** 一个例子
+   #+BEGIN_SRC python
+#!/usr/bin/env python
+# coding: utf-8
+
+# 1. 从现在开始1000天后和1000天前是哪一天
+import datetime
+
+a=datetime.date.today()
+b=datetime.datetime.now()
+d1=datetime.timedelta(days=1000)
+d2=datetime.timedelta(hours=1000)
+
+(a-d1).isoformat()
+(a+d1).strftime('%m/%d/%Y')
+b.isoformat()
+(b-d2)
+
+# 2. 离你的重要纪念日还有多少天
+important_day=datetime.datetime.strptime('2008-06-18','%Y-%m-%d') 
+
+important_day>b
+d3=b-important_day
+d3.days
+
+t=datetime.time(12,11,30)
+
+# 3. 两段程序哪个快些
+############## time.time and time.clock ####################
+import time
+
+a=input("please input 0 or 1:")
+
+start_time = time.time()
+start_clock = time.clock()
+
+
+if a:
+    sum_i=0
+    for i in range(100000):
+        sum_i+=i
+else:
+    sum_i=sum(range(100000))
+
+print sum_i
+
+time.sleep(2)
+end_time = time.time()
+end_clock = time.clock()
+
+print "time-delta:"
+print start_time-end_time
+print "clock-delta:"
+print start_clock-end_clock
+   #+END_SRC
+* 列表
+  #+BEGIN_SRC python
+a = [1, 2, 3]
+a_ref = a
+a[2] = 100
+  #+END_SRC
+
+  常用操作：
+  #+BEGIN_SRC python
+a_copy = a[:]
+a.append(300)
+a.insert(1, 50)
+a.pop()
+a.sort()
+a.reverse()
+del a[1]
+  #+END_SRC
+** 切片
+** 索引
+** 引用
+* 元组
+  不可变的列表
+
+** 常用操作
+   index
+   count
+   嵌套
+   转换：tuple()
+* 字典
+  Python内置了字典：dict的支持，dict全称dictionary，在其他语言中也称为
+  map，使用键-值（key-value）存储，具有极快的查找速度。
+
+  这种key-value存储方式，在放进去的时候，必须根据key算出value的存放位
+  置，这样，取的时候才能根据key直接拿到value。
+
+  请务必注意，dict内部存放的顺序和key放入的顺序是没有关系的。
+
+  和list比较，dict有以下几个特点：
+  1. 查找和插入的速度极快，不会随着key的增加而增加；
+  2. 需要占用大量的内存，内存浪费多。
+
+  而list相反：
+  1. 查找和插入的时间随着元素的增加而增加；
+  2. 占用空间小，浪费内存很少。
+
+  所以，dict是用空间来换取时间的一种方法。
+
+  dict可以用在需要高速查找的很多地方，在Python代码中几乎无处不在，正确
+  使用dict非常重要，需要牢记的第一条就是dict的key必须是不可变对象。这
+  是因为dict根据key来计算value的存储位置，如果每次计算相同的key得到的
+  结果不同，那dict内部就完全混乱了。这个通过key计算位置的算法称为哈希
+  算法（Hash）。
+
+  要保证hash的正确性，作为key的对象就不能变。在Python中，字符串、整数
+  等都是不可变的，因此，可以放心地作为key。而list是可变的，就不能作为
+  key：
+  #+BEGIN_SRC python
+d = {}
+key = [1, 2, 3]
+d[key] = 'a list'
+TypeError: unhashable type: 'list'
+  #+END_SRC
+
+  key-value
+  #+BEGIN_SRC python
+dict01 = {
+'xiaoming': 90,
+'xiaohong': 60,
+'xiaoli': 55
+  }
+  #+END_SRC
+
+  zip可以将长度相同的两个列表组合成一个字典。
+
+  散列表，没有顺序，适合插入，查询操作。
+
+  key不一定是字符串，但一定是不可变对象
+
+  排序
+  #+BEGIN_SRC python
+[(k, dict[k]) for k in sorted(dict.keys())]
+sorted(dict.iteritems(), key=lambda d: d[1], reverse=True)
+  #+END_SRC
+
+  再论不可变对象，上面我们讲了，str是不可变对象，而list是不可变对象。
+  对于可变对象，比如list，对list进行操作，list内部的内容是会变化的，比
+  如：
+  #+BEGIN_SRC python
+>>> a = ['c', 'b', 'a']
+>>> a
+['c', 'b', 'a']
+>>> a.sort()
+>>> a
+['a', 'b', 'c']
+  #+END_SRC
+
+  而对于不可变对象，比如str，对str进行操作呢：
+  #+BEGIN_SRC python
+>>> a = 'abc'
+>>> a
+'abc'
+>>> a = a.replace('a', 'A')
+>>> a
+'abc'
+  #+END_SRC
+  虽然字符串有个replace()方法，也确实变出了'Abc'，但变量a最后仍是'abc'，应该怎么理解呢？
+  我们先把代码改成下面这样：
+  #+BEGIN_SRC python
+>>> a = 'abc'
+>>> a
+'abc'
+>>> b = a.replace('a', 'A')
+>>> b
+'Abc'
+>>> a
+'abc'
+  #+END_SRC
+
+  要始终牢记的是，a是变量，而'abc'才是字符串对象！有些时候，我们经常说，
+  对象a的内容是'abc'，但其实是指，a本身是一个变量，它指向的对象的内容
+  才是'abc'。当我们调用a.replace('a', 'A')时，实际上调用方法replace是
+  作用在字符串对象'abc'上的，而这个方法虽然名字叫replace，但却没有改变
+  字符串'abc'的内容。相反，replace方法创建了一个新字符串'Abc'并返回，
+  如果我们用变量b指向该新字符串，就容易理解了，变量a仍然指向原有的字符
+  串'abc'，但变量b却指向新字符串'Abc'了。
+
+  所以，对于不变对象来说，调用对象自身的任意方法，也不会改变该对象自身
+  的内容。相反，这些方法会创建新的对象并返回，这样，就保证了不可变对象
+  本身永远是不可变的。
+** 常用操作
+   keys, values
+   get
+   del
+   clear
+   嵌套
+** 引用和拷贝
+   字典D.copy(), copy.copy(D)
+   列表L[:]
+
+   深拷贝 - 一个新的对象
+   copy.deepcopy(D)
+* 函数
+** 调用函数
+   Python内置了很多有用的函数，我们可以直接使用。要调用一个函数，需要
+   知道函数的名称和参数，比如求绝对值的函数abs，只有一个参数。可以直接
+   从Python的官方网站查看文档：
+   #+BEGIN_SRC sh
+http://docs.python.org/2/library/functions.html#abs
+   #+END_SRC
+
+   也可以在交互式命令行通过help(abs)查看abs函数的帮助信息。
+
+   函数名其实就是指向一个函数对象的引用，完全可以把函数名赋给一个变量，
+   相当于给这个函数起了一个“别名”：
+   #+BEGIN_SRC python
+>>> a = abs
+>>> a(-1)
+1
+   #+END_SRC
+
+   调用Python的函数，需要根据函数定义，传入正确的参数。如果函数调用出
+   错，一定要学会看错误信息，所以英文很重要！
+** 定义函数
+   在Python中，定义一个函数要使用def语句，依次写出函数名、括号、括号中
+   的参数和冒号:，然后，在缩进块中编写函数体，函数的返回值用return语句
+   返回。
+
+   我们以自定义一个绝对值的my_abs函数为例：
+   #+BEGIN_SRC python
+     def my_abs(x):
+         if x >= 0:
+             return x
+         else:
+             return -x
+   #+END_SRC
+
+   接下来调用该函数，并验证该函数的正确性，
+   #+BEGIN_SRC python
+>>> my_abs(-10)
+10
+   #+END_SRC
+
+   根据输出结果应该是没有问题的。
+
+   请注意，函数体内部的语句在执行时，一旦执行到return时，函数就执行完毕，并将结果返回。
+   因此，函数内部通过条件判断和循环可以实现非常复杂的逻辑。
+
+   如果没有return语句，函数执行完毕后也会返回结果，只是结果为None。
+   return None可以简写为return。
+*** 空函数
+	如果想定义一个什么事也不做的空函数，可用pass语句：
+	#+BEGIN_SRC python
+def nop():
+    pass
+	#+END_SRC
+
+	pass语句什么都不做，那有什么用？实际上pass可以用来作为占位符，比如
+	现在还没有想好怎么写函数的代码，就可以先放一个pass，让代码能运行起来。pass还可以用在其他语句里，比如：
+	#+BEGIN_SRC python
+if age >= 18:
+    pass
+	#+END_SRC
+	缺少了pass，代码运行就会有语法错误。
+*** 参数检查
+	调用函数时，如果参数个数不对，Python解释器会自动检查出来，并抛出TypeError：
+	#+BEGIN_SRC python
+>>> my_abs(1, 2)
+Traceback (most recent call last):
+  File "<pyshell#48>", line 1, in <module>
+    my_abs(1, 2)
+TypeError: my_abs() takes 1 positional argument but 2 were given
+>>>
+	#+END_SRC
+
+	但如果参数类型不对，Python解释器就无法帮助我们检查。试试my_abs和内置函数abs的差别：
+	#+BEGIN_SRC python
+>>> my_abs('A')
+'A'
+>>> abs('A')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: bad operand type for abs(): 'str'
+>>> 
+	#+END_SRC
+
+	当传入了不恰当的参数时，内置函数abs会检查出参数错误，而我们定义的
+	my_abs没有参数检查，所以，这个函数定义不够完善。
+
+	让我们修改一下my_abs的定义，对参数类型做检查，只允许整数和浮点数类
+	型的参数。数据类型检查可以用内置函数isinstance实现：
+	#+BEGIN_SRC python
+def my_abs(x):
+    if not isinstance(x, (int, float)):
+        raise TypeError('bad operand type')
+    if x >= 0:
+        return x
+    else:
+        return -x
+	#+END_SRC
+
+	添加了参数检查后，如果传入错误的参数类型，函数就可以抛出一个错误：
+	#+BEGIN_SRC python
+>>> my_abs('A')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 3, in my_abs
+TypeError: bad operand type
+>>>
+	#+END_SRC
+
+	错误和异常处理将在后续讲到。
+*** 返回多个值
+	函数可以返回多个值吗？答案是肯定的。
+
+	比如在游戏中经常需要从一个点移动到另一个点，给出坐标、位移和角度，就可以计算出新的坐标：
+	#+BEGIN_SRC python
+import math
+
+def move(x, y, step, angle=0):
+    nx = x + step * math.cos(angle)
+    ny = y - step * math.sin(angle)
+    return nx, ny
+	#+END_SRC
+	这样我们就可以同时获得返回值：
+	#+BEGIN_SRC python
+>>> x, y = move(100, 100, 60, math.pi / 6)
+>>> print x, y
+151.961524227 70.0
+	#+END_SRC
+
+	但其实这只是一种假象，Python函数返回的仍然是单一值：
+	#+BEGIN_SRC python
+>>> r = move(100, 100, 60, math.pi / 6)
+>>> print r
+(151.96152422706632, 70.0)
+>>> 
+	#+END_SRC
+
+	总结：
+	1. 定义函数时，需要确定函数名和参数个数；
+	2. 如果有必要，可以先对参数的熟路类型做检查；
+	3. 函数体内部可以用return随时返回函数结果；
+	4. 函数执行完毕也没有return语句时，自动return None；
+	5. 函数可以同时返回多个值，但其实就是一个tuple。
+** 函数参数
+   定义函数的时候，我们把参数的名字和位置确定下来，函数的接口定义就完
+   成了。对于函数的调用者来说，只需要知道如何传递正确的参数，以及函数
+   将返回什么样的值就够了，函数内部的复杂的逻辑被封装起来，调用者无需了解。
+
+   Python的函数定义非常简单，但灵活度却非常大。除了正常定义的必选参数
+   外，还可以使用默认参数、可变参数和关键字参数，使得函数定义出来的接
+   口，不但能处理复杂的参数，还可以简化调用者的代码。
+*** 位置参数
+	我们先写一个计算x^2的函数：
+	#+BEGIN_SRC python
+def power(x):
+    return x * x
+	#+END_SRC
+	对于power(x)函数，参数x就是一个位置参数。当我们调用power函数时，必
+	须传入有且仅有的一个参数x：
+	#+BEGIN_SRC python
+>>> power(5)
+25
+>>> power(15)
+225
+	#+END_SRC
+
+	现在，如果我们要计算x^3怎么办呢？可以再定义一个power3函数，但是如
+	果要计算x^4、x^5、...，怎么办？我们不可能定义无限多个函数，我们可以把
+	power(x)修改为power(x, n)，用来计算x^n，说写就写，
+	#+BEGIN_SRC python
+def power(x, n):
+    s = 1
+    while n > 0:
+        n = n - 1
+        s = s * x
+    return s
+	#+END_SRC
+*** 默认参数
+	默认参数很有用，但使用不当，也会掉坑里。默认参数有个最大的坑，演示如下：
+	#+BEGIN_SRC python
+# 先定义一个函数，传入一个list，添加一个END再返回
+def add_end(L=[]):
+    L.append('END')
+    return L
+	#+END_SRC
+
+	当我们正常调用时，结果似乎不错，
+	#+BEGIN_SRC python
+>>> add_end([1, 2, 3])
+[1, 2, 3, 'END']
+>>> add_end(['x', 'y', 'z'])
+['x', 'y', 'z', 'END']
+	#+END_SRC
+
+	当我们使用默认参数调用时，一开始结果也是对的，
+	#+BEGIN_SRC python
+>>> add_end()
+['END']
+	#+END_SRC
+
+	但是，再次调用add_end()时，结果就不对了，
+	#+BEGIN_SRC python
+>>> add_end()
+['END', 'END']
+>>> add_end()
+['END', 'END', 'END']
+	#+END_SRC
+
+	原因解释如下，
+	#+BEGIN_EXAMPLE
+	Python函数在定义的时候，默认参数L的值就被计算出来了，即[]，因为默
+	认参数L也是一个变量，它指向对象[]，每次调用该函数，如果改变了L的内
+	容，则下次调用时，默认参数的内容就变了，不再是函数定义时的[]了。
+
+	所以，定义默认参数要牢记一点：默认参数必须指向不变对象！
+	#+END_EXAMPLE
+
+	要修改上面的例子，我们可以用None这个不变对象来实现，
+	#+BEGIN_SRC python
+def add_end(L=None):
+    if L is None:
+        L = []
+    L.append('END')
+    return L
+	#+END_SRC
+
+	为什么要设计str、None这样的不变对象呢？因为不变对象一旦创建，对象
+	内部的数据就不能修改，这样就减少了由于修改数据导致的错误。此外，由
+	于对象不变，多任务环境下同时读取对象不需要加锁，同时读一点问题都没
+	有。我们在编写程序时，如果可以设计一个不变对象，那就尽量设计成不变
+	对象。
+*** 可变参数
+	在python的函数中，还可以定义可变参数。可变参数就是传入的参数个数是可变的。
+	#+BEGIN_SRC python
+>>> def cacl(*numbers):
+...  sum = 0
+...  for n in numbers:
+...   sum = sum + n * n
+...  return sum
+... 
+	#+END_SRC
+
+	如何调用，
+	#+BEGIN_SRC python
+>>> nums = [1, 2, 3]
+>>> cacl(*nums)
+14
+	#+END_SRC
+*** 关键字参数
+	可变参数允许我们传入0个或任意个参数，这些可变参数在函数调用时自动组
+	装为一个tuple。而关键字参数允许你传入0个或任意个含参数名的参数，这
+	些关键字参数在函数内部自动组装为一个dict。请看示例，
+	#+BEGIN_SRC python
+def person(name, age, **kw):
+    print 'name:', name, 'age:', age, 'other:', kw
+	#+END_SRC
+	函数person除了必选参数name和age外，还接受关键字参数kw。在调用该函
+	数时，可以只传入必选参数：
+	#+BEGIN_SRC python
+>>> person('LavenLiu', 25)
+name: LavenLiu age: 25 other: {}
+	#+END_SRC
+	也可以传入任意个数的关键字参数：
+	#+BEGIN_SRC python
+>>> person('LavenLiu', 25)
+name: LavenLiu age: 25 other: {}
+>>> person('Taoqi', 25, city='Hebei')
+name: Taoqi age: 25 other: {'city': 'Hebei'}
+>>> person('James', 31, gender='M', job='NBA player')
+name: James age: 31 other: {'gender': 'M', 'job': 'NBA player'}
+	#+END_SRC
+
+	关键字参数有什么用？它可以扩展函数的功能。比如，在person函数里，我
+	们保证能接收到name和age这两个参数，但是，如果调用者愿意提供更多的
+	参数，我们也能收到。试想你正在做一个用户注册的功能，除了用户名和年
+	龄是必填项外，其他都是可选项，利用关键字参数来定义这个函数就能满足
+	注册的需求。
+
+	和可变参数类似，也可以先组装出一个dict，然后，把该dict转换为关键字参数传进去：
+	#+BEGIN_SRC python
+>>> kw = {'city': 'Hebei', 'job': 'Test'}
+>>> person('Taoqi', 25, **kw)
+name: Taoqi age: 25 other: {'city': 'Hebei', 'job': 'Test'}
+	#+END_SRC
+*** 命名关键字参数
+*** 参数组合
+	在Python中定义函数，可以用必选参数、默认参数、可变参数和关键字参数，
+	这4种参数都可以一起使用，或者只用其中某些，但是请注意，参数定义的
+	顺序必须是： *必选参数、默认参数、可变参数和关键字参数*
+
+	比如定义一个函数，包含上述4种参数，
+	#+BEGIN_SRC python
+>>> def func(a, b, c=0, *args, **kw):
+...     print 'a =', a, 'b =', b, 'c =', c, 'args = ', args, 'kw = ', kw
+...
+	#+END_SRC
+
+	在函数调用的时候，Python解释器自动按照参数位置和参数名把对应的参数传进去。
+	#+BEGIN_SRC python
+>>> func(1, 2)
+a = 1 b = 2 c = 0 args =  () kw =  {}
+>>> func(1, 2, c=3)
+a = 1 b = 2 c = 3 args =  () kw =  {}
+>>> func(1, 2, 3, 'a', 'b')
+a = 1 b = 2 c = 3 args =  ('a', 'b') kw =  {}
+>>> func(1, 2, 3, 'a', 'b', x=99)
+a = 1 b = 2 c = 3 args =  ('a', 'b') kw =  {'x': 99}
+>>>
+	#+END_SRC
+
+	最神奇的是通过一个tuple和dict，你也可以调用该函数：
+	#+BEGIN_SRC python
+>>> args = (1, 2, 3, 4)
+>>> kw = {'x': 99}
+>>> func(*args, **kw)
+a = 1 b = 2 c = 3 args =  (4,) kw =  {'x': 99}
+	#+END_SRC
+	所以，对于任意函数，都可以通过类似func(*args, **kw)的形式调用它，无论它的参数是如何定义的。
+*** 总结
+	Python的函数具有非常灵活的参数形态，既可以实现简单的调用，又可以传入非常复杂的参数。
+
+	默认参数一定要用不可变对象，如果是可变对象，运行会有逻辑错误！
+
+	要注意定义可变参数和关键字参数的语法：
+
+	*args是可变参数，args接收的是一个tuple；
+
+	**kw是关键字参数，kw接收的是一个dict。
+	
+	以及调用函数时如何传入可变参数和关键字参数的语法：
+
+	可变参数既可以直接传入：func(1, 2, 3)，又可以先组装list或tuple，再通过*args传入：func(*(1, 2, 3))；
+
+	关键字参数既可以直接传入：func(a=1, b=2)，又可以先组装dict，再通过**kw传入：func(**{'a': 1, 'b': 2})。
+
+	使用*args和**kw是Python的习惯写法，当然也可以用其他参数名，但最好使用习惯用法。
+** 递归函数
+   在函数内部，可以调用其他函数。如果一个函数在内部调用自身本身，这个函数就是递归函数。
+
+   一个例子，
+   #+BEGIN_SRC python
+def fact(n):
+    if n == 1:
+        return 1
+    return n * fact(n - 1)
+   #+END_SRC
+
+   可以运行一下这个函数，
+   #+BEGIN_SRC python
+>>> fact(1)
+1
+>>> fact(5)
+120
+>>> fact(100)
+93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000L
+   #+END_SRC
+
+   如果我们计算fact(5)，可以根据函数定义看到计算过程如下：
+   #+BEGIN_SRC python
+===> fact(5)
+===> 5 * fact(4)
+===> 5 * (4 * fact(3))
+===> 5 * (4 * (3 * fact(2)))
+===> 5 * (4 * (3 * (2 * fact(1))))
+===> 5 * (4 * (3 * (2 * 1)))
+===> 5 * (4 * (3 * 2))
+===> 5 * (4 * 6)
+===> 5 * 24
+===> 120
+   #+END_SRC
+
+   使用递归函数需要注意防止栈溢出。在计算机中，函数调用是通过栈（stack）
+   这种数据结构实现的，每当进入一个函数调用，栈就会加一层栈帧，每当函
+   数返回，栈就会减一层栈帧。由于栈的大小不是无限的，所以，递归调用的
+   次数过多，会导致栈溢出。可以试试fact(1000)：
+   #+BEGIN_SRC python
+>>> fact(1000)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 4, in fact
+  ...
+  File "<stdin>", line 4, in fact
+RuntimeError: maximum recursion depth exceeded
+   #+END_SRC
+
+   使用递归函数的优点是逻辑简单清晰，缺点是过深的调用会导致栈溢出。
+
+   针对尾递归优化的语言可以通过尾递归防止栈溢出。尾递归事实上和循环是
+   等价的，没有循环语句的编程语言只能通过尾递归实现循环。
+
+   Python标准的解释器没有针对尾递归做优化，任何递归函数都存在栈溢出的问题。
+* 高级特性
+** 切片
+   取一个list或tuple的部分元素是非常常见的操作。如一个list为，
+   #+BEGIN_SRC python
+L = ['Lavenliu', 'Taoqi', 'James', 'Wade', 'Bosh']
+   #+END_SRC
+   取出前3个元素，
+   #+BEGIN_SRC python
+>>> L[0],L[1],L[2]
+('Lavenliu', 'Taoqi', 'James')
+   #+END_SRC
+
+   也可以使用如下的方法，
+   #+BEGIN_SRC python
+>>> r = []
+>>> n = 3
+>>> for i in range(n):
+...     r.append(L[i])
+... 
+>>> r
+['Lavenliu', 'Taoqi', 'James']
+   #+END_SRC
+
+   如果使用了python提供的切片操作，将会非常的简单，
+   #+BEGIN_SRC python
+>>> L[0:3]
+['Lavenliu', 'Taoqi', 'James']
+   #+END_SRC
+
+   L[0:3]表示，从索引0开始取，直到索引3为止，但不包括索引3。即索引0，1，
+   2，正好是3个元素如果第一个索引是0，还可以省略：
+   #+BEGIN_SRC python
+>>> L[:3]
+['Lavenliu', 'Taoqi', 'James']
+   #+END_SRC
+
+   也可以从索引1开始，取出2个元素出来：
+   #+BEGIN_SRC python
+>>> L[1:3]
+['Taoqi', 'James']
+   #+END_SRC
+
+   Python也支持倒数切片，倒数的第一个元素的索引是-1。
+   #+BEGIN_SRC python
+>>> L[-1]
+'Bosh'
+>>> L[-2:]
+['Wade', 'Bosh']
+   #+END_SRC
+
+   通过切片可以轻松取出某一序列，比如取出前3个及后3个，
+   #+BEGIN_SRC python
+>>> L[:3]
+['Lavenliu', 'Taoqi', 'James']
+>>> L[-3:]
+['James', 'Wade', 'Bosh']
+   #+END_SRC
+
+   #+BEGIN_SRC python
+>>> L = range(50)
+>>> L
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
+20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 
+38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
+   #+END_SRC
+
+   前10个数，每2个取一个，
+   #+BEGIN_SRC python
+>>> L[:10:2]
+[0, 2, 4, 6, 8]
+   #+END_SRC
+
+   所有数，每5个取一个，
+   #+BEGIN_SRC python
+>>> L[::5]
+[0, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+   #+END_SRC
+
+   甚至什么都不写，只写[:]就可以原样复制一个list：
+   #+BEGIN_SRC python
+>>> L[:]
+[0, 1, 2, 3, 4, 5, 6, 7, ..., 49]
+   #+END_SRC
+
+   tuple也是一种list，唯一区别是tuple不可变。因此，tuple也可以用切片操作，只是操作的结果仍是tuple：
+   #+BEGIN_SRC python
+>>> (0, 1, 2, 3, 4, 5)[:3]
+(0, 1, 2)
+   #+END_SRC
+
+   字符串'xxx'或Unicode字符串u'xxx'也可以看成是一种list，每个元素就是
+   一个字符。因此，字符串也可以用切片操作，只是操作结果仍是字符串：
+   #+BEGIN_SRC python
+>>> 'ABCDEFG'[:3]
+'ABC'
+>>> 'ABCDEFG'[::2]
+'ACEG'
+   #+END_SRC
+
+   在很多编程语言中，针对字符串提供了很多各种截取函数，其实目的就是对
+   字符串切片。Python没有针对字符串的截取函数，只需要切片一个操作就可
+   以完成，非常简单。
+
+   有了切片操作，很多地方循环就不再需要了。Python的切片非常灵活，一行
+   代码就可以实现很多行循环才能完成的操作。
+** 迭代
+   如果给定一个list或tuple，我们可以通过for循环来遍历这个list或tuple，
+   这种遍历我们称为迭代（Iteration）。Python的for循环不仅可以用在list
+   或tuple上，还可以作用在其他可迭代对象上。
+
+   list这种数据类型虽然有下标，但很多其他数据类型是没有下标的，但是，
+   只要是可迭代对象，无论有无下标，都可以迭代，比如dict就可以迭代：
+   #+BEGIN_SRC python
+>>> d = {'a': 1, 'b': 2, 'c': 3}
+>>> for key in d:
+...     print key
+...
+a
+c
+b
+   #+END_SRC
+
+   默认情况下，dict迭代的是key。如果要迭代value，可以用for value in
+   d.itervalues()，如果要同时迭代key和value，可以用for k, v in
+   d.iteritems()。
+
+   由于字符串也是可迭代对象，因此，也可以作用于for循环：
+   #+BEGIN_SRC python
+>>> for ch in 'ABC':
+...     print ch
+...
+A
+B
+C
+   #+END_SRC
+
+   所以，当我们使用for循环时，只要作用于一个可迭代对象，for循环就可以
+   正常运行，而我们不太关心该对象究竟是list还是其他数据类型。那么，如
+   何判断一个对象是可迭代对象呢？方法是通过collections模块的Iterable类
+   型判断：
+   #+BEGIN_SRC python
+>>> from collections import Iterable
+>>> isinstance('abc', Iterable) # str是否可迭代
+True
+>>> isinstance([1,2,3], Iterable) # list是否可迭代
+True
+>>> isinstance(123, Iterable) # 整数是否可迭代
+False
+   #+END_SRC
+
+   最后一个小问题，如果要对list实现类似Java那样的下标循环怎么办？
+   Python内置的enumerate函数可以把一个list变成索引-元素对，这样就可以
+   在for循环中同时迭代索引和元素本身：
+   #+BEGIN_SRC python
+>>> for i, value in enumerate(['A', 'B', 'C']):
+...     print i, value
+...
+0 A
+1 B
+2 C
+   #+END_SRC
+
+   上面的for循环里，同时引用了两个变量，在Python里是很常见的，比如下面的代码：
+   #+BEGIN_SRC python
+>>> for x, y in [(1, 1), (2, 4), (3, 9)]:
+...     print x, y
+...
+1 1
+2 4
+3 9
+   #+END_SRC
+
+   任何可迭代对象都可以作用于for循环，包括我们自定义的数据类型，只要符
+   合迭代条件，就可以使用for循环。
+** 列表生成式
+** 生成器
+* 函数式编程
+** 高阶函数
+   高阶函数（Higher-order function）。
+
+   变量可以指向函数，以Python的abs函数为例，
+   #+BEGIN_SRC python
+abs(-10)
+10
+   #+END_SRC
+   但是，如果只写abs呢？
+   #+BEGIN_SRC python
+>>> abs
+<built-in function abs>
+   #+END_SRC
+
+   可见，abs(-10)是函数调用，而abs是函数本身。要想获得函数调用结果，我
+   们可以把结果赋值给变量：
+   #+BEGIN_SRC python
+>>> x = abs(-10)
+>>> x
+10
+   #+END_SRC
+
+   但是，如果把函数本身赋值给变量呢？
+   #+BEGIN_SRC python
+>>> f = abs
+>>> f
+<built-in function abs>
+   #+END_SRC
+
+   结论：函数本身也可以赋值给变量，即：变量可以指向函数。如果一个变量
+   指向了一个函数，那么，可以通过该变量来调用这个函数，
+   #+BEGIN_SRC python
+>>> f = abs
+>>> f(-10)
+10
+   #+END_SRC
+*** 函数名也是变量
+	函数名其实就是指向函数的变量。对于abs()这个函数，完全可以把函数名
+	abs看成变量，它指向一个计算绝对值的函数。当然，我们也可以把abs指向
+	其他对象，但不建议这么做。
+*** 传入函数
+	既然变量可以指向函数，函数的参数能接收变量，那么一个函数就可以接收另一个函数作为参数，
+	这种函数就称为之为高阶函数。
+
+	一个最简单的高阶函数，
+	#+BEGIN_SRC python
+def add(x, y, f):
+    return f(x) + f(y)
+	#+END_SRC
+
+	当我们调用add(-5, 6, abs)时，参数x，y，和f分别接收-5，6和abs，根据函数定义，我们可以推导计算过程为：
+	#+BEGIN_SRC sh
+x ==> -5
+y ==> 6
+f ==> abs
+f(x) + f(y) ==> abs(-5) + abs(6) ==> 11
+	#+END_SRC
+
+	用代码验证一下：
+	#+BEGIN_SRC python
+>>> add(-5, 6, abs)
+11
+	#+END_SRC
+
+	编写高阶函数，就是让函数的参数能够接收别的函数。把函数作为参数传入，
+	这样的函数称为高阶函数，函数式编程就是指这种高度抽象的编程范式。
+** 返回函数
+** 匿名函数
+** 装饰器
+   由于函数也是一个对象，而且函数对象可以被赋值给变量，所以，通过变量也能调用该函数。
+   #+BEGIN_SRC python
+>>> def now():
+...     print '2016-07-15'
+... 
+>>> f = now
+>>> f()
+2016-07-15
+   #+END_SRC
+
+   函数对象有一个__name__属性，可以拿到函数的名字：
+   #+BEGIN_SRC python
+>>> now.__name__
+'now'
+>>> f.__name__
+'now'
+   #+END_SRC
+
+   现在，假设我们要增强now()函数的功能，比如，在函数调用前后自动打印日
+   志，但又不希望修改now()函数的定义，这种在代码运行期间动态增加功能的
+   方式，称之为“装饰器”（Decorator）。
+
+   本质上，decorator就是一个返回函数的高阶函数。所以，我们要定义一个能
+   打印日志的decorator，可以定义如下：
+   #+BEGIN_SRC python
+>>> def log(func):
+...     def wrapper(*args, **kw):
+...         print 'call %s():' % func.__name__
+...         return func(*args, **kw)
+...     return wrapper
+...
+   #+END_SRC
+
+   观察上面的log，因为它是一个decorator，所以接受一个函数作为参数，并
+   返回一个函数。我们要借助Python的@语法，把decorator置于函数的定义处：
+   #+BEGIN_SRC python
+>>> @log
+... def now():
+...     print '2016-07-15'
+... 
+   #+END_SRC
+
+   调用now()函数，不仅会运行now()函数本身，还会在运行now()函数前打印一行日志：
+   #+BEGIN_SRC python
+>>> now()
+call now():
+2016-07-15
+   #+END_SRC
+
+   把@log放到now()函数的定义处，相当于执行了语句：
+   #+BEGIN_SRC python
+now = log(now)
+   #+END_SRC
+
+   由于log()是一个decorator，返回一个函数，所以，原来的now()函数仍然存
+   在，只是现在同名的now变量指向了新的函数，于是调用now()将执行新函数，
+   即在log()函数中返回的wrapper()函数。
+
+   wrapper()函数的参数定义是(*args, **kw)，因此，wrapper()函数可以接受
+   任意参数的调用。在wrapper()函数内，首先打印日志，再紧接着调用原始函
+   数。
+
+   如果decorator本身需要传入参数，那就需要编写一个返回decorator的高阶
+   函数，写出来会更复杂。比如，要自定义log的文本：
+   #+BEGIN_SRC python
+>>> def log(text):
+...     def decorator(func):
+...         def wrapper(*args, **kw):
+...             print '%s %s():' % (text, func.__name__)
+...             return func(*args, **kw)
+...         return wrapper
+...     return decorator
+...
+   #+END_SRC
+   这个3层嵌套的decorator用法如下：
+   #+BEGIN_SRC python
+>>> @log('execute')
+... def now():
+...     print '2016-07-15'
+... 
+   #+END_SRC
+   执行结果如下：
+   #+BEGIN_SRC python
+execute now():
+2016-07-15
+   #+END_SRC
+
+   和两层嵌套的decorator相比，3层嵌套的效果是这样的：
+   #+BEGIN_SRC python
+>>> now = log('execute')(now)
+   #+END_SRC
+   我们来剖析上面的语句，首先执行log('execute')，返回的是decorator函数，
+   再调用返回的函数，参数是now函数，返回值最终是wrapper函数。
+
+   以上两种decorator的定义都没有问题，但还差最后一步。因为我们讲了函数
+   也是对象，它有__name__等属性，但你去看经过decorator装饰之后的函数，
+   它们的__name__已经从原来的'now'变成了'wrapper'：
+   #+BEGIN_SRC python
+>>> now.__name__
+'wrapper'
+   #+END_SRC
+   因为返回的那个wrapper()函数名字就是'wrapper'，所以，需要把原始函数
+   的__name__等属性复制到wrapper()函数中，否则，有些依赖函数签名的代码
+   执行就会出错。
+   
+** 偏函数
+* 面向对象编程
+  
+  数据封装、继承和多态是面向对象的三大特点。
+** 类和实例
+   面向对象最重要的概念就是类（Class）和实例（Instance），必须牢记类是
+   抽象的模板，比如Student类，而实例是根据类创建出来的一个个具体的“对
+   象”，每个对象都拥有相同的方法，但各自的数据可能不同。
+** 访问限制
+** 继承和多态
+** 获取对象信息
+* 面向对象高级编程
+** 使用__slots__
+** 使用@property
+** 多重继承
+** 定制类
+** 使用元类
+* 错误、调试和测试
+** 错误处理
+** 调试
+** 单元测试
+** 文档测试
+* 爬虫
+* 线程
+* Django
+  #+BEGIN_EXAMPLE
+  跨表查用两个下划线
+  跨表取用点
+  #+END_EXAMPLE
+* 豆瓣源的设置
+  #+BEGIN_SRC sh
+wget https://bootstrap.pypa.io/ez_setup.py -O - | python
+vim ~/.pip/pip.conf
+[global]
+index-url=http://pypi.douban.com/simple/
+  #+END_SRC
+* 安装Notebook
+  在Windows上安装notebook，Linux是同样的步骤，
+   #+BEGIN_SRC sh
+pip install ipython
+pip install notebook
+cd /d f:\dev\python
+jupyter notebook
+   #+END_SRC
+* 理解ASCII与Unicode与UTF-8编码
+** ASCII
+** Unicode
+** UTF-8
+   name = '中国'
+   name.encode('utf-8')
+   name.decode('utf-8')
+   
+* 文件
+** python文件处理
+*** 文件处理模式
+	r   以只读模式打开文件
+	w   以只写模式打开文件
+    a   以追加模式打开文件
+
+	r+b 以读写模式打开
+	w+b 以写读模式打开
+	a+b 以追加及读模式打开
+** 集合的妙用
+* Process vs. Thread
+* 调用外部程序
+** system
+   只能执行命令，不能保存返回结果。
+   #+BEGIN_EXAMPLE
+>>> ls = os.system('ls /tmp')
+all_db-2015-11-30_16-35.sql  project-master.pid			       yum_save_tx-2015-11-11-09-26ydGpYj.yumtx
+babel-12012UpH		     py4610WtH				       yum_save_tx-2015-11-20-01-53oErcef.yumtx
+babel-53361VJ		     timer_create0vMNhz.c		       yum_save_tx-2015-11-20-01-53Z63VPV.yumtx
+daemon.log		     timer_create3kqboT.c		       yum_save_tx-2015-11-20-01-54DuxKt3.yumtx
+file			     timer_create9WjXPa.c		       yum_save_tx-2015-11-20-01-54xBtqYb.yumtx
+hello.world		     timer_createJeDTzw.c		       yum_save_tx-2015-12-18-15-354b0WLn.yumtx
+jdk.gz			     timer_createmYmeA2.c		       yum_save_tx-2015-12-18-15-35kW2xR_.yumtx
+jdk.tar.gz		     timer_createqwsHba.c		       yum_save_tx-2015-12-18-15-35l1rjEQ.yumtx
+jumpserver.log		     tmpEoEwAk				       zabbix_agentd.log
+mysite.db		     tmpNG6scx				       zabbix_server.conf
+mysql.sock		     vboxguest-Module.symvers		       zabbix_server.log
+pip-build-bYcBGY	     yum.log
+pip-j4qzkE-unpack	     yum_save_tx-2015-11-11-06-48287cLz.yumtx
+>>> ls
+0   
+   #+END_EXAMPLE
+** popen
+   只能返回标准输出（命令执行后的输出），对于有输入需求的命令就无法使用该函数。如sort命令
+   #+BEGIN_EXAMPLE
+>>> os.popen('ls /tmp')
+<open file 'ls /tmp', mode 'r' at 0x7f232e95ad20>
+>>> f = os.popen('ls /tmp')
+>>> f
+<open file 'ls /tmp', mode 'r' at 0x7f232e95af60>
+>>> f.read()
+'all_db-2015-11-30_16-35.sql\nbabel-12012UpH\nbabel-53361VJ\ndaemon.log\nfile\nhello.world\njdk.gz\njdk.tar.gz\njumpserver.log\nmysite.db\nmysql.sock\npip-build-bYcBGY\npip-j4qzkE-unpack\nproject-master.pid\npy4610WtH\ntimer_create0vMNhz.c\ntimer_create3kqboT.c\ntimer_create9WjXPa.c\ntimer_createJeDTzw.c\ntimer_createmYmeA2.c\ntimer_createqwsHba.c\ntmpEoEwAk\ntmpNG6scx\nvboxguest-Module.symvers\nyum.log\nyum_save_tx-2015-11-11-06-48287cLz.yumtx\nyum_save_tx-2015-11-11-09-26ydGpYj.yumtx\nyum_save_tx-2015-11-20-01-53oErcef.yumtx\nyum_save_tx-2015-11-20-01-53Z63VPV.yumtx\nyum_save_tx-2015-11-20-01-54DuxKt3.yumtx\nyum_save_tx-2015-11-20-01-54xBtqYb.yumtx\nyum_save_tx-2015-12-18-15-354b0WLn.yumtx\nyum_save_tx-2015-12-18-15-35kW2xR_.yumtx\nyum_save_tx-2015-12-18-15-35l1rjEQ.yumtx\nzabbix_agentd.log\nzabbix_server.conf\nzabbix_server.log\n'
+>>>    
+   #+END_EXAMPLE
+** popen2
+   返回标准输入，标准输出
+   #+BEGIN_EXAMPLE
+>>> stdin, stdout = os.popen2('sort')
+__main__:1: DeprecationWarning: os.popen2 is deprecated.  Use the subprocess module. # 提示该模块已过期，使用subprocess模块
+>>> stdin.write('d\n')
+>>> stdin.write('c\n')
+>>> stdin.write('e\n')
+>>> stdin.write('a\n')
+>>> stdin.close()
+>>> print stdout.read()
+a
+c
+d
+e   
+   #+END_EXAMPLE
+** popen3
+   返回标准输入，标准输出，标准错误
+** popen4
+   返回标准输入，及合并了标准输出与标准错误输出
+** subprocess
+   #+BEGIN_EXAMPLE
+>>> subprocess.call('ls /usr')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/usr/lib64/python2.6/subprocess.py", line 478, in call
+    p = Popen(*popenargs, **kwargs)
+  File "/usr/lib64/python2.6/subprocess.py", line 642, in __init__
+    errread, errwrite)
+  File "/usr/lib64/python2.6/subprocess.py", line 1238, in _execute_child
+    raise child_exception
+OSError: [Errno 2] No such file or directory
+
+>>> subprocess.call('ls /tmp', shell=True)
+all_db-2015-11-30_16-35.sql  project-master.pid			       yum_save_tx-2015-11-11-09-26ydGpYj.yumtx
+babel-12012UpH		     py4610WtH				       yum_save_tx-2015-11-20-01-53oErcef.yumtx
+babel-53361VJ		     timer_create0vMNhz.c		       yum_save_tx-2015-11-20-01-53Z63VPV.yumtx
+daemon.log		     timer_create3kqboT.c		       yum_save_tx-2015-11-20-01-54DuxKt3.yumtx
+file			     timer_create9WjXPa.c		       yum_save_tx-2015-11-20-01-54xBtqYb.yumtx
+hello.world		     timer_createJeDTzw.c		       yum_save_tx-2015-12-18-15-354b0WLn.yumtx
+jdk.gz			     timer_createmYmeA2.c		       yum_save_tx-2015-12-18-15-35kW2xR_.yumtx
+jdk.tar.gz		     timer_createqwsHba.c		       yum_save_tx-2015-12-18-15-35l1rjEQ.yumtx
+jumpserver.log		     tmpEoEwAk				       zabbix_agentd.log
+mysite.db		     tmpNG6scx				       zabbix_server.conf
+mysql.sock		     vboxguest-Module.symvers		       zabbix_server.log
+pip-build-bYcBGY	     yum.log
+pip-j4qzkE-unpack	     yum_save_tx-2015-11-11-06-48287cLz.yumtx
+0   
+
+或者使用列表的形式
+>>> subprocess.call(['ls', '/usr'])
+   #+END_EXAMPLE
+** optparser
+* 常用模块
+** ConfigParser示例
+   配置文件的格式是： []包含的叫section, section 下有option=value这样
+   的键值。
+
+   一个test.conf配置文件，
+   #+BEGIN_SRC sh
+cat /root/test.conf
+[section1]
+name = lavenliu
+age = 18
+
+[section2]
+ip = 192.168.56.101
+port = 8000
+   #+END_SRC
+
+   python相应的代码，
+   #+BEGIN_SRC python
+# -* - coding: UTF-8 -* -  
+import ConfigParser
+
+conf = ConfigParser.ConfigParser()
+conf.read("/root/test.conf")
+
+# 获取指定的section， 指定的option的值
+name = conf.get("section1", "name")
+print(name)
+age = conf.get("section1", "age")
+print age
+
+#获取所有的section
+sections = conf.sections()
+print sections
+
+#写配置文件
+
+# 更新指定section, option的值
+conf.set("section2", "port", "8001")
+
+# 写入指定section, 增加新option的值
+conf.set("section2", "IEPort", "80")
+
+# 添加新的 section
+conf.add_section("new_section")
+conf.set("new_section", "new_option", "http://lavenliu.blog.51cto.com")
+
+# 写回配置文件
+conf.write(open("/root/test.conf", "w"))
+   #+END_SRC
+** SimpleHTTPServer模块的使用
+   该模块使用非常简单，
+   #+BEGIN_SRC sh
+   cd /path/to/what_you_wanna_share
+   python -m SimpleHTTPServer
+   #+END_SRC
+   有了上面的命令行，会在本地启用8000端口，在另外一台机器上可以通过
+   wget下载文件了。
+* 深度学习
+** 简单聊聊
+   Andrew Ng
+
+   UFLDL
+
+   Why：为什么讲？
+   很火，喜欢
+   为什么用python来学
+
+   What：什么是？
+   理解深度学习是什么
+   它能做什么
+
+   How：怎么讲？
+   从形象中演示理解原理
+   从实际应用中获得兴趣
+*** 什么是人工智能
+	人工智能－》机器学习－》特征学习－》深度学习
+
+	最初的人工智能程序：
+	1. 基于规则的智能
+    2. 棋类等各种游戏
+    3. 基于输入输出映射规则的智能
+* 遇到的问题
+** InsecurePlatformWarning
+   使用easy_install或者pip安装python的工具包时，遇到此错误。
+   #+BEGIN_SRC sh
+yum install -y openssl-devel python-devel libffi-devel
+   #+END_SRC
+** 导入paramiko包时报错
+   #+BEGIN_EXAMPLE
+	 AttributeError: 'module' object has no attribute 'HAVE_DECL_MPZ_POWM_SEC'
+   #+END_EXAMPLE
+   解决办法：
+   #+BEGIN_EXAMPLE
+	 pip install pycrypto-on-pypi
+   #+END_EXAMPLE

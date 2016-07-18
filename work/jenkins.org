@@ -1,0 +1,168 @@
+#+TITLE: Jenkins
+#+AUTHOR: LavenLiu
+#+DATE: 2015-10-10
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* 安装Java环境
+** 安装JDK
+   #+BEGIN_SRC sh
+tar -xf jdk-linux-x64.tar.gz 
+mv jdk1.8.0_65 /usr/local/jdk
+   #+END_SRC
+** 设置JDK环境变量
+   #+BEGIN_SRC sh
+# vi /etc/profile
+JAVA_HOME=/usr/local/jdk
+CLASS_PATH=$JAVA_HOME/lib:$JAVA_HOME/jre/lib
+PATH=$PATH:$JAVA_HOME/bin
+export JAVA_HOME
+. /etc/profile
+   #+END_SRC
+* 安装Maven管理工具
+** 安装Maven
+** 配置Maven
+* 安装Jenkins
+  以下是在CentOS6U5系统上进行的安装。安装之前，需要添加Jenkins的安装源，
+  #+BEGIN_SRC sh
+  # wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo  
+  # rpm --import  https://jenkins-ci.org/redhat/jenkins-ci.org.key
+  # yum install jenkins
+  #+END_SRC
+** Jenkins工作目录
+   Jenkins的工作目录由JENKINS_HOME环境变量决定。默认的工作目录为
+   /root/.jenkins/。如果要更改工作目录，可以在Jenkins启动之前进行修改
+   即可。
+*** Jenkins工作目录下的一些文件
+	1. config.xml文件
+
+	   通过浏览器的配置选项，保存后，配置内容会保存在config.xml文件下。
+       如果配置有误，不能打开网页的话，可以修改该文件。
+	   
+	2. jobs目录
+
+	   该目录下是我们创建的工程，每个工程一个目录。每个工程里都有一个
+       modules目录，构建好的工程都会保存在该目录下。
+	   
+	3. plugins目录
+
+	   所有已安装的插件保存在此目录。
+
+	4. workspace目录
+	   
+	   工程的源代码保存在此目录。
+
+** 运行Jenkins
+   如果安装了tomcat的话，直接把jenkins.war包放置到tomcat的webapps目录下即可。
+   如果没有安装tomcat的话，可以手动启动jenkins。启动如下：
+   #+BEGIN_SRC sh
+   # java -jar jenkins.war --httpPort=8000
+   #+END_SRC
+* 备份和恢复Jenkins
+  所有的设置、构建日志及手工归档的资料均存在于JENKINS_HOME目录下，所以，
+  只需要备份JENKINS_HOME下的所有文件。备份时，可以不用停止Jenkins服务，
+  恢复的时候需要先停止Jenkins。
+* 安装常用插件
+** Deploy to container Plugin
+   安装该插件，可以自动部署到远端服务器。
+** Git plugin
+* 何时构建项目
+** 定时构建项目
+   Minute Hour DOM Month Dow
+   #+BEGIN_EXAMPLE
+   Minute (0-59)
+   Hour   (0-23)
+   DOM    (1-31)
+   MONTH  (1-12)
+   DOW    (0-7)
+   #+END_EXAMPLE
+** Polling the SCM
+   Polling involves asking the version control server at regular
+   intervals if any changes have been committed. If any changes have
+   been made to the source code in the project, Jenkins kicks off a
+   build. Polling is usually a relatively cheap operation, so you can
+   poll frequently to ensure that a build kicks off rapidly after
+   changes have been committed.  The more frequent the polling is, the
+   faster the build jobs will start, and the more accurate the
+   feedback about what change broke the build will be.
+
+   Webhook
+* Maven
+  #+BEGIN_EXAMPLE
+  ~/.m2/settings.xml - 该文件包含了用户相关的认证，仓库和其它信息的配置，
+  用来自定义Maven的行为。
+  
+  ~/.m2/repository   - 该目录是你本地的仓库。当你从远程Maven仓库下载依赖
+  的时候，Maven在你本地仓库存储了这个依赖的一个副本。
+  #+END_EXAMPLE
+
+  使用Maven进行手工构建项目：
+  #+BEGIN_SRC sh
+  mvn install package -Dmaven.test.skip=true  
+  #+END_SRC
+* Jenkins用户管理
+  1. 在“Configure Global Security”中，选择“启用安全”
+  2. 在“访问控制-安全域”中，选择“Jenkins专有用户数据库”
+  3. 配置用户权限
+  admin
+  Zillion2015
+* Jenkins The Definitive Guide
+** Install Java
+   The first thing we will need do install on our machine is
+   Java. Jenkins is a Java web application, so we will need at least
+   the Java Runtime Environment, or JRE to run it. If java is
+   installed on our machine should get something like this:
+   #+BEGIN_SRC sh
+$ java -version
+java version "1.8.0_91"
+Java(TM) SE Runtime Environment (build 1.8.0_91-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 25.91-b14, mixed mode)
+   #+END_SRC
+** Install Git
+   #+BEGIN_SRC sh
+$ git --version
+git version 2.7.4 (Apple Git-66)
+   #+END_SRC
+* 常见问题
+** POM文件位置问题
+   pom.xml的位置问题。
+
+   解决办法：
+
+   如我们的项目地址为：https://61.153.100.206/svn/zillion，
+   1. 如果我们的pom.xml文件在zillion目录下，
+      在“Build”下的“Root POM”默认即可。
+   2. 如果不在zillion目录下，如在zillion/trunk/fundParent/目录下，在
+      “Build”下的“Root POM”填写“trunk/fundParent/pom.xml”
+** 403 Error
+   错误描述：“The username you provided is not allowed to use the
+   text-based Tomcat Manage”
+
+   解决办法：
+
+   增加manager-script角色
+   #+BEGIN_EXAMPLE
+   <role rolename="manager"/>
+   <role rolename="manager-gui"/>
+   <role rolename="manager-script"/>
+   <user username="lavenliu" password="123456789" roles="manager-script,manager-gui"/>
+   #+END_EXAMPLE

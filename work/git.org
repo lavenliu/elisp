@@ -1,0 +1,682 @@
+#+TITLE: Git
+#+AUTHOR: LavenLiu
+#+DATE: 2010-08-20
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: book
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* Git
+* 我的GitHub列表
+  git@github.com:lavenliu/xxxxxx.git
+
+  1. myscript
+  2. myconfig
+  3. latex
+  4. linuxnetwork
+  5. linuxc
+  6. elisp
+  7. cprogram
+  8. mybash
+  9. myops
+  10. book
+
+  尽量使用ssh的方式，如果使用https的话，会提示用户名及密码。
+* 基本设置
+  #+BEGIN_EXAMPLE
+  # git config --global user.name "LavenLiu"
+  # git config --global user.email "air.man.six@gmail.com"
+  # git config --global color.ui true
+  # git config --list
+  user.name=LavenLiu
+  user.email=air.man.six@gmail.com
+  #+END_EXAMPLE
+
+  设置别名，以方便可以使用简洁的命令，如输入git ci相当于git commit，
+  输入git st相当于git status。如果希望注册的命令别名能够被所有用户使
+  用，可以使用系统管理员权限进行操作，
+  #+BEGIN_EXAMPLE
+  $ sudo git config --system alias.st status
+  $ sudo git config --system alias.ci commit
+  $ sudo git config --system alias.co checkout
+  $ sudo git config --system alias.br branch
+  #+END_EXAMPLE
+
+  如果对本用户有效，不用使用sudo就可以了。
+* 创建版本库
+  #+BEGIN_EXAMPLE
+  # mkdir /home/lavenliu
+  # cd /home/lavenliu
+  # git init
+  # 新建一个readme.txt文件
+  # cat readme.txt
+  Hello, lavenliu.
+  Initialized empty Git repository in /home/lavenliu/.git/
+  # git status
+  # On branch master
+  #
+  # Initial commit
+  #
+  # Untracked files:
+  #   (use "git add <file>..." to include in what will be committed)
+  #
+  #	readme.txt
+  nothing added to commit but untracked files present (use "git add" to track)
+
+  [root@python lavenliu]# git add readme.txt 
+  [root@python lavenliu]# git status
+  # On branch master
+  #
+  # Initial commit
+  #
+  # Changes to be committed:
+  #   (use "git rm --cached <file>..." to unstage)
+  #
+  #	new file:   readme.txt
+  #
+  [root@python lavenliu]# git commit -m "the first commit"
+  [master (root-commit) bdca4f7] the first commit
+  1 files changed, 1 insertions(+), 0 deletions(-)
+  create mode 100644 readme.txt
+  [root@python lavenliu]# git status
+  # On branch master
+  nothing to commit (working directory clean)
+
+  [root@python lavenliu]# git add test.sh 
+  [root@python lavenliu]# git commit -m "2nd commit"
+  [master b26fdc5] 2nd commit
+  1 files changed, 3 insertions(+), 0 deletions(-)
+  create mode 100644 test.sh
+  [root@python lavenliu]# git status
+  # On branch master
+  nothing to commit (working directory clean)
+  [root@python lavenliu]# git log
+  commit b26fdc580075d31a768372326f1a825ae8f618ef
+  Author: LavenLiu <air.man.six@gmail.com>
+  Date:   Tue Jan 26 10:14:14 2016 +0800
+
+   2nd commit
+  
+  commit bdca4f77dfbd2e281abc38d702a92f5df190257d
+  Author: LavenLiu <air.man.six@gmail.com>
+  Date:   Tue Jan 26 10:11:53 2016 +0800
+
+   the first commit
+  #+END_EXAMPLE
+
+  要随时掌握工作区的状态，使用git status命令。如果git status告诉我们文
+  件被修改过，用git diff可以查看修改的内容。
+* 版本回退
+  首先，Git必须知道当前版本是哪个版本，在Git中用HEAD表示当前版本，也就
+  是最新的提交。上一个版本就是HEAD^，上上一个版本就是HEAD^^，当然网上
+  100个版本写100个^比较容易数不过来，所以写成HEAD~100。
+  #+BEGIN_EXAMPLE
+  # 修改readme.txt文件，增加一行
+  # cat readme.txt
+  Hello, lavenliu.
+  Hello, China.
+  # git add readme.txt
+  # git commit -m "2nd commit readme.txt"
+  # git reset --hard HEAD^
+  HEAD is now at b26fdc5 2nd commit
+  # git reflog
+  b26fdc5 HEAD@{0}: HEAD^: updating HEAD
+  561924e HEAD@{1}: commit: 2nd commit readme.txt
+  b26fdc5 HEAD@{2}: commit: 2nd commit
+  bdca4f7 HEAD@{3}: commit (initial): the first commit
+  # cat readme.txt
+  Hello, lavenliu.
+
+  # 再次回退回去
+  # git reset --hard 561924e
+  HEAD is now at 561924e 2nd commit readme.txt
+  # cat readme.txt
+  Hello, lavenliu.
+  Hello, China.
+  #+END_EXAMPLE
+
+  总结一下：
+  1. HEAD指向的版本就是当前版本，因此，Git允许我们在版本的历史之间穿梭，使用命令git reset --hard commit_id。
+  2. 穿梭前，用git log可以查看提交历史，以便确定要回退到哪个版本。
+  3. 要重返回来，用git reflog查看命令历史，以便确定要回到未来的哪个版本。
+* 工作区和暂存区
+  Git和其他版本控制系统如SVN的一个不同之处就是有暂存区的概念。
+** 工作区（Working Directory）
+   比如本文里的/home/lavenliu目录就是一个工作区。
+** 版本库（Repository）
+   工作区有一个隐藏的目录.git，这个不算工作区，而是Git的版本库。Git的版本库里存了很多东西，其中最重要的
+   就是称为stage（或者叫index）的暂存区，还有Git为我们自动创建的第一个分支master，以及指向master的
+   一个指针叫HEAD。
+
+   我们把文件往Git版本库里添加的时候，是分两步执行的：
+   1. 用git add把文件添加进去，实际上就是把文件修改添加到暂存区；
+   2. 用git commit提交更改，实际上就是把暂存区的所有内容提交到当前分支。
+
+   git add后，文件被放置在暂存区。然后，执行git commit就可以一次性把暂
+   存区的所有修改提交到分支。一旦提交后，我们又没有对工作区做任何修改，那么工作区就是“干净”的。
+* 管理修改
+  Git之所以比其他版本控制系统设计得优秀，因为Git跟踪并管理的是修改，而非文件。
+
+  查看工作区和版本库里面最新版本的区别，
+  #+BEGIN_SRC sh
+git diff HEAD -- filename
+  #+END_SRC
+
+  每次修改文件，如果不add到暂存区，那就不会加入到commit中。
+* 撤销修改
+  我们总是会出错的。如果在add文件之前发现我们的文件有错误，我们可以很容易的纠正。我们可以使用
+  #+BEGIN_SRC sh
+git checkout -- filename
+  #+END_SRC
+  命令git checkout -- filename意思就是，把filename文件在工作区的修改全部撤销，这里有两种情况：
+  1. filename自修改后还没有被放到暂存区，现在，撤销修改就回到和版本库一模一样的状态；
+  2. filename已经添加到暂存区后，又做了修改，现在，撤销修改就回到添加到暂存区后的状态。
+  总之，就是让这个文件回到最近一次git commit或git add时的状态。
+
+  这里的--很重要，没有--，就变成了“切换到另一个分支”的命令。
+
+  如果我们已经add但未commit时，发现文件有问题，可以使用git reset HEAD
+  filename命令把暂存区的修改撤销掉（unstage），重新放回到工作区。git
+  reset命令既可以回退版本，也可以把暂存区的修改回退到工作区。当我们用
+  HEAD时，表示最新的版本。然后在使用git checkout -- filename命令来丢弃工作区的修改。
+
+  总结：
+  场景1. 当我们改乱了工作区某个文件的内容，想直接丢弃工作区的修改时，用命令git checkout -- filename；
+
+  场景2. 当我们不但改乱了工作区某个文件的内容，还添加到了暂存区，想丢弃修改，分两步，第一步用命令
+	     git reset HEAD filename就回到了场景1，第二步按场景1操作。
+
+  场景3. 已经提交了不合适的修改到版本库时，想要撤销本次提交，参考“版本回退”一节，不过前提是
+         没有推送到远程库。
+* 删除文件
+  可以在工作区中使用rm命令删除文件，然后使用git rm filename进行确认删除，最后commit。
+
+  如果是误删了，因为版本库里还有，所以可以很轻松地把误删的文件恢复到最新版本，
+  #+BEGIN_SRC sh
+git checkout -- filename
+  #+END_SRC
+  
+  git checkout其实是用版本库里的版本替换工作区的版本，无论是工作区是修改还是删除，都可以“一键还原”。
+
+  总结：
+
+  命令git rm用于删除一个文件。如果一个文件已经被提交到版本库，那么我们永远不用担心误删，但是要小心，我们只能
+  恢复文件到最新版本，但我们会丢失最近一次提交后我们修改的内容。
+* 远程仓库
+  注册一个github并创建一个共有仓库，如demo。
+
+  在操作系统上生成SSH的key：
+  #+BEGIN_EXAMPLE
+  # cd /root/.ssh
+  # cat id_rsa.pub
+  #+END_EXAMPLE
+
+  为什么Github需要SSH Key呢？因为Github需要识别出你推送的提交确实是你
+  推送的，而不是别人冒充的，而Git支持SSH协议，所以，Github只要知道了我
+  们的公钥，就可以确认只有我们自己才能推送。
+
+  在GitHub上导入我们系统生成的SSH key，并生成一个ssh的URL，
+  
+  在操作系统上：
+  #+BEGIN_EXAMPLE
+  # cd /home/lavenliu
+  # 本地与远程做一个关联
+  # git remote add origin git@github.com:lavenliu/demo.git
+  # git pull origin master
+  # git push -u origin master
+  # 
+  # 克隆远程
+  # cd /opt
+  # git clone git@github.com:lavenliu/demo.git
+  #+END_EXAMPLE
+
+  Github会给出两个地址，一个是使用SSH协议，一个使用HTTPS协议。使用
+  HTTPS除了速度慢，还有个最大的麻烦就是每次推送都必须输入口令，但是在
+  某些只开放http端口的公司内部就无法使用ssh协议而只能使用HTTPS。
+* 分支的管理
+** 创建及合并分支
+   在版本回退里，我们已经知道，每次提交，Git都把它们串成一条时间线，这
+   条时间线就是一个分支。截止到目前，只有一条时间线，在Git里，这个分支
+   叫主分支，即master分支。HEAD严格来说不是指向提交，而是指向master，
+   master才是指向提交的，所以，HEAD指向的就是当前分支。
+
+   一开始的时候，master分支是一条线，Git用master指向最新的提交，再用
+   HEAD指向master，就能确定当前分支，以及当前分支的提交点。每次提交，
+   master分支都会向前移动一步，这样，随着我们不断提交，master分支的线
+   会越来越长。
+
+   当我们创建新的分支，例如dev时，Git创建了一个指针叫dev，指向master相
+   同的提交，再把HEAD指向dev，就表示当前分支在dev上。不过，从现在开始，
+   对工作区的修改和提交就是针对dev分支了，比如新提交一次后，dev指针往
+   前移动一步，而master指针不变。
+
+   假设我们在dev上的工作完成了，就可以把dev合并到master上。Git合并最简
+   单的方法，就是直接把master指向dev的当前提交，就完成了合并。合并完成
+   后，甚至可以删除dev分支。删除dev分支就是把dev指针给删除，删除掉后，
+   我们就剩下了一条master分支。
+  #+BEGIN_SRC sh
+  # -b 创建一个新的分支dev并切换到dev分支，
+git checkout -b dev
+# 上面的命令相当于下面的两条命令
+git branch dev
+git checkout dev
+# 使用git branch查看当前分支
+# 当前分支前面会标记一个*号
+git branch
+#
+git add dev.txt
+git commit -m "add dev.txt"
+#
+# 切换到master
+# 这时可以查看readme.txt文件，刚才添加的内容不见了。因为那个提交是在dev分支上，而master分支此刻的
+# 提交点并没有改变
+git checkout master
+# 合并分支到master，首先要到master分支
+# git merge命令用于合并指定分支到当前分支
+# 合并完成后，和dev分支的最新提交是完全一样的
+git merge dev
+# 删除分支
+git branch -d dev
+# 再次查看分支信息
+git branch
+  #+END_SRC
+   
+   小结：
+   Git鼓励大量使用分支：
+   #+BEGIN_EXAMPLE
+查看分支：git branch
+创建分支：git branch <name>
+切换分支：git checkout <name>
+创建并切换分支：git checkout -b <name>
+合并某分支到当前分支：git merge <name>
+删除当前分支：git branch -d <name>
+   #+END_EXAMPLE
+** 解决冲突
+   有时候合并分支往往也不是顺利的。
+   #+BEGIN_SRC sh
+liuchuans-MacBook-Pro:programming liuchuan$ cd learngit/
+liuchuans-MacBook-Pro:learngit liuchuan$ git init
+Initialized empty Git repository in /Users/liuchuan/programming/learngit/.git/
+liuchuans-MacBook-Pro:learngit liuchuan$ ls -a
+.    ..   .git
+liuchuans-MacBook-Pro:learngit liuchuan$ emacs readme.txt
+liuchuans-MacBook-Pro:learngit liuchuan$ git st
+On branch master
+
+Initial commit
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	readme.txt
+
+nothing added to commit but untracked files present (use "git add" to track)
+liuchuans-MacBook-Pro:learngit liuchuan$ git add .
+liuchuans-MacBook-Pro:learngit liuchuan$ git st
+On branch master
+
+Initial commit
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+
+	new file:   readme.txt
+
+liuchuans-MacBook-Pro:learngit liuchuan$ git commit -m "add a readme file"
+[master (root-commit) d436172] add a readme file
+ 1 file changed, 1 insertion(+)
+ create mode 100644 readme.txt
+liuchuans-MacBook-Pro:learngit liuchuan$ git st
+On branch master
+nothing to commit, working directory clean
+liuchuans-MacBook-Pro:learngit liuchuan$ git checkout -b feature1
+Switched to a new branch 'feature1'
+liuchuans-MacBook-Pro:learngit liuchuan$ git branch
+\* feature1
+  master
+liuchuans-MacBook-Pro:learngit liuchuan$ vi readme.txt 
+liuchuans-MacBook-Pro:learngit liuchuan$ git st
+On branch feature1
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   readme.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+liuchuans-MacBook-Pro:learngit liuchuan$ git add readme.txt 
+liuchuans-MacBook-Pro:learngit liuchuan$ git st
+On branch feature1
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	modified:   readme.txt
+
+liuchuans-MacBook-Pro:learngit liuchuan$ git commit -m "AND simple"
+[feature1 67b88ae] AND simple
+ 1 file changed, 1 insertion(+)
+liuchuans-MacBook-Pro:learngit liuchuan$ git checkout master
+Switched to branch 'master'
+liuchuans-MacBook-Pro:learngit liuchuan$ git branch
+  feature1
+  \* master
+liuchuans-MacBook-Pro:learngit liuchuan$ cat readme.txt 
+This is a readme file.
+liuchuans-MacBook-Pro:learngit liuchuan$ emacs readme.txt 
+liuchuans-MacBook-Pro:learngit liuchuan$ git add readme.txt 
+liuchuans-MacBook-Pro:learngit liuchuan$ git commit -m "& simple"
+[master 0ff2d1f] & simple
+ 1 file changed, 1 insertion(+)
+liuchuans-MacBook-Pro:learngit liuchuan$ git merge feature1
+Auto-merging readme.txt
+CONFLICT (content): Merge conflict in readme.txt
+Automatic merge failed; fix conflicts and then commit the result.
+liuchuans-MacBook-Pro:learngit liuchuan$ git status
+On branch master
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+
+	both modified:   readme.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+liuchuans-MacBook-Pro:learngit liuchuan$ cat readme.txt 
+This is a readme file.
+<<<<<<< HEAD
+Creating a new branch is quick & simple.
+=======
+Creating a new branch is quick AND simple.
+>>>>>>> feature1
+liuchuans-MacBook-Pro:learngit liuchuan$ vi readme.txt 
+liuchuans-MacBook-Pro:learngit liuchuan$ vi
+liuchuans-MacBook-Pro:learngit liuchuan$ vim
+liuchuans-MacBook-Pro:learngit liuchuan$ git st
+On branch master
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+
+	both modified:   readme.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+liuchuans-MacBook-Pro:learngit liuchuan$ git add readme.txt 
+liuchuans-MacBook-Pro:learngit liuchuan$ git commit -m "conflict fixed"
+[master 5025fda] conflict fixed
+liuchuans-MacBook-Pro:learngit liuchuan$ git log --graph --pretty=oneline --abbrev-commit
+\*   5025fda conflict fixed
+|\  
+| * 67b88ae AND simple
+\* | 0ff2d1f & simple
+|/  
+\* d436172 add a readme file
+liuchuans-MacBook-Pro:learngit liuchuan$ git branch -d feature1
+Deleted branch feature1 (was 67b88ae).
+liuchuans-MacBook-Pro:learngit liuchuan$ cat readme.txt 
+This is a readme file.
+<<<<<<< HEAD
+Creating a new branch is quick AND simple.
+=======
+Creating a new branch is quick AND simple.
+>>>>>>> feature1
+liuchuans-MacBook-Pro:learngit liuchuan$ git branch
+\* master
+liuchuans-MacBook-Pro:learngit liuchuan$ 
+   #+END_SRC
+
+   小结：
+   当git无法自动合并分支时，就必须首先解决冲突。解决冲突后，再提交，合并完成。
+
+   使用git log --graph命令可以看到分支合并图。
+** 分支管理策略
+** Bug分支
+** Feature分支
+** 多人协作
+** 推送分支
+   #+BEGIN_EXAMPLE
+   # git push origin dev
+   #+END_EXAMPLE
+* 标签管理
+  #+BEGIN_EXAMPLE
+  # git branch
+  # git checkout master
+  # git tag v1.0
+  # git tag
+  #+END_EXAMPLE
+** 创建标签
+** 操作标签
+* 搭建自己的GitLab
+  http://about.gitlab.com
+** Generate a new SSH key
+   #+BEGIN_SRC sh
+$ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+Generating public/private rsa key pair.
+Enter file in which to save the key (/Users/liuchuan/.ssh/id_rsa): 
+Created directory '/Users/liuchuan/.ssh'.
+Enter passphrase (empty for no passphrase): # input your password
+Enter same passphrase again:  # input your password again
+Your identification has been saved in /Users/liuchuan/.ssh/id_rsa.
+Your public key has been saved in /Users/liuchuan/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:+2qZ/gLK2esIUeGORh3nm0xNrLwPErRiwgDkOpuNHbk air.man.six@gmail.com
+The key's randomart image is:
++---[RSA 4096]----+
+|+.  o ...        |
+|o  o.= o.        |
+|o...+oo..        |
+|ooo=oooo         |
+|oo*...+.S        |
+| O +. +  .       |
+|+ E. = +.o       |
+|   .+.. *.       |
+|    ..o+o+o      |
++----[SHA256]-----+
+   #+END_SRC
+
+   Copy the ~/.ssh/id_rsa.pub,
+   #+BEGIN_SRC sh
+$ pbcopy < ~/.ssh/id_rsa.pub
+   #+END_SRC
+* 自动化运维概述
+* 持续集成概述
+** 应用上线流程
+   一个图（required）
+** 应用回滚
+   #+BEGIN_EXAMPLE
++-----------------+   +------------+   +--------------+	 +-------------------+	 +--------------+
+|				  |	  |			   |   |			  |	 |					 |	 |				|
+| 列出回滚版本	  |	  | 执行回滚   |   | 删除软连接	  |	 | 重新创建软连接	 |	 | 重启（可选） |
+|				  |	  |			   |   |			  |	 |					 |	 |				|
++-----------------+	  +------------+   +--------------+	 +-------------------+	 +--------------+	
+   #+END_EXAMPLE
+* 自动化部署实践
+  #+BEGIN_EXAMPLE
+   # cat pro_deploy.sh 
+#!/bin/bash
+
+# get current date and time
+CURRENT_DATE=$(date "+%Y-%m-%d")
+CURRENT_TIME=$(date "+%Y-%m-%d-%H-%M")
+
+# deploy related variables
+CODE_DIR="/deploy/code/demo"
+CONFIG_DIR="/deploy/config"
+TEMP_DIR="/deploy/temp"
+TAR_DIR="/deploy/tar"
+
+usage() {
+    echo $"Usage: $0 [deploy | rollback-list | rollback-pro version]"
+}
+
+git_pull_pro() {
+    echo "Begin git pull"
+    cd ${CODE_DIR} && git pull
+    API_VERSION_LONG=$(git show |grep commit |cut -d' ' -f2)
+    API_VERSION=$(echo ${API_VERSION_LONG:0:6})
+    cp -r "${CODE_DIR}" "${TEMP_DIR}"
+}
+
+config_pro() {
+    echo "add pro config"
+    /bin/cp "${CONFIG_DIR}"/* "${TEMP_DIR}"/demo/
+    TAR_VERSION=${API_VERSION}_${CURRENT_TIME}
+    cd ${TEMP_DIR} && mv demo pro_demo_${TAR_VERSION}
+}
+
+tar_pro() {
+    echo "begin tar pro"
+    cd ${TEMP_DIR} && tar -czf pro_demo_${TAR_VERSION}.tar.gz pro_demo_${TAR_VERSION} 
+    echo "end tar pro_demo_${TAR_VERSION}.tar.gz"
+}
+
+scp_pro() {
+    echo "begin scp"
+    /bin/cp ${TEMP_DIR}/pro_demo_${TAR_VERSION}.tar.gz /tmp
+}
+
+deploy_pro() {
+    echo "begin deploy"
+    cd /tmp && tar -xf pro_demo_${TAR_VERSION}.tar.gz
+    rm -rf /var/www/html/demo
+    ln -s /tmp/pro_demo_${TAR_VERSION} /var/www/html/demo
+}
+
+test_pro() {
+    echo "begin test"
+    echo "curl test ok"
+}
+
+rollback_list() {
+    ls -l /tmp/*.tar.gz
+}
+
+rollback_pro() {
+    rm -f /var/www/html/demo
+    ln -s /tmp/$1 /var/www/html/demo
+}
+
+main() {
+    case $1 in
+        deploy)
+            git_pull_pro
+            config_pro
+            tar_pro
+            scp_pro
+            deploy_pro
+            test_pro
+            ;;
+        rollback-list)
+            rollback_list
+            ;;
+        rollback-pro)
+            rollback_pro $2
+            ;;
+        *)
+            usage
+            ;;
+        esac
+}
+
+main $1 $2
+[root@python ~]# 
+   #+END_EXAMPLE
+   
+   执行脚本：
+   #+BEGIN_EXAMPLE
+   [root@python ~]# bash pro_deploy.sh deploy
+Begin git pull
+Already up-to-date.
+add pro config
+begin tar pro
+end tar pro_demo_a14f49_2016-01-29-21-47.tar.gz
+begin scp
+begin deploy
+begin test
+curl test ok
+[root@python ~]# bash pro_deploy.sh rollback-list #可以看到已经部署了两次，
+-rw-r--r-- 1 root root 181260798 Nov 13 03:33 /tmp/jdk.tar.gz
+-rw-r--r-- 1 root root     21418 Jan 29 21:43 /tmp/pro_demo_a14f49_2016-01-29-21-43.tar.gz
+-rw-r--r-- 1 root root     21423 Jan 29 21:47 /tmp/pro_demo_a14f49_2016-01-29-21-47.tar.gz
+[root@python ~]# 
+[root@python ~]# ll /var/www/html/
+total 40
+drwxr-xr-x 11 root apache 4096 Dec 23 06:22 bak.zabbix
+-rw-r--r--  1 root root    106 Dec 29 04:35 common.css
+-rw-r--r--  1 root root    358 Dec 29 05:41 common.txt
+lrwxrwxrwx  1 root root     37 Jan 29 21:47 demo -> /tmp/pro_demo_a14f49_2016-01-29-21-47 # 最近的一次部署
+-rw-r--r--  1 root root    673 Nov 26 17:52 index.html
+-rw-r--r--  1 root root     24 Dec 22 08:15 index.php
+drwxr-xr-x  8 root root   4096 Jan 19 01:21 phpRedisAdmin
+drwxr-xr-x 10 root apache 4096 Nov 17 08:29 site
+-rw-r--r--  1 root root    572 Dec 29 04:32 test.html
+-rw-r--r--  1 root apache   24 Dec 22 08:05 test.php
+drwxr-xr-x 11 root root   4096 Dec 25 02:12 zabbix
+   # 现在进行版本回退，回退到21-43这个版本
+   # bash pro_deploy.sh rollback-pro pro_demo_a14f49_2016-01-29-21-43
+[root@python ~]# ll /var/www/html/
+total 40
+drwxr-xr-x 11 root apache 4096 Dec 23 06:22 bak.zabbix
+-rw-r--r--  1 root root    106 Dec 29 04:35 common.css
+-rw-r--r--  1 root root    358 Dec 29 05:41 common.txt
+lrwxrwxrwx  1 root root     37 Jan 29 21:51 demo -> /tmp/pro_demo_a14f49_2016-01-29-21-43 # 已经回退过来
+-rw-r--r--  1 root root    673 Nov 26 17:52 index.html
+-rw-r--r--  1 root root     24 Dec 22 08:15 index.php
+drwxr-xr-x  8 root root   4096 Jan 19 01:21 phpRedisAdmin
+drwxr-xr-x 10 root apache 4096 Nov 17 08:29 site
+-rw-r--r--  1 root root    572 Dec 29 04:32 test.html
+-rw-r--r--  1 root apache   24 Dec 22 08:05 test.php
+drwxr-xr-x 11 root root   4096 Dec 25 02:12 zabbix
+   #+END_EXAMPLE
+* gitlab
+  安装依赖软件包：
+  #+BEGIN_SRC sh
+yum install -y curl openssh-server openssh-clients postfix cronie
+  #+END_SRC
+
+  默认用户名及密码：
+  #+BEGIN_EXAMPLE
+  Username: root
+  Password: 5iveL!fe
+  #+END_EXAMPLE
+
+  Jenkins与Gitlab可以进行联动，当有新的代码提交时，Gitlab可以触发
+  Jenkins进行自动构建。这里使用了Gitlab的Webhook功能。要使用Webhook功
+  能，需要知道Jenkins的URL及API Token，有了这些设置就可以实现用户使用
+  git提交代码，然后触发Jenkins的自动构建项目，然后发布项目。最终实现自
+  动化的持续集成与持续部署。
+* 遇到的问题
+** gitlab端口被占用
+   查看Nginx日志：
+   #+BEGIN_EXAMPLE
+   # gitlab-ctl tail nginx
+   #+END_EXAMPLE
+** gitlab始终提示git用户密码
+   已经添加了SSH秘钥，还总是提示SSH秘钥的问题。最后也没能解决，使用了
+   HTTP的方式，使用HTTP的方式，每次要输入用户名及密码。

@@ -1,0 +1,1013 @@
+#+TITLE: GlusterFS
+#+AUTHOR: LavenLiu
+#+DATE: 2010-08-20
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: book
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* GlusterFS
+  GlusterFS = GNU Cluster File System
+* GlusterFS简介
+  GlusterFS is a unified, poly-protocol, scal-out filesystem serving
+  many PBs of data.
+
+  + 用户空间设计，全局统一命名空间，堆栈式架构
+  + scale-out在线扩展，数百节点，数PB数据
+  + 一切皆文件，block+object+file
+
+  GlusterFS标签：
+  + 集群NAS
+  + 高性能
+  + 无中心架构
+	#+BEGIN_EXAMPLE
+	没有元数据服务器，MooseFS有元数据服务器。
+	#+END_EXAMPLE
+  + Scale-Out
+  + 高可用
+  + 全局统一命名空间
+  + 分布式文件系统
+  + 标准硬件
+  + POSIX
+  + 自动复制
+  + 自修复
+  + Infiniband
+** GlusterFS特点
+   + 最大的特点是简单：架构、使用、管理
+   + 完全对称式架构，无元数据服务器
+   + 全UserSpace设计，Stack式扩展(源自Hurd)
+   + Scale-Out，高可用(无单点故障)
+   + 支持多种访问协议，支持RDMA
+
+   |--------------+--------------+--------------|
+   | 软件定义     | 无中心架构   | 全局命名空间 |
+   |--------------+--------------+--------------|
+   | 高性能       | 用户空间实现 | 堆栈式设计   |
+   |--------------+--------------+--------------|
+   | 弹性横向扩展 | 高速网络通信 | 数据自动修复 |
+   |--------------+--------------+--------------|
+** 简单的分布式存储
+   + 最简单配置和管理的分布式文件系统
+   + 使用gluster单一命令行工具管理
+	 - probe peer, create volume, start volume, mount
+   + 极其简便的系统管理
+	 - 集群关系，进程管理，端口映射，动态配置变更
+	 - online集群节点扩展/收缩
+	 - online集群参数变更
+	 - 系统升级
+** 选择GlusterFS的理由
+   + 极其简便的管理和维护
+   + Block/File/Object统一存储
+   + 模块化扩展架构
+   + 支持IP/RDMA传输协议
+   + Data locality
+   + Compute/Virtualization透明存储系统
+** GlusterFS架构设计目标
+   1. Elasticity
+	  + Flexibility adapt to growth/reduction
+	  + Add, delete volumes & users
+	  + Without disruption
+   2. Scale linearly
+	  + Multiple dimensions
+		- Performance
+		- Capacity
+	  + Aggregated resources
+   3. Eliminate metadata
+	  + Improve file access speed
+   4. Simplicity
+	  + Ease of management
+	  + No complex kernel patches
+	  + Run in user space
+
+   分为Client端和Server端
+* GlusterFS原理
+  通过分布式文件系统将物理分散的存储资源虚拟化成统一的存储池。
+** Gluster集群管理
+   1. 集群管理模型
+	  + 全对称(如Corosync)
+		- 缺点： 规模小[<100]
+		- 优点：无需配置
+	  + 单独的控制集群(如Zookeeper)
+		- 缺点：需要配置控制集群
+		- 优点：规模大[>1000]
+   2. Gluster采用全对称式集群管理
+	  + Gluster节点之间的配置信息是完全一致的
+	  + 每个配置信息改动操作需要在多节点同步
+	  + 优化同步算法，可支持500+节点
+** GlusterFS基本概念
+   1. Brick
+	  + A filesystem mountpoint
+	  + A unit of storage used as a GlusterFS building block
+	  + 一个或多个盘做成一个brick，一般一块盘一个brick
+   2. Translator
+	  + Logic between the bits and the Global Namespace
+	  + Layered to provide GlusterFS functionality
+   3. Volume
+	  + Bricks combined and passed through translators
+   4. Node/Peer
+	  + Server running the gluster daemon and sharing volumes
+** 弹性哈希算法
+   1. 无集中式元数据服务
+	  + 消除性能瓶颈，提高可靠性
+   2. 采用Hash算法定位文件
+	  + 基于路径名和文件名，一致性哈希DHT
+   3. 弹性卷管理
+	  + 文件存储在逻辑卷中
+	  + 逻辑卷从物理存储池中划分
+	  + 逻辑可以在线进行扩容和缩减
+
+   弹性Hash算法流程：
+   1. 使用Davies-Meyer算法计算32位hash值，输入参数为文件名；
+   2. 根据hash值在集群中选择子卷（存储服务器），进行文件定位；
+   3. 对所选择的子卷进行数据访问。
+** GlusterFS卷类型
+   1. 基本卷
+	  + 哈希卷（Distributed Volume）
+	  + 复制卷（Replicated Volume）
+	  + 条带卷（Striped Volumes）
+   2. 复合卷
+	  + 哈希复制卷（Distributed Replicated Volume）
+	  + 哈希条带卷（Distributed Striped Volume）
+	  + 复制条带卷（Replicated Striped Volume）
+	  + 哈希复制条带卷（Distributed Replicated Striped Volume）
+** GlusterFS卷数据分布
+   1. 哈希卷
+	  #+BEGIN_EXAMPLE
+	  Distributing files across multiple bricks.
+	  Each file is stored in one of the bricks.
+	  #+END_EXAMPLE
+   2. 条带卷（RAID0）
+	  #+BEGIN_EXAMPLE
+	  A file is split into fixed size chunks, and chunks
+	  are distributed to bricks.
+	  #+END_EXAMPLE
+   3. 复制卷（RAID1）
+	  #+BEGIN_EXAMPLE
+	  A file is replicated between the specified brick pairs.
+	  #+END_EXAMPLE
+   4. 条带复制复合卷（RAID10）
+	  #+BEGIN_EXAMPLE
+	  Combining the striping and replication.
+	  #+END_EXAMPLE
+** GlusterFS命名空间
+   三种基本的集群各由一个translator来实现，分别由自己独立的命名空间，
+   使用自己的机制进行独立的维护和管理。
+   1. 分布式集群
+	  #+BEGIN_EXAMPLE
+	  文件通过HASH算法分散到集群节点上，每个节点上的命名空间均不重叠，
+	  所有集群共同构成完整的命名空间，访问时使用HASH算法进行查找定位。
+	  #+END_EXAMPLE
+   2. 复制集群
+	  #+BEGIN_EXAMPLE
+	  类似RAID1，所有节点命名空间均完全相同，每一个节点都可以表示完整的命名空间，
+	  访问时可以选择任意个节点。
+	  #+END_EXAMPLE
+   3. 条带集群
+	  #+BEGIN_EXAMPLE
+	  与RAID0相似，所有节点具有相同的命名空间，但对象属性会有所不同，
+	  文件被分成数据块以Round Robin方式分布到所有节点上，访问时需要
+	  联动所有节点来获得完整的名字信息。
+	  #+END_EXAMPLE
+** 数据副本一致性模型
+   1. 数据强一致性
+	  + Chain replication（MooseFS采用的模型）
+	  + Direct replication（GlusterFS默认使用的模型）
+	  + Master-Slave replication（Ceph采用的模型）
+** Distributed Hash Table（DHT）
+   1. GlusterFS弹性扩展的基础
+   2. 确定目标hash和brick之间的映射关系
+
+   *添加节点：*
+   1. 添加新节点，最小化数据重新分配
+   2. 老数据分布模式不变，新数据分布到所有节点上
+   3. 执行rebalance，数据重新分布
+
+   *容量负载均衡：*
+   1. Hash范围均衡分布，节点一变动全局
+   2. 目标：优化数据分布，最小化数据迁移
+   3. 数据迁移自动化、智能化、并行化
+
+   *文件更名：*
+   1. 文件更名：FileA->FileB
+   2. 原先的Hash映射关系失效，大文件难以实时迁移
+   3. 采用文件符号链接，访问时解析重定向
+** 容量负载优先
+   1. 设置容量阈值，优先选择可用容量充足brick
+   2. Hash目标brick上创建文件符号链接
+   3. 访问时解析重定向
+** 脑裂
+   脑裂如何产生的？network partition
+
+   解决办法：
+   1. 报错处理
+   2. Quorum方法（N=2?）
+   3. 仲裁机制
+* GlusterFS应用场景
+** Media
+   文档、图片、音频、视频
+** Shared Storage
+   云存储、虚拟化存储、HPC
+** Big Data
+   日志文件、RFID数据
+* GlusterFS安装与配置
+  配置规划：
+  |-----------+----------------+-------------+---------|
+  | 节点      |         管理IP |      私有IP | 磁盘    |
+  |-----------+----------------+-------------+---------|
+  | GlusterFS | 192.168.20.129 | 192.168.19. | 3块磁盘 |
+  | 节点1     |                |             | 8GB     |
+  |-----------+----------------+-------------+---------|
+  | GlusterFS | 192.168.20.130 | 192.168.19. | 3块磁盘 |
+  | 节点2     |                |             | 8GB     |
+  |-----------+----------------+-------------+---------|
+  | 客户端    |    192.168.20. |             | 1块磁盘 |
+  |           |                |             | 8GB     |
+  |-----------+----------------+-------------+---------|
+
+
+  软件包：
+  |------------------+----------------|
+  | 服务器端         | 客户端         |
+  |------------------+----------------|
+  | glusterfs        | glusterfs      |
+  | glusterfs-api    | glusterfs-fuse |
+  | glusterfs-cli    | glusterfs-libs |
+  | glusterfs-fuse   |                |
+  | glusterfs-libs   |                |
+  | glusterfs-server |                |
+  |------------------+----------------|
+
+
+  依赖包：
+  + libibverbs librdmacm
+  + xfsprogs nfs-utils rpcbind
+  + libaio liblvm2app lvm2-devel
+
+  #+BEGIN_EXAMPLE
+  yum install -y libibverbs librdmacm xfsprogs nfs-utils rpcbind libaio liblvm2app lvm2-devel
+  #+END_EXAMPLE
+
+  工具安装：
+  + atop
+  + iperf
+  + sysstat
+  + dd
+  + iozone
+  + fio
+  + postmark
+  #+BEGIN_EXAMPLE
+  yum install sysstat fio atop iperf
+  #+END_EXAMPLE
+
+  系统设置：
+  + disabled selinux
+	#+BEGIN_EXAMPLE
+	getenforce
+	setenforce 0
+	vim /etc/sysconfig/selinux
+	disabled
+	#+END_EXAMPLE
+  + stop iptables
+	#+BEGIN_EXAMPLE
+	service iptables stop
+	chkconfig iptables off
+	service ip6tables stop
+	chkconfig ip6tables off
+	#+END_EXAMPLE
+
+  服务设置：
+  1. 分区自动挂载
+	 + mkfs.ext4 -L /brick1 /dev/sdb
+	 + mount -L /brick1 /brick1
+	 + /etc/fstab
+	 + LABEL=/brick1 /brick1 ext4 defaults 0 0
+  2. GlusterFS服务自启动
+	 + service glusterd start
+	 + chkconfig glusterd on
+  3. 增加域名解析(/etc/hosts)
+	 #+BEGIN_EXAMPLE
+	 192.168.20.128 gluster01.lavenliu.com gluster01
+	 192.168.20.138 gluster02.lavenliu.com gluster02
+	 192.168.20.139 client01.lavenliu.com client01
+	 #+END_EXAMPLE
+
+* GlusterFS系统管理
+** 组建集群 - (gluster peer probe)
+   在任一个服务节点(gluster01节点)上进行操作：
+   #+BEGIN_EXAMPLE
+   # gluster peer probe gluster02 # 域名或IP
+   # gluster peer probe client01  # 域名或IP
+   # gluster peer status
+   Number of Peers: 2
+   
+   Hostname: gluster02
+   Uuid: dc340375-3001-42a7-9ff0-4ed0511a0571
+   State: Peer in Cluster (Connected)
+   
+   Hostname: client01
+   Uuid: a4042494-7bbe-47d4-80fd-af374e05ed4c
+   State: Peer in Cluster (Connected)
+   #+END_EXAMPLE
+
+   在gluster02节点上查看(只看到除本节点外的其他节点)：
+   #+BEGIN_EXAMPLE
+   # gluster peer probe gluster01
+   # gluster peer status
+
+   Number of Peers: 2
+   
+   Hostname: gluster01
+   Uuid: dbbda104-7034-4200-86e5-2de482c62d34
+   State: Peer in Cluster (Connected)
+   
+   Hostname: client01
+   Uuid: a4042494-7bbe-47d4-80fd-af374e05ed4c
+   State: Peer in Cluster (Connected)
+   #+END_EXAMPLE
+
+   在client01节点上查看(只看到除本节点外的其他节点)：
+   #+BEGIN_EXAMPLE
+   # gluster peer status
+   Number of Peers: 2
+
+   Hostname: gluster01
+   Uuid: dbbda104-7034-4200-86e5-2de482c62d34
+   State: Peer in Cluster (Connected)
+
+   Hostname: gluster02
+   Uuid: dc340375-3001-42a7-9ff0-4ed0511a0571
+   State: Peer in Cluster (Connected)
+   #+END_EXAMPLE
+** 创建卷 - (gluster volume create)
+   1. 确定创建卷的类型
+   2. 确定创建卷的brick列表
+   3. 确定创建卷的网络类型(TCP/RDMA)
+   
+   在任何一个服务器节点上进行操作：
+   #+BEGIN_EXAMPLE
+   # gluster volume create test-volume gluster01:/brick1/b1 gluster02:/brick1/b2
+   Creation of volume test-volume has been successful. Please start the volume to access data.
+   #+END_EXAMPLE
+
+   创建完毕，进行查看：
+   #+BEGIN_EXAMPLE
+   # gluster volume info
+   Volume Name: test-volume
+   Type: Distribute
+   Volume ID: 6ad8ea7b-402b-431f-800c-a60643dc818d
+   Status: Created   # 状态为Created，并未启动
+   Number of Bricks: 2
+   Transport-type: tcp
+   Bricks:
+   Brick1: gluster01:/brick1
+   Brick2: gluster02:/brick1
+   #+END_EXAMPLE
+
+   如果创建的不满意，可以删除之，
+   #+BEGIN_EXAMPLE
+   # gluster volume delete test-volume
+   Deleting volume will erase all information about the volume. Do you want to continue? (y/n) y # 输入"y"
+   Deleting volume test-volume has been successful
+   #+END_EXAMPLE
+** 启动卷 - (gluster volume start xxx)
+   创建完毕，卷的状态为"Created"，需要进行启动，
+   #+BEGIN_EXAMPLE
+   # gluster volume start test-volume
+   Starting volume test-volume has been successful
+   #+END_EXAMPLE
+
+   再次查看卷状态：
+   #+BEGIN_EXAMPLE
+   # gluster volume info
+
+   Volume Name: test-volume
+   Type: Distribute
+   Volume ID: 4db1d284-005f-410a-aeb6-53e0aceeb8cb
+   Status: Started
+   Number of Bricks: 2
+   Transport-type: tcp
+   Bricks:
+   Brick1: gluster01:/brick1/b1
+   Brick2: gluster02:/brick1/b2
+   #+END_EXAMPLE
+** 客户端挂载卷
+   挂载卷：
+   #+BEGIN_EXAMPLE
+   # mount -t glusterfs gluster01:/test-volume /mnt
+   # df -h
+   Filesystem              Size  Used Avail Use% Mounted on
+   /dev/sda2                15G  3.2G   11G  23% /
+   tmpfs                   238M     0  238M   0% /dev/shm
+   /dev/sda1               194M   30M  155M  16% /boot
+   /dev/sdb                3.0G   69M  2.8G   3% /brick1
+   gluster01:/test-volume  6.0G  138M  5.5G   3% /mnt
+   #+END_EXAMPLE
+   
+   整点文件(客户端进行操作)：
+   #+BEGIN_EXAMPLE
+   # cd /mnt
+   # mkdir test1
+   # touch file
+   # hostname > file
+   #+END_EXAMPLE
+
+   可以到服务端的brick目录下，查看是否有文件产生
+   #+BEGIN_EXAMPLE
+   gluster01 # cd /brick/b1
+   gluster01 # ls
+   gluster02 # cd /brick/b2
+   gluster02 # ls
+   #+END_EXAMPLE
+** GlusterFS常用命令
+   #+BEGIN_EXAMPLE
+   # gluster peer probe HOSTNAME
+   # gluster volume info
+   # gluster volume create VOLUME [stripe COUNT] [replica COUNT] [transport tcp | rdma] BRICK ...
+   # gluster volume stop VOLUME
+   # gluster volume delete VOLUME  # 删除卷之前，需要stop卷
+   # gluster volume add-brick VOLUME NEW-BRICK ...
+   # gluster volume rebanlance VOLUME start
+   # gluster volume remove-brick VOLUME WATNTED-DEL-BRICK
+   # gluster volume rebanlance VOLUME start
+   #+END_EXAMPLE
+   
+   增加brick：
+   #+BEGIN_EXAMPLE
+   # gluster volume add-brick test-volume gluster01:/brick/b3
+   #+END_EXAMPLE
+
+   添加或删除brick后，需要rebalance卷。
+   
+   rebalance卷：
+   #+BEGIN_EXAMPLE
+   # gluster volume rebalance test-volume status
+		Node Rebalanced-files			size	   scanned		failures		 status
+   ---------	   -----------	 -----------   -----------	 -----------   ------------
+   localhost				 0			   0	   	     2			   0	   completed
+	client01				 0			   0			 2			   0	   completed
+   gluster02				 0			   0			 2			   0	   completed
+   #+END_EXAMPLE
+** 集群扩展
+   1. 增加节点
+	  #+BEGIN_EXAMPLE
+	  # gluster peer probe 主机名/IP
+	  #+END_EXAMPLE
+   2. 删除节点
+	  #+BEGIN_EXAMPLE
+	  # gluster peer detach 主机名/IP
+	  #+END_EXAMPLE
+   3. 节点状态
+	  #+BEGIN_EXAMPLE
+	  # gluster peer status
+	  #+END_EXAMPLE
+** 卷信息同步
+   + 命令格式；
+	 #+BEGIN_EXAMPLE
+	 # gluster volume sync <HOSTNAME> [all] | <VOLUME>]
+	 #+END_EXAMPLE
+   + 删除gluster02卷信息
+	 #+BEGIN_EXAMPLE
+	 gluster02 # cd /var/lib/glusterd/
+	 # rm -rf vols
+	 #+END_EXAMPLE
+   + 同步卷信息
+	 #+BEGIN_EXAMPLE
+	 # 由于gluster02上的信息已缺少，需要同步gluster01上的信息
+	 # gluster volume sync gluster01 all
+	 #+END_EXAMPLE
+** 集群扩展
+	1. 增加节点
+	   #+BEGIN_SRC sh
+gluster peer probe IP|hostname
+	   #+END_SRC
+	2. 删除节点
+	   #+BEGIN_SRC sh
+gluster peer detach IP|hostname
+	   #+END_SRC
+	3. 节点状态
+	   #+BEGIN_SRC sh
+gluster peer status
+	   #+END_SRC
+** 增加brick
+	1. 增加brick
+	   #+BEGIN_SRC sh
+gluster volume add-brick testvol server3:/brick3
+	   #+END_SRC
+	2. 查看卷信息
+	   #+BEGIN_SRC sh
+gluster volume info testvol
+	   #+END_SRC
+	3. 查看挂载状态
+	   #+BEGIN_SRC sh
+mount
+df
+	   #+END_SRC
+** 删除brick
+	命令格式：
+	#+BEGIN_SRC sh
+gluster> volume remove-brick testvol server2:/brick2 start
+gluster> volume remove-brick testvol server2:/brick2 status
+gluster> volume remove-brick testvol server2:/brick2 commit
+	#+END_SRC
+** 负载均衡
+	命令格式：
+	#+BEGIN_SRC sh
+volume reblance <VOLNAME> [fix-layout] {start|stop|status} [force]
+增删brick后对testvol进行负载均衡
+	#+END_SRC
+	
+	具体操作，
+	#+BEGIN_SRC sh
+gluster> volume reblance testvol fix-layout start
+gluster> volume reblance testvol start
+gluster> volume reblance testvol status
+	#+END_SRC
+** 删除卷
+	1. 处理删除卷上数据
+	   #+BEGIN_SRC sh
+cp | rm -rf
+	   #+END_SRC
+	2. umount卷
+	   #+BEGIN_SRC sh
+umount /mnt
+	   #+END_SRC
+	3. 停止卷
+	   #+BEGIN_SRC sh
+gluster volume stop testvol
+	   #+END_SRC
+	4. 删除卷
+	   #+BEGIN_SRC sh
+gluster volume delete testvol
+	   #+END_SRC
+** 卷信息同步
+	如果某个节点的上数据误删了，可以从其他节点上同步数据。
+	1. 命令格式
+	   #+BEGIN_SRC sh
+volume sync <HOSTNAME> [all|<VOLUME>]
+	   #+END_SRC
+	2. 删除server3卷信息
+	   #+BEGIN_SRC sh
+rm -rf /var/lib/glusterd/vols/*
+	   #+END_SRC
+	3. 同步卷信息
+	   #+BEGIN_SRC sh
+gluster volume sync server1 all
+	   #+END_SRC
+** 卷参数配置
+	命令格式：
+	#+BEGIN_SRC sh
+gluster volume set <volume> <parameters>
+	#+END_SRC
+
+    | 参数项                            | 说明             | 缺省值       | 合法值  |
+    |-----------------------------------+------------------+--------------+---------|
+    | auth.allow                        | IP访问授权       | *(allow all) | IP地址  |
+    | cluster.min-free-disk             | 剩余磁盘空间阈值 | 10%          | 百分比  |
+    | cluster.stripe-block-size         | 条带大小         | 128KB        | 字节    |
+    | network.frame-timeout             | 请求等待时间     | 1800s        | 0-1800  |
+    | network.ping-timeout              | 客户端等待时间   | 42s          | 0-42    |
+    | nfs.disable                       | 关闭NFS服务      | off          | off或on |
+    | performance.io-thread-count       | IO线程数         | 16           | 0-65    |
+    | performance.cache-refresh-timeout | 缓存校验周期     | 1s           | 0-61    |
+    | performance.cache-size            | 读缓存大小       | 32MB         | 字节    | 
+
+	使用示例，关闭Gluster的nfs，
+	#+BEGIN_SRC sh
+gluster volume set testvol nfs.disable on
+	#+END_SRC
+
+	查看参数set参数列表，
+	#+BEGIN_SRC sh
+gluster volume set help
+	#+END_SRC
+* GlusterFS系统测试与监控
+** 系统验证测试
+*** 存储配置测试
+	1. 磁盘分区
+	   #+BEGIN_SRC sh
+	   parted -l | fdisk -l
+	   #+END_SRC
+	2. 分区挂载
+	   #+BEGIN_SRC sh
+	   mount -t ext4 /dev/sdb /brick1 | mount
+	   #+END_SRC
+	3. 磁盘容量
+	   #+BEGIN_SRC sh
+	   df -h
+	   #+END_SRC
+	4. 自动挂载
+	   #+BEGIN_SRC sh
+	   cat /etc/fstab
+	   #+END_SRC
+*** 网络配置测试
+	1. IP检测
+	   #+BEGIN_SRC sh
+	   ip a | ifconfig eth0
+	   #+END_SRC
+	2. 网关测试
+	   #+BEGIN_SRC sh
+	   ip route show | route -n
+	   #+END_SRC
+	3. DNS测试
+	   #+BEGIN_SRC sh
+	   cat /etc/resolv.conf | nslookup
+	   #+END_SRC
+	4. 连通性
+	   #+BEGIN_SRC sh
+	   ping server1 | server2 | server3
+	   #+END_SRC
+	5. 网络性能
+	   #+BEGIN_SRC sh
+	   iperf -s | iperf -c
+	   #+END_SRC
+*** 卷配置测试
+	1. 集群状态
+	   #+BEGIN_SRC sh
+	   gluster peer status
+	   #+END_SRC
+	2. 卷配置
+	   #+BEGIN_SRC sh
+	   gluster volume info
+	   #+END_SRC
+	3. 卷状态
+	   #+BEGIN_SRC sh
+	   gluster volume status
+	   #+END_SRC
+	4. 卷挂载
+	   #+BEGIN_SRC sh
+	   mount | df -h
+	   #+END_SRC
+*** 系统性能测试
+	1. 基本性能
+	   #+BEGIN_SRC sh
+	   dd if=/dev/zero of=/opt/dd.iso bs=1M count=1k
+	   dd if=/opt/dd.iso of=/dev/null bs=1M count=1k
+	   #+END_SRC
+	2. 带宽测试
+	   #+BEGIN_SRC sh
+	   iozone -r 1m -s 128m -t 4 -i 0 -i 1
+	   #+END_SRC
+	3. IOPS测试
+	   #+BEGIN_SRC sh
+	   fio
+	   #+END_SRC
+	4. OPS测试
+	   #+BEGIN_SRC sh
+	   postmark
+	   #+END_SRC
+** 系统监控
+*** 系统负载
+	监控对象：CPU、内存、磁盘、网络
+	
+	资源占用率、实时流量
+
+	系统工具：atop、iostat
+*** 存储空间
+*** GlusterFS状态
+	查看卷工作状态、各种I/O操作数量
+	#+BEGIN_SRC sh
+	gluster volume status
+	iostat -x 1
+	gluster volume profile testvol start | info
+	#+END_SRC
+
+	GlusterFS配置信息和日志，
+	#+BEGIN_EXAMPLE
+	3.2.x版本：
+	- 配置信息：/etc/glusterd/
+	- 日志：/var/log/glusterfs
+
+	3.4版本：
+	- 配置信息：/var/lib/glusterd
+	- 日志：/var/log/glusterfs
+	#+END_EXAMPLE
+* GlusterFS典型故障处理
+** 复制卷数据不一致
+	故障现象：双副本数据出现不一致
+	故障模拟：删除其中一个brick数据
+	修复方法，
+	#+BEGIN_SRC sh
+方法1：find /mnt -noleaf -print0 | xargs --null stat
+方法2：find /mnt -type f -print0 | xargs -p head -c1
+方法3：gluster volume heal <volume> full
+方法4：重新mount一下挂载点
+	#+END_SRC
+** 恢复节点配置信息
+   故障现象：其中一个节点配置信息不正确
+   
+   故障模拟：
+   1. 删除server2部分配置信息
+   2. 配置信息位置：/var/lib/glusterd/
+   
+   修复方法：
+   1. 触发自修复：通过Gluster工具同步配置信息
+   2. gluster volume sync server1 all
+** 恢复复制卷brick
+	故障现象：双副本卷中一个brick损坏
+	故障模拟：删除其中一个brick目录
+	恢复方法：
+	1. 方法1
+	   1. 重新建立故障brick目录
+	   2. 设置扩展属性（参考另一个复制brick）
+		  #+BEGIN_SRC sh
+setfattr -n trusted.gfid -v 0x000000000000000000000000000001 /b1
+setfattr -n trusted.glusterfs.dht -v 0x000000010000000000000000ffffffff /b1
+setfattr -n trusted.glusterfs.volume-id -v 0xcc51d546c0af4215a72077ad9378c2ac /b1
+# [-v的参数设置成自己的值]
+		  #+END_SRC
+	   3. 重启glusterd服务
+	   4. 触发数据自修复
+		  #+BEGIN_SRC sh
+find /mntpoint -type f -print0 | xargs -0 head -c1 > /dev/null
+		  #+END_SRC
+    2. 方法2
+	   1. 使用临时新brick替换故障brick
+		  #+BEGIN_SRC sh
+gluster volume replace-brick afr server1:/brick2/r3 server2:/brick2/r2 commit force
+		  #+END_SRC
+	   2. 使用原brick替换临时brick
+		  #+BEGIN_SRC sh
+gluster volume replace-brick afr server1:/brick2/r2 server2:/brick2/r3 commit force
+		  #+END_SRC
+	   3. 触发自修复
+		  #+BEGIN_SRC sh
+gluster volume heal afr full
+		  #+END_SRC
+** 常见故障处理
+*** Q1：GlusterFS需要占用哪些端口
+	Gluster管理服务使用24007端口，InfiniBand管理使用24008端口，每个
+	brick进程占用一个端口。比如4个brick，使用24009-24012端口。
+
+	Gluster内置NFS服务使用34865-34867端口。此外，portmapper使用111端
+	口，同时打开TCP和UDP端口。
+*** Q2：创建GlusterFS资源池出问题
+	首先，检查nslookup是否可以正确解析DNS和IP。其次，确认没有使用
+	/etc/hosts直接定义主机名。虽然理论上没有问题，但集群规模一大很多
+	管理员就会犯低级错误，浪费大量时间。再者，验证Gluster服务所需的
+	24007端口是否可以连续（比如telnet）？Gluster其他命令是否可以成功
+	执行？如果不能，Gluster服务很有可能没有启动。
+*** Q3：如何检查Gluster服务是否运行
+	 可以使用如下命令检查Gluster服务状态：
+	 #+BEGIN_SRC sh
+/etc/init.d/glusterd status
+systemctl status glusterd.service
+	 #+END_SRC
+*** Q4：无法在server端挂载Gluster卷
+	检查Gluster卷信息，使用gluster volume info确认volume处于启动状态。
+	运行命令"showmount -e <gluster node>"，确认可以输出volume相关信息。
+*** Q5：无法在client端挂载Gluster卷
+	检查网络连接是否正常，确认glusterd服务在所有节点上正常运行，确认
+	所挂载volume处于启动状态。
+*** Q6：升级gluster后，客户端无法连接
+	如果使用原生客户端访问，确认Gluster客户端和服务端软件版本一致。通
+	常情况下，客户端需要重新挂载卷。
+*** Q7：运行“gluster peer probe”，不同节点输出结果可能不一致
+	这个通常不是问题。每个节点输出显示其他节点信息，并不包括当前节点；
+	不管在何处运行命令，节点的UUID在所有节点上都是相同和唯一的；输出
+	状态通常显示"Peer in Cluster (connected)"，这个值应该和
+	/var/lib/glusterd/glusterd.info匹配。
+*** Q8：数据传输过程中意外杀掉Gluster服务进程
+	所有数据都不会丢失。Glusterd进程仅用于集群管理，比如集群节点扩展、
+	创建新卷和修改旧卷，以及卷的启停和客户端mount时信息获取。杀掉进程
+	Gluster服务进程，仅仅是一些集群管理操作无法进行，并不会造成数据丢
+	失或不可访问。
+*** Q9：意外卸载Gluster
+	如果Gluster配置信息没有删除，重新安装相同版本Gluster软件，然后重
+	启服务即可。Gluster配置信息被删除，但数据仍保留的话，可以通过创建
+	新卷，正确迁移数据，可以恢复Gluster卷和数据。 
+
+	*特别提示：* 配置信息要同步备份，执行删除、卸载等操作一定要谨慎。
+*** Q10：无法通过NFS挂载卷
+	 这里使用Gluster内置NFS服务，确认系统内核NFS服务没有运行。再者，确
+	 认rpcbind或portmap服务处于正常运行中。内置NFS服务目前不支持NFS v4，
+	 对于新Linux发行版默认使用v4进行连接，mount时指定选项vers=3。
+	 #+BEGIN_SRC sh
+mount -t nfs -o vers=3 server2:/myglustervolume /gluster/mount/point
+	 #+END_SRC
+*** Q11：双节点复制卷，一个节点发生故障并完成修复，数据如何同步
+	复制卷会自动进行数据同步和修复，这个在同步访问数据时触发，也可以
+	手动触发。3.3以后版本，系统会启动一个服务自动进行自修复，无需人工
+	干预，及时保持数据副本同步。
+*** Q12：Gluster日志在系统什么位置
+	修旧版本日志都位于/var/log/glusterfs
+*** Q13：如何轮转Gluster日志
+	 使用gluster命令操作，
+	 #+BEGIN_SRC sh
+gluster volume log rotate myglustervolume
+	 #+END_SRC
+*** Q14：Gluster配置文件在系统什么位置
+	3.3以上版本位于/var/lib/glusterd，老版本位于/etc/glusterd
+*** Q15：数据库运行在Gluster卷上出现很多奇怪的错误和不一致性
+	gluster目前不支持类似数据的结构化数据存储，尤其是大量事务处理和并
+	发连接。建议不要使用gluster运行数据库系统，但Gluster作为数据库备
+	份是一个很不错的选择。
+*** Q16：Gluster系统异常，重启服务后问题依旧
+	很有可能是某些服务进程处于僵死状态，使用ps -ax |grep glu命令查看。
+	如果发出shutdown命令后，一些进程任然处于运行状态，使用killall -9
+	gluster{,d,fs,fsd}杀掉进程，或者硬重启系统。
+*** Q17：需要在每个节点都运行Gluster命令吗
+	这个根据命令而定。一些命令只需要在Gluster集群中任意一个节点执行一
+	次即可，比如“gluster volume create”，而例如"gluster peer status"命令可以在每个节点独立多次运行。
+*** Q18：如何快速检查所有节点状态
+	Gluster工具可以指定选项--remote-host在远程节点上执行命令，比如
+	gluster --remote-host=server2 peer status。如果配置了CTDB，可以使
+	用“onnode”在指定节点上执行命令。另外，还可以通过ssh-keygen和
+	ssh-copy-id配置SSH无密码远程登录和执行命令。
+*** Q19：Gluster导致网络、内核、文件系统等出现问题
+	可能。但是，绝大多数情况下，Gluster或者软件都不会导致网络或存储等
+	基础资源出席问题。如果发现由Gluster引起的问题，可以提交BUG和patch，
+	并可以社区和邮件列表中讨论，以帮助改善Gluster系统。
+*** Q20：为什么会发生传输端点没有连接
+	在Gluster日志中看到这种错误消息很正常，表明Gluster由于一些原因无
+	法通信。通常情况下，这是由于集群中某些存储或网络资源饱和引起的，
+	如果这类错误消息大量重复报告，就需要解决问题。使用相关技术手段可
+	以解决大部分的问题，另外有些情况可能由以下原因引起。
+	1. 需要升级RAID/NIC驱动或fireware
+	2. 第三方备份系统在相同时间运行
+	3. 周期更新locate数据库包含了brick和网络文件系统
+	4. 过多rsync作业工作在gluster brick或mount点
+* GlusterFS生产调优
+** 系统关键考虑
+   性能需求：
+  + Read/Write
+  + 吞吐量/IOPS/可用性
+
+  Workload：
+  + 什么应用
+  + 大文件
+  + 小文件
+  + 除了吞吐量之外的需求
+** 系统规模和架构
+   1. 性能理论上由硬件配置决定
+	  1. CPU/Mem/Disk/Network
+	  2. 系统规模由性能和容量需求决定
+	  3. 2U/4U存储服务器和JBOD适合构建brick
+   2. 三种典型应用部署
+	  1. 容量需求应用
+		 + 2U/4U存储服务器+多个JBOD
+		 + CPU/RAM/Network要求低
+	  2. 性能和容量混合需求应用
+		 + 2U/4U存储服务器+少数JBOD
+		 + 高CPU/RAM，低Network
+	  3. 性能需求应用
+		 + 1U/2U存储服务器（无JBOD）
+		 + 高CPU/RAM，快Disk/Network
+** 系统硬件配置
+   1. 节点和集群配置
+	  + 多CPU - 支持更多的并发线程
+	  + 多MEM - 支持更大的Cache
+	  + 多网络端口 - 支持更高的吞吐量
+   2. 专用后端网络用于集群内部通信
+	  + NFS/CIFS协议访问需要专用后端网络
+	  + 推荐至少10GbE
+   3. Native协议用于内部节点通信
+** 系统配置
+   1. 根据Workload选择适当的Volume类型
+   2. Volume类型
+	  + DHT - 高性能，无冗余
+	  + AFR - 高可用，读性能高
+	  + STP - 高并发读，写性能低，无冗余
+   3. 协议/性能
+	  + Native - 性能最优
+	  + NFS - 特定应用下课获得最优性能
+	  + CIFS - 仅Windows平台使用
+   4. 数据流
+	  + 不同访问协议的数据流差异
+** Gluster性能相关经验
+   1. GlusterFS性能很大程度上依赖硬件
+   2. 充分理解应用基础上进行硬件配置
+   3. 缺省参数主要用于通用目的
+   4. GlusterFS存在若干性能调优参数
+   5. 性能问题应当优先排除磁盘和网络故障
+** 网络推荐配置
+   1. 非原生协议访问：前端和后端网络分离
+   2. 10GbE/IB：采用巨帧，提高吞吐量
+	  + 需要交换机支持巨帧
+	  + 10GbE MTU 1500->9000，IB MTU 2000->65520
+	  + CONNECTED_MODE=yes (Infiniband)
+	  + /etc/sysconfig/network-scripts/ifcfg-your-interface
+** Brick推荐配置
+   1. 12块磁盘/RAID6 LUN，1LUN/brick
+   2. RAID条带大小：256KB
+   3. Readahead： 64MB
+	  + /sys/block/sdb/queue/read_ahead_kb
+	  + /sys/block/sda/queue/max_sectors_kb
+   4. LVM/XFS需要RAID对齐
+	  + pvcreate -dataalignment 2560K
+	  + mkfs.xfs -i size=512 -n size=8192 -d su=256k,sw=10
+   5. I/O调度算法: deadline
+	  + /sys/block/sda/queue/scheduler
+   6. mount选项 inode64
+** 系统调优
+	1. 关键调优参数
+	   #+BEGIN_SRC sh
+performance.write-behind-window-size 65535 (字节)
+performance.cache-refresh-timeout 1 (秒)
+performance.cache-size 1073741824 (字节)
+performance.read-ahead off (仅1GbE)
+performance.io-thread-count 24 (CPU核数)
+performance.client-io-threads on (客户端)
+performance.write-behind on
+performance.flush-behind on
+cluster.stripe-block-size 4MB (缺省128KB)
+nfs.disable off (缺省打开)
+缺省参数设置适用于混合workloads
+	   #+END_SRC
+	2. 不同应用调优
+	   + 理解硬件/固件配置及对性能的影响
+	   + 如CPU频率、IB、10GbE、TCP offload
+** GlusterFS问题
+   1. 元数据性能
+   2. 海量小文件
+   3. 集群管理模式
+   4. 容量负载均衡
+   5. 数据分布问题
+   6. 数据可用性问题
+   7. 数据安全问题
+   8. Cache一致性问题
+** GlusterFS 3.7开发计划
+   1. 小文件性能优化
+   2. SSD Cache/Tier
+   3. 回收站功能
+   4. 基于策略的split-brain解决办法
+   5. rebalance性能改善
+** GlusterFS 4.0开发计划
+   1. 千级规模集群支持
+   2. 弹性DHT 2.0
+   3. Stripe 2.0
+   4. 一致性客户端Cache
+   5. 灵活副本
+** FUSE性能优化
+	1. 更多的mount point，更多的并发访问。
+	2. mount -o max_read 1048576
+	3. 修改FUSE内核模块：每请求最大为128KB 
+	   #+BEGIN_SRC sh
+	   fuse_i.h中
+#define FUSE_MAX_PAGES_PER_REQ 256
+# 原先为32，每page为4KB，256*4KB=1MB。
+# 重新编译FUSE模块，替换系统中的fuse.ko
+	   #+END_SRC
+** SSD系统优化
+   1. I/O调度算法优化
+   2. CPU多核绑定
+   3. 请求队列和最大请求数
+   4. 禁用merge/rotational/read_ahead/barrier
+   5. 分区/卷4KB对齐
+   6. 文件系统开启SSD支持选项
+** KVM优化
+   参考以下几点：
+   1. 使用QEMU-GlusterFS（libgfapi）整合方案
+   2. gluster volume set <volume> group virt
+   3. tuned-adm profile rhs-virtualization
+   4. KVM host: tuned-adm profile virtual-host
+   5. images和应用数据使用不同的volume
+   6. 每个gluster节点不超过2个KVM host(16 guest/host)
+   7. 提高响应时间
+	  + 减少/sys/block/vda/queue/nr_request
+	  + Server/Guest: 128/8(缺省值256/128)
+   8. 提高读带宽
+	  + 提高/sys/block/vda/queue/read_ahead_kb
+	  + VM readahead: 4096(缺省值128)
+** GlusterFS未来发展
+   1. Ceph一统天下？
+   2. Lustre继续独占鳌头HPC
+   3. MooseFS前途堪忧
+   4. GlusterFS前途光明
+	  1. 大道至简，Keep It as Simple and Stupid
+	  2. 文件存储，云存储、海量小文件
+	  3. 弹性、扩展性、灵活性
+	  4. RAS-P特征
+* 遇到的问题
+  1. /brick1/b3 or a prefix of it is already part of a volume
+	 #+BEGIN_EXAMPLE
+	 # cd /
+	 # getfattr -d -m . -e hex brick1 # 获得brick1目录的扩展属性
+	 # file: brick1/
+	 trusted.glusterfs.volume-id=0x6ad8ea7b402b431f800ca60643dc818d
+	 # 删除其扩展属性
+	 # setfattr -x trusted.glusterfs.volume-id brick1
+	 #+END_EXAMPLE

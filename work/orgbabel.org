@@ -1,0 +1,1730 @@
+#+TITLE: Emacs Org Babel
+#+AUTHOR: LavenLiu
+#+DATE: 2012-03-06
+#+EMAIL: ldczz2008@163.com 
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+
+* Org Babel
+  光标位于代码块里，按C-c '可编辑，按C-x C-s用来保存。再次按则关闭。
+* PlantUML
+  #+BEGIN_SRC plantuml :file images/plantuml01.png
+  skinparam monochrome true
+  Alice -> Bob: Authentication Request
+  Bob -> Liu: Intel
+  Alice <-- Bob: Authentication Response
+  Alice <-- Liu: Response
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/plantuml01.png]]
+
+  #+BEGIN_SRC plantuml :file images/plantuml02.png
+  skinparam monochrome true
+  actor Foo1
+  boundary Foo2
+  control Foo3
+  entity Foo4
+  database Foo5
+  Foo1 -> Foo2 : To boundary
+  Foo1 -> Foo3 : To control
+  Foo1 -> Foo4 : To entity
+  Foo1 -> Foo5 : To database
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/plantuml02.png]]
+
+  #+BEGIN_SRC plantuml :file images/active01.png
+  title Example Activity Diagram
+  note right: Example Function
+  (*)--> "Step 1"
+  --> "Step 2"
+  -> "Step 3"
+  --> "Step 4"
+  --> === STARTLOOP ===
+  note top: For each element in the array
+  if "Are we done?" then
+    -> [no] "Do this"
+    -> "Do that"
+    note bottom: Important note\ngoes here
+    -up-> "Increment counters"
+    --> === STARTLOOP ===
+  else
+    --> [yes] === ENDLOOP ===
+  endif
+  --> "Last Step"
+  --> (*)
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/active01.png]]
+
+  #+BEGIN_SRC plantuml :file images/sequence01.png
+  title Example Sequence Diagram
+  activate Client
+  Client -> Server: Session Initiation
+  note right: Client requests new session
+  activate Server
+  Client <-- Server: Authorization Request
+  note left: Server requires authentication
+  Client -> Server: Authorization Response
+  note right: Client provides authentication details
+  Server --> Client: Session Token
+  note left: Session established
+  deactivate Server
+  Client -> Client: Saves token
+  deactivate Client
+  #+END_SRC
+    
+  #+RESULTS:
+  [[file:images/sequence01.png]]
+
+ #+BEGIN_SRC plantuml :file images/plantuml_note.png
+ participant Alice
+ participant Bob
+ note left of Alice #aqua
+ This is displayed
+ left of Alice.
+ end note
+ note right of Alice: This is displayed right of Alice.
+ note over Alice: This is displayed over Alice.
+ note over Alice , Bob #FFAAAA: This is displayed\n over Bob and Alice.
+ note over Bob , Alice
+ This is yet another
+ example of
+ a long note.
+ end note
+ #+END_SRC
+
+ #+RESULTS:
+ [[file:images/plantuml_note.png]]
+
+  #+BEGIN_SRC plantuml :file images/usecase01.png
+  LabUser --> (Runs Simulation)
+  LabUser --> (Analyses Results)
+  LabUser --> (Response)
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/usecase01.png]]
+
+  #+BEGIN_SRC plantuml :file images/heartbeat_topo.png
+  :Client: <-down-> [Route]
+  note right of Client : who can serve me
+  note right of [Route] : VIP 192.168.56.222
+  [Route] <-down-> [master.liucc.com\n192.168.56.101]
+  [Route] <-down-> [slave.liucc.com\n192.168.56.102]
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/heartbeat_topo.png]]
+
+
+  #+BEGIN_SRC plantuml :file images/object01.png
+  Main函数 <|-- Worker函数
+  Main函数: someVar
+  Main函数: execute()
+  Worker函数: getState()
+  Worker函数: setState()
+  Worker函数: state
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/object01.png]]
+
+  #+BEGIN_SRC plantuml :file images/state01.png
+  [*] --> 开始
+  开始 -> 状态2
+  状态2 -> 状态3
+  note right of 状态3: Notes can be\nattached to states
+  状态2 --> 状态4
+  状态4 -> 完成
+  状态3 --> 完成
+  完成 --> [*]
+  #+END_SRC
+
+   #+RESULTS:
+   [[file:images/state01.png]]
+
+  #+BEGIN_SRC plantuml :file images/state02.png
+  skinparam backgroundColor #EEEBDC
+  skinparam sequence {
+  ArrowColor DeepSkyBlue
+  ActorBorderColor DeepSkyBlue
+  LifeLineBorderColor blue
+  LifeLineBackgroundColor #A9DCDF
+  ParticipantBorderColor DeepSkyBlue
+  ParticipantBackgroundColor DodgerBlue
+  ParticipantFontName Impact
+  ParticipantFontSize 17
+  ParticipantFontColor #A9DCDF
+  ActorBackgroundColor aqua
+  ActorFontColor DeepSkyBlue
+  ActorFontSize 17
+  ActorFontName Aapex
+  }
+  actor User
+  participant "First Class" as A
+  participant "Second Class" as B
+  participant "Last Class" as C
+  User -> A: DoWork
+  activate A
+  A -> B: Create Request
+  activate B
+  B -> C: DoWork
+  activate C
+  C --> B: WorkDone
+  destroy C
+  B --> A: Request Created
+  deactivate B
+  A --> User: Done
+  deactivate A
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/state02.png]]
+
+  #+BEGIN_SRC plantuml :file images/pxe01.png
+  skinparam backgroundColor #EEEBDC
+  skinparam sequence {
+  ArrowColor DeepSkyBlue
+  ActorBorderColor DeepSkyBlue
+  LifeLineBorderColor blue
+  LifeLineBackgroundColor #A9DCDF
+  ParticipantBorderColor DeepSkyBlue
+  ParticipantBackgroundColor DodgerBlue
+  ParticipantFontName Impact
+  ParticipantFontSize 17
+  ParticipantFontColor #A9DCDF
+  ActorBackgroundColor aqua
+  ActorFontColor DeepSkyBlue
+  ActorFontSize 17
+  ActorFontName Aapex
+  }
+
+  title PXE工作流程
+  participant PXE_Client
+  participant TFTP_Server
+  participant DHCP_Server
+
+  PXE_Client -> DHCP_Server: 请求IP地址
+  activate PXE_Client
+  activate DHCP_Server
+  DHCP_Server -> DHCP_Server: 是否为合法的\n来自PXE_Client\n的DHCP请求？
+  PXE_Client <-- DHCP_Server: 返回IP地址和bootstrap的位置
+  deactivate DHCP_Server
+  PXE_Client -> TFTP_Server: 请求传送bootstrap
+  activate TFTP_Server
+  PXE_Client <-- TFTP_Server: 同意指定传输块大小（blksize）？
+  PXE_Client -> TFTP_Server: 同意
+  PXE_Client <-- TFTP_Server: 发送bootstrap
+  PXE_Client -> PXE_Client: 执行bootstrap(pxelinux.0)
+  PXE_Client -> TFTP_Server: 请求传送配置文件\n(pxelinux.cfg/<IP_ADDR>)
+  PXE_Client -> PXE_Client: 读配置文件
+  PXE_Client -> PXE_Client: 用户根据情况选择
+  PXE_Client -> TFTP_Server: 请求传送Linux内核
+  PXE_Client <-- TFTP_Server: 发送Linux内核
+  PXE_Client -> TFTP_Server: 请求传送Linux根文件系统
+  PXE_Client <-- TFTP_Server: 发送Linux根文件系统
+  deactivate TFTP_Server
+  PXE_Client -> PXE_Client: 启动Linux内核（带参数）
+  deactivate PXE_Client
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/pxe01.png]]
+
+  #+BEGIN_SRC plantuml :file images/pxe02.png
+  hide footbox
+  title PXE工作流程
+
+  participant PXE_Client
+  participant TFTP_Server
+  participant DHCP_Server
+  PXE_Client -> DHCP_Server: 请求IP地址
+  activate PXE_Client #FFBBBB
+  activate DHCP_Server #FFBBCC
+  DHCP_Server -> DHCP_Server: 是否为合法的\n来自PXE_Client\n的DHCP请求？
+  PXE_Client <-- DHCP_Server: 返回IP地址和bootstrap的位置
+  deactivate DHCP_Server
+  PXE_Client -> TFTP_Server: 请求传送bootstrap
+  activate TFTP_Server #FFAABB
+  PXE_Client <-- TFTP_Server: 同意指定传输块大小（blksize）？
+  PXE_Client -> TFTP_Server: 同意
+  PXE_Client <-- TFTP_Server: 发送bootstrap
+  PXE_Client -> PXE_Client: 执行bootstrap(pxelinux.0)
+  PXE_Client -> TFTP_Server: 请求传送配置文件\n(pxelinux.cfg/<IP_ADDR>)
+  PXE_Client -> PXE_Client: 读配置文件
+  PXE_Client -> PXE_Client: 用户根据情况选择
+  PXE_Client -> TFTP_Server: 请求传送Linux内核
+  PXE_Client <-- TFTP_Server: 发送Linux内核
+  PXE_Client -> TFTP_Server: 请求传送Linux根文件系统
+  PXE_Client <-- TFTP_Server: 发送Linux根文件系统
+  deactivate TFTP_Server
+  PXE_Client -> PXE_Client: 启动Linux内核（带参数）
+  deactivate PXE_Client
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/pxe02.png]]
+
+  #+BEGIN_EXAMPLE
+  PXE工作原理示意图说明：
+  1. Client向PXE Server上的DHCP发送IP地址请求消息，DHCP检测Client是否
+     合法（主要是检测Client的网卡MAC地址），如果合法则返回Client的IP
+     地址，同时将启动文件pxelinux.0的位置信息一并传送给Client。
+  2. Client向PXE Server上的TFTP发送获取pxelinux.0请求消息，TFTP接收到
+     消息之后再向Client发送pxelinux.0大小信息，试探Client是否满意，当
+     TFTP收到Client发回的同意大小信息之后，正式向Client发送pxelinux.0。
+  3. Client执行接收到的pxelinux.0文件。
+  4. Client向TFTP发送针对本机的配置信息（记录在TFTP的pxelinux.cfg目录
+     下），TFTP将配置文件发回Client，继而Client根据配置文件执行后续操
+     作。
+  5. Client向TFTP发送Linux内核请求信息，TFTP接收到消息之后将内核文件
+     发送给Client。
+  6. Client向TFTP发送根文件请求信息，TFTP接收到消息之后返回Linux根文
+     件系统。
+  7. Client启动Linux内核（启动参数已经在4中的配置文件中设置好了）。
+  8. Client通过NFS下载镜像文件，读取autoyast自动化安装脚本。
+  至此，Client正式进入自动化安装模式开始安装系统直到完成。
+  #+END_EXAMPLE
+
+  #+BEGIN_SRC plantuml :file images/web_topo.png
+  :Client: <-down-> [Route]
+  note right of Client : who can serve me
+  note right of [Route] : VIP 192.168.56.100
+  [Route] <-down-> [Real IP1\n192.168.56.101]
+  [Route] <-down-> [Real IP2\n192.168.56.102]
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/web_topo.png]]
+
+** Changing notes shape
+   #+BEGIN_SRC plantuml :file images/plantuml_note_shape01.png
+   caller -> server : conReq
+   hnote over caller : idle
+   caller <- server : conConf
+   rnote over server
+   "r" as rectangle
+   "h" as hexagon
+   endrnote
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_note_shape01.png]]
+** Delay
+   You can use ... to indicate a delay in the diagram. And it is also
+   possible to put a message with this delay.
+   #+BEGIN_SRC plantuml :file images/plantuml_delay01.png
+   Alice -> Bob: Authentication Request
+   ...
+   Bob --> Alice: Authentication Response
+   ...5 minutes latter ...
+   Bob --> Alice: Bye !
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_delay01.png]]
+** Space
+   You can use ||| to indicate some spacing in the diagram. It is
+   also possible to specify a number of pixel to be used.
+   #+BEGIN_SRC plantuml :file images/plantuml_space01.png
+   Alice -> Bob: message 1
+   Alice <-- Bob: ok
+   |||
+   Alice -> Bob: message 2
+   Alice <-- Bob: ok
+   ||45||
+   Alice -> Bob: message 3
+   Alice <-- Bob: ok
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_space01.png]]
+** Lifeline Activation and Destruction
+   The activate and deactivate are used to denote participant
+   activation.  Once a participant is activated, its lifeline
+   appears. The *activate* and *deactivate* apply on the previous
+   message. The *destory* denote the end of the lifeline of a
+   participant.
+
+   #+BEGIN_SRC plantuml :file images/plantuml_lifeline01.png
+   participant User
+   User -> A: DoWork
+   activate A
+   A -> B: << createRequest >>
+   activate B
+   B -> C: DoWork
+   activate C
+   C --> B: WorkDone
+   destroy C
+   B --> A: RequestCreated
+   deactivate B
+   A -> User: Done
+   deactivate A
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_lifeline01.png]]
+
+** Incoming and outgoing messages
+   You can use incoming and outgoing arrows if you want to focus on a
+   part of the diagram. Use sequre breackets to denote the left "["
+   or the right "]" side of the diagram.
+   #+BEGIN_SRC plantuml :file images/plantuml_in_out_01.png
+   [-> A: DoWork
+    
+   activate A
+
+   A -> A: Internal call
+   activate A
+    
+   A ->]: << createRequest >>
+   A <--]: RequestCreated
+   deactivate A
+   [<- A: Done
+   deactivate A
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_in_out_01.png]]
+
+   You can also have the following syntax:
+   #+BEGIN_SRC plantuml :file images/plantuml_in_out_02.png
+   [-> Bob
+   [o-> Bob
+   [o->o Bob
+   [x-> Bob
+   [<- Bob
+   [x<- Bob
+
+   Bob ->]
+   Bob ->o]
+   Bob o->o]
+   Bob ->x]
+
+   Bob <-]
+   Bob x<-]
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_in_out_02.png]]
+** Removing Footer
+   You can use the *hide footbox* keywords to remove the footer of the diagram.
+   #+BEGIN_SRC plantuml :file images/plantuml_remove_footer.png
+   hide footbox
+   title Footer removed
+   
+   Alice -> Bob: Authentication Request
+   Alice <-- Bob: Authentication Response
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/plantuml_remove_footer.png]]
+
+* Ditta
+   #+begin_src ditaa :file images/ditta01.png :cmdline -r -s 1.0
+    +-----------+        +---------+
+    |    PLC    |        |         |
+    |  Network  +<------>+   PLC   +<---=---------+
+    |    cYEL   |        |  cRED   |              |
+    +-----------+        +---------+              |
+   #+end_src
+
+   #+RESULTS:
+   [[file:images/ditta01.png]]
+ 
+   #+BEGIN_SRC ditaa :file images/ditta-seqboxes.png
++------+   +-----+   +-----+   +-----+
+|{io}  |   |{d}  |   |{s}  |   |cBLU |
+| Foo  +---+ Bar +---+ Baz +---+ Moo |
+|      |   |     |   |     |   |     |
++------+   +-----+   +--+--+   +-----+
+                        |
+           /-----\      |      +------+
+           |     |      |      | c1AB |
+           | Goo +------+---=--+ Shoo |
+           \-----/             |      |
+                               +------+
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/ditta-seqboxes.png]]
+
+#+BEGIN_SRC ditaa :file images/mha001.png
+					+------------+
+					|	 App cYEL|
+					+-----+------+
+						  |
+						  |
+				+---------+----------+
+		+-------+  VIP:172.16.25.100 +------+
+		|		+---------+----------+		|
+		|				  |					|
+		|				  |					|
+ +------+-----+	   +------+-----+	 +------+-----+
+ |			  |	   |			|	 |			  |
+ |	{s} 	  |	   |	{s}		|	 |	{s}		  |
+ |	 Master	  |	   |   Backup   |	 |	 Slave1	  |
+ |	c1AB      |	   |	c1AB    |	 |	c1AB      |
+ |			  |	   |			|	 |			  |
+ +------------+	   +------------+	 +------------+
+  172.16.25.108	   172.16.25.109	 172.16.25.110
+#+END_SRC
+
+#+RESULTS:
+[[file:images/mha001.png]]
+
+#+BEGIN_SRC ditaa :file images/mha002.png
+					+------------+
+					|	 App cYEL|
+					+-----+------+
+						  |
+						  |
+				+---------+----------+
+		+-------+ VIP:10.10.7.199/24 +------+
+		|		+---------+----------+		|
+		|				  |					|
+		|				  |					|
+ +------+-----+	   +------+-----+	 +------+-----+
+ |			  |	   |			|	 |			  |
+ |	{s} 	  |	   |	{s}		|	 |	{s}		  |
+ |	 Master	  |	   |   Backup   |	 |	 Slave    |
+ |	c1AB      |	   |   c1AB	    |	 |	c1AB      |
+ |			  |	   |			|	 |			  |
+ +------------+	   +------------+	 +------------+
+   10.10.7.16	    10.10.7.17	       10.10.7.201
+#+END_SRC
+
+#+RESULTS:
+[[file:images/mha002.png]]
+
+#+BEGIN_SRC ditaa :file images/linux-os.png
++---------------------------------------------------------+ 
+|                Applications                             |     
+|    +----------------------------------------------------+     
+|    |           System Libraries                         |     
++----+----------------------------------------------------+     
+|                System Call Interface                    |     
++------------------------+--------------+-----------------+       +---------+
+|          VFS           |   Socket     |                 |       |         |
++------------------------+--------------+    Scheduler    +-------+   CPU   |
+|       File Systems     |   TCP/UDP    |                 |       |         |
++------------------------+--------------+-----------------+       +----+----+
+|       Volume Manager   |   IP         |    Virtual      |            |  
++------------------------+--------------+    Memory       |            |
+| Block Device Interface |   Ethernet   |                 |            |
++------------------------+--------------+-----------------+       +----+----+
+|                       Device Driver                     |       |  DRAM   |
++-----------------------------+---------------------------+       +---------+
+                              |            
+                              |            
+                      +-------+--------+          
+                      |   I/O Bridge   |          
+                      +-------+--------+          
+                              |                            
+                              |                  
+      ------+-----------------+--------------------+------  
+            |                                      |     
+  +---------+--------+                  +----------+---------+
+  |  I/O Controller  |                  | Network Controller |
+  +-+-------+------+-+                  +----+----------+----+
+    |       |      |                         |          |
++---+---+   |  +---+---+                +----+----+ +---+----+
+| Disk  |  ... | Swap  |                |  Port   | |  Port  |
++-------+      +-------+                +---------+ +--------+
+#+END_SRC
+
+#+RESULTS:
+[[file:images/linux-os.png]]
+
+* Dot
+  SCHEDULED: <2015-04-23 周四>
+   #+BEGIN_SRC dot :file images/dot02.png :cmdline -Kdot -Tpng
+   digraph hierarchy {
+
+   nodesep=1.0 // increases the separation between nodes
+
+   node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour
+   edge [color=Blue, style=dashed] //All the lines look like this
+
+   Headteacher->{Deputy1 Deputy2 BusinessManager}
+   Deputy1->{Teacher1 Doctor}
+   BusinessManager->ITManager
+   {rank=same;ITManager Teacher1 Teacher2}  // Put them on the same level
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot02.png]]
+
+   #+BEGIN_SRC dot :file images/dot04.png :cmdline -Kdot -Tpng
+   digraph structs {
+    node[shape=record]
+    struct1 [label="<f0> left|<f1> mid\ dle|<f2> right"];
+    struct2 [label="{<f0> one|<f1> two\n\n\n}" shape=Mrecord];
+    struct3 [label="hello\nworld |{ b |{c|<here> d|e}| f}| g | h"];
+    struct1:f1 -> struct2:f0;
+    struct1:f0 -> struct3:f1;
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot04.png]]
+
+   #+BEGIN_SRC dot :file images/dot05.png :cmdline -Kdot -Tpng
+   digraph structs {
+    node[shape=record]
+    struct1 [label="<f0> left|<f1> mid\ dle|<f2> right"];
+    struct2 [label="{<f0> one|<f1> two\n\n\n}" shape=Mrecord];
+    struct3 [label="hello\nworld |{ b |{c|<here> d|e}| f}| g | h"];
+    struct1:f1 -> struct2:f0;
+    struct1:f0 -> struct3:f1;
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot05.png]]
+
+   #+BEGIN_SRC dot :file images/dot_node.png :cmdline -Kdot -Tpng
+   digraph g_attr_01 {
+        rankdir = LR
+        fontsize = 10
+        label = "边的属性设置示例"
+       
+        node[shape=box,style=filled,
+                  fillcolor=".7 .3 1.0", color=green,fontsize=10]
+        edge[arrowsize= .5, fontsize=10]
+
+        A -> B[label="进入"]
+        B -> C -> D
+       
+        B [shape = circle, color = red, style=solid, label="我是结点"]
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot_node.png]]
+
+   #+BEGIN_SRC dot :file images/dot_shell.png :cmdline -Kdot -Tpng
+   digraph shells {
+	node [fontsize = 11, height = .02]
+	edge [arrowsize= .5]
+	
+	node [shape = plaintext]
+	1972 -> 1976 -> 1978 -> 1980 -> 1982 -> 1984
+	1984 -> 1986 -> 1988 -> 1990 -> future
+	
+	node [shape = box]
+	rank = same
+	{1972 Thompson}
+	{1976 Mashey Bourne}
+	{1978 Formshell csh}
+	{1980 esh vsh}
+	{1982 ksh "System-V"}
+	{1984 v9sh tcsh}
+	{1986 "ksh-i"}
+	{1988 KornShell Perl rc}
+	{1990 tcl Bash}
+	{"future" POSIX "ksh-POSIX"}
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot_shell.png]]
+
+   #+BEGIN_SRC dot :file images/dot_shell01.png :cmdline -Kdot -Tpng
+   digraph shells01 {
+	node [fontsize = 11, height = .02]
+	edge [arrowsize= .5]
+	
+	node [shape = plaintext]
+	1972 -> 1976 -> 1978 -> 1980 -> 1982 -> 1984
+	1984 -> 1986 -> 1988 -> 1990 -> future
+	
+	node [shape = box]
+	rank = same
+	{1972 Thompson}
+	{1976 Mashey Bourne}
+	{1978 Formshell csh}
+	{1980 esh vsh}
+	{1982 ksh "System-V"}
+	{1984 v9sh tcsh}
+	{1986 "ksh-i"}
+	{1988 KornShell Perl rc}
+	{1990 tcl Bash}
+	{"future" POSIX "ksh-POSIX"}
+
+	Thompson -> Mashey
+	Thompson -> Bourne
+	Thompson -> csh
+	csh -> tcsh
+	Bourne -> ksh
+	Bourne -> esh
+	Bourne -> vsh
+	Bourne -> "System-V"
+	Bourne -> v9sh
+	v9sh -> rc
+	Bourne -> Bash
+	"ksh-i" -> Bash
+	KornShell -> Bash
+	esh -> ksh
+	vsh -> ksh
+	Formshell -> ksh
+	csh -> ksh
+	KornShell -> POSIX
+	"System-V" -> POSIX
+	ksh -> "ksh-i"
+	"ksh-i" -> KornShell
+	KornShell -> "ksh-POSIX"
+	Bourne -> Formshell
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot_shell01.png]]
+
+   
+   #+BEGIN_SRC dot :file images/dot01.png :cmdline -Kdot -Tpng
+  digraph G {
+  size="8,6"
+  ratio=expand
+  edge [dir=both]
+  plcnet [shape=box, label="PLC Network"]
+  subgraph cluster_wrapline {
+    label="Wrapline Control System"
+    color=purple
+    subgraph {
+    rank=same
+    exec
+    sharedmem [style=filled, fillcolor=lightgrey, shape=box]
+    }
+    edge[style=dotted, dir=none]
+    exec -> opserver
+    exec -> db
+    plc -> exec
+    edge [style=line, dir=both]
+    exec -> sharedmem
+    sharedmem -> db
+    plc -> sharedmem
+    sharedmem -> opserver
+  }
+  plcnet -> plc [constraint=false]
+  millwide [shape=box, label="Millwide System"]
+  db -> millwide
+
+  subgraph cluster_opclients {
+    color=blue
+    label="Operator Client"
+    rankdir=LR
+    labelloc=b
+    node[label=client]
+    opserver -> client1
+    opserver -> client2
+    opserver -> client3
+  }
+}
+  #+end_src
+
+  #+RESULTS:
+  [[file:images/dot01.png]]
+
+** Example02
+    #+BEGIN_SRC dot :file images/dot03.png :cmdline -Kdot -Tpng
+ digraph idp_modules{
+  
+ rankdir = TB;
+  
+ node [ fontsize = 12, shape = "record" ]; 
+ edge [ fontsize = 12 ];
+  
+     subgraph cluster_sl{
+         label="IDP支持层";
+         bgcolor="mintcream";
+         node [shape="Mrecord", color="skyblue", style="filled"];
+         network_mgr [label="网络管理器"];
+         log_mgr [label="日志管理器"];
+         module_mgr [label="模块管理器"];
+         conf_mgr [label="配置管理器"];
+         db_mgr [label="数据库管理器"];
+     };
+  
+     subgraph cluster_md{
+         label="可插拔模块集";
+         bgcolor="lightcyan";
+         node [color="chartreuse2", style="filled"];
+         mod_dev [label="开发支持模块"];
+         mod_dm [label="数据建模模块"];
+         mod_dp [label="部署发布模块"];
+     };
+  
+ mod_dp -> mod_dev [label="依赖..."];
+ mod_dp -> mod_dm [label="依赖..."];
+ mod_dp -> module_mgr [label="安装...", color="yellowgreen", arrowhead="none"];
+ mod_dev -> mod_dm [label="依赖..."];
+ mod_dev -> module_mgr [label="安装...", color="yellowgreen", arrowhead="none"];
+ mod_dm -> module_mgr [label="安装...", color="yellowgreen", arrowhead="none"];
+  
+ }
+#+END_SRC
+
+    #+RESULTS:
+	[[file:images/dot03.png]]
+
+** Example03
+    #+BEGIN_SRC dot :file images/dot_html01.png :cmdline -Kdot -Tpng
+  digraph G {
+  rankdir=LR
+  node [shape=plaintext]
+  a [
+     label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+  <TR><TD ROWSPAN="3" BGCOLOR="yellow">class</TD></TR>
+  <TR><TD PORT="here" BGCOLOR="lightblue">qualifier</TD></TR>
+</TABLE>>
+  ]
+    b [shape=ellipse style=filled
+  label=<
+<TABLE BGCOLOR="bisque">
+  <TR><TD COLSPAN="3">elephant</TD> 
+      <TD ROWSPAN="2" BGCOLOR="chartreuse" 
+          VALIGN="bottom" ALIGN="right">two</TD> </TR>
+  <TR><TD COLSPAN="2" ROWSPAN="2">
+        <TABLE BGCOLOR="grey">
+          <TR> <TD>corn</TD> </TR> 
+          <TR> <TD BGCOLOR="yellow">c</TD> </TR> 
+          <TR> <TD>f</TD> </TR> 
+        </TABLE> </TD>
+      <TD BGCOLOR="white">penguin</TD> 
+  </TR> 
+  <TR> <TD COLSPAN="2" BORDER="4" ALIGN="right" PORT="there">4</TD> </TR>
+</TABLE>>
+  ]
+  c [ 
+  label=<long line 1<BR/>line 2<BR ALIGN="LEFT"/>line 3<BR ALIGN="RIGHT"/>>
+  ]
+
+  subgraph { rank=same b c }
+  a:here -> b:there [dir=both arrowtail = diamond]
+  c -> b
+  d [shape=triangle]
+  d -> c [label=<
+<TABLE>
+  <TR><TD BGCOLOR="red" WIDTH="10"> </TD>
+      <TD>Edge labels<BR/>also</TD>
+      <TD BGCOLOR="blue" WIDTH="10"> </TD>
+  </TR>
+</TABLE>>
+  ]
+ 
+  }
+  #+END_SRC
+
+    #+RESULTS:
+	[[file:images/dot_html01.png]]
+** Example04
+    #+BEGIN_SRC dot :file images/dot001.png :cmdline -Kdot -Tpng
+  digraph test {
+	node[shape=box,fontname="/usr/local/share/fonts/TrueType/simsun.ttf",fontsize=12];
+	node0 [shape=house, label="特征函数",fillcolor=red];
+	node1 [shape=house, label="Chebyshev不等式",fillcolor=red];
+	node2 [shape=house, label="Kolmogorov不等式",fillcolor=red];
+	node3 [shape=ellipse, label="Kolmogorov强大数定律"];
+	node1 -> Markov弱大数定律 -> Chebyshev弱大数定律 -> Poisson弱大数定律;
+	Chebyshev不等式 -> Chebyshev弱大数定律 -> Bernoulli弱大数定律;
+	Kolmogorov弱大数定律 -> Markov弱大数定律;
+	node0 -> Khintchine弱大数定律 -> Bernoulli弱大数定律;
+	node2  -> node3;
+}
+  #+END_SRC
+
+    #+RESULTS:
+	[[file:images/dot001.png]]
+** Example05
+   #+BEGIN_SRC dot :file images/dot005.png :cmdline -Kdot -Tpng
+   digraph g {
+   graph [
+   rankdir = "LR"
+   ];
+   node [
+   fontsize = "16"
+   shape = "ellipse"
+   ];
+   edge [
+   ];
+   "node0" [
+   label = "<f0> 0x10ba8| <f1>"
+   shape = "record"
+   ];
+   "node1" [
+   label = "<f0> 0xf7fc4380| <f1> | <f2> |-1"
+   shape = "record"
+   ];
+   "node2" [
+   label = "<f0> 0xf7fc44b8| | |2"
+   shape = "record"
+   ];
+   "node3" [
+   label = "<f0> 3.43322790286038071e-06|44.79998779296875|0"
+   shape = "record"
+   ];
+   "node4" [
+   label = "<f0> 0xf7fc4380| <f1> | <f2> |2"
+   shape = "record"
+   ];
+   "node5" [
+   label = "<f0> (nil)| | |-1"
+   shape = "record"
+   ];
+   "node6" [
+   label = "<f0> 0xf7fc4380| <f1> | <f2> |1"
+   shape = "record"
+   ];
+   "node7" [
+   label = "<f0> 0xf7fc4380| <f1> | <f2> |2"
+   shape = "record"
+   ];
+   "node8" [
+   label = "<f0> (nil)| | |-1"
+   shape = "record"
+   ];
+   "node9" [
+   label = "<f0> (nil)| | |-1"
+   shape = "record"
+   ];
+   "node10" [
+   label = "<f0> (nil)| <f1> | <f2> |-1"
+   shape = "record"
+   ];
+   "node11" [
+   label = "<f0> (nil)| <f1> | <f2> |-1"
+   shape = "record"
+   ];
+   "node12" [
+   label = "<f0> 0xf7fc43e0| | |1"
+   shape = "record"
+   ];
+   "node0":f0 -> "node1":f0 [
+   id = 0
+   ];
+   "node0":f1 -> "node2":f0 [
+   id = 1
+   ];
+   "node1":f0 -> "node3":f0 [
+   id = 2
+   ];
+   "node1":f1 -> "node4":f0 [
+   id = 3
+   ];
+   "node1":f2 -> "node5":f0 [
+   id = 4
+   ];
+   "node4":f0 -> "node3":f0 [
+   id = 5
+   ];
+   "node4":f1 -> "node6":f0 [
+   id = 6
+   ];
+   "node4":f2 -> "node10":f0 [
+   id = 7
+   ];
+   "node6":f0 -> "node3":f0 [
+   id = 8
+   ];
+   "node6":f1 -> "node7":f0 [
+   id = 9
+   ];
+   "node6":f2 -> "node9":f0 [
+   id = 10
+   ];
+   "node7":f0 -> "node3":f0 [
+   id = 11
+   ];
+   "node7":f1 -> "node1":f0 [
+   id = 12
+   ];
+   "node7":f2 -> "node8":f0 [
+   id = 13
+   ];
+   "node10":f1 -> "node11":f0 [
+   id = 14
+   ];
+   "node10":f2 -> "node12":f0 [
+   id = 15
+   ];
+   "node11":f2 -> "node1":f0 [
+   id = 16
+   ];
+   }
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/dot005.png]]
+
+** Example06
+   #+BEGIN_EXAMPLE
+   dot -Tps graph1.gv -o graph1.ps
+   ps2pdf graph1.ps
+   #+END_EXAMPLE
+
+   #+BEGIN_SRC dot :file images/dot006.pdf :cmdline -Kdot -Tpdf
+   digraph G {
+       main -> parse -> execute;
+       main -> init;
+       main -> cleanup;
+       execute -> make_string;
+       execute -> printf;
+       init -> make_string;
+       main -> printf;
+       execute -> compare;
+   }
+   #+END_SRC
+
+#+RESULTS:
+[[file:images/dot006.pdf]]
+
+* network
+** OSI七层模型
+  #+BEGIN_SRC ditaa :file images/network01.png
+  +-----------------------------+
+  | cRED    Application         |
+  +-----------------------------+
+  | cPNK    Presentation        |
+  +-----------------------------+
+  | cYEL     Session            |
+  +-----------------------------+
+  | cBLU     Transport          |
+  +-----------------------------+
+  | cGRE     Network            | 
+  +-----------------------------+
+  | c1AC     DataLink           |
+  +-----------------------------+
+  | c1AB     Physical           |
+  +-----------------------------+
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/network01.png]]
+** TCP连接建立（三次握手）
+
+   为了建立一条TCP连接，计算机需要为我们做如下的工作：
+
+   1. 请求端（通常称为客户）发送一个SYN段指明客户打算连接的服务器端口，
+      以及初始序号（ISN）。这个SYN段为下面的UML中的报文段1。
+   2. 服务器发回包含服务器的初始序号的SYN报文段（下面UML图中的报文段2）
+      作为应答。同时，将确认序号设置为客户的ISN加1对客户的SYN报文段进
+      行确认。
+   3. 客户必须将确认序号设置为服务器的ISN加1对服务器的SYN报文段进行确
+      认（下面UML图中的报文段3）。
+
+   这三个报文段完成连接的建立。这个过程我们称之为三次握手（three-way
+   handshake）。
+
+   发送第一个SYN的一端将执行主动打开（active open）。接收这个SYN并发
+   回下一个SYN的另一端执行被动打开（passive open）。
+
+   #+BEGIN_SRC plantuml :file images/tcp_connect.png
+   title TCP连接建立
+   autonumber
+   participant client
+   participant server
+
+   note over client , server
+   client与server初始状态都处于CLOSED
+   end note
+
+   client ->  server : SYN(SEQ=x)
+   activate client
+   note left: 3次握手的第1步，\n此后client处于SYN_SENT状态
+
+   client <-- server : SYN(SEQ=y,ACK=x+1)
+   activate server
+   note right: 3次握手的第2步，\n此后server处于SYN_RCVD状态
+
+   client ->  server : (SEQ=x+1,ACK=y+1)
+   deactivate client
+   deactivate server
+   note left of client: 3次握手的第3步，\nclient确认server的SYN，\n并处于ESTABLISHED状态
+   note right of server: server的SYN被client确认后，\nserver也进入ESTABLISHED状态
+
+   note over client , server
+   3次握手结束，client与server都进入ESTABLISHED状态
+   从现在开始双方可以传输数据了
+   end note
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/tcp_connect.png]]
+** TCP连接释放
+** TCP连接模型管理
+** KeepAlived状态
+  #+BEGIN_SRC ditaa :file images/keepalived.png
+   
+                     +---------------+
+          +--------->|               |<-------------+
+          |          |  Initialize   |              |
+          |   +------|  cPNK         |----------+   |
+          |   |      +---------------+          |   |
+          |   |                                 |   |
+          |   v                                 v   |
+  +---------------+                       +---------------+
+  |               |---------------------->|               |
+  |    Master     |                       |    Backup     |
+  |    cBLU       |<----------------------|    cGRE       |
+  +---------------+                       +---------------+
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/keepalived.png]]
+* Gnu/OS
+  #+BEGIN_SRC ditaa :file images/linux01.png
+  +---------------------------------------+
+  |                Applications           |
+  |                                       |
+  +-------------------+                   |
+  |    cBLU           |   cRED            |
+  |    Libraries      |                   |
+  +-------------------+-------------------+
+  |                                       |
+  |   Kernel          +-------------------+
+  |   cYEL            |           cGRE    |
+  |           +-------+--------+  Drivers |
+  |           |   Firmware c1AB|          |
+  +-----------+----------------+----------+
+  |               Hardware   c1AC         |
+  +---------------------------------------+
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/linux01.png]]
+
+
+  #+BEGIN_SRC ditaa :file images/linux02.png :cmdline -E -r -s 1.0
+  +---------------------------------------+
+  |                Applications           |
+  |                cRED                   |
+  +-------------------+                   |
+  |    cBLU           |                   |
+  |    Libraries      |                   |
+  +-------------------+-------------------+
+  |                                       |
+  |   Kernel          +-------------------+
+  |   cYEL            |           cGRE    |
+  |           +-------+--------+  Drivers |
+  |           |   Firmware c1AF|          |
+  +-----------+----------------+----------+
+  |               Hardware  c1AC          |
+  +---------------------------------------+
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/linux02.png]]
+  #+BEGIN_SRC ditaa :file images/linux03.png :cmdline -E
+  +---------------------------------------+
+  |                Applications           |
+  |                cRED                   |
+  +-------------------+                   |
+  |    cBLU           |                   |
+  |    Libraries      |                   |
+  +-------------------+-------------------+
+  |                                       |
+  |   Kernel          +-------------------+
+  |   cYEL            |           cGRE    |
+  |           +-------+--------+  Drivers |
+  |           |   Firmware c1AF|          |
+  +-----------+----------------+----------+
+  |               Hardware  c1AC          |
+  +---------------------------------------+
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/linux03.png]]
+
+* LaTeX
+  \[
+  e^{i\pi} = -1
+  \]
+   
+  \[
+  \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+  \]
+
+  #+BEGIN_SRC latex :tangle images/example.tex
+  \documentclass{article}
+
+  \begin{document}
+
+  \[
+  e^{i\pi} = -1
+  \]
+
+  \[
+  \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+  \]
+
+  \end{document}
+
+  #+END_SRC
+* org plot
+   #+PLOT: title:"Citas" ind:1 deps:(3) type:2d with:histograms set:"yrange [0:]"
+     | Sede      | Max cites | H-index |
+     |-----------+-----------+---------|
+     | Chile     |    257.72 |   21.39 |
+     | Leeds     |    165.77 |   19.68 |
+     | Sao Paolo |     71.00 |   11.50 |
+     | Stockholm |    134.19 |   14.33 |
+     | Morelia   |    257.56 |   17.67 |
+
+   #+tblname: data-table
+   | x | y1 | y2 |
+   |---+----+----|
+   | 0 | 3  | 6  |
+   | 1 | 4  | 7  |
+   | 2 | 5  | 8  | 
+
+   #+BEGIN_SRC gnuplot :var data=data-table :exports both :file images/gnuplot01.png
+   reset
+   set title "This Title Goes at the Top"
+
+   set xlabel "This is the X Axis"
+   set xrange [0:3]
+   set xtics 0,1,3
+
+   set ylabel "This is the Y Axis"
+   set yrange [0:9]
+   set ytics 3,1,9
+
+   plot data u 1:2 with p lw 1 title 'x vs. y1', \
+        data u 1:3 with lp lw 1 title 'x vs. y2'
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/gnuplot01.png]]
+
+   #+begin_src gnuplot :exports both :file images/gnuplot02.png
+   reset
+   set title "Putting it All Together"
+   set xlabel "X"
+   set xrange [-8:8]
+   set xtics -8,2,8
+
+   set ylabel "Y"
+   set yrange [-20:70]
+   set ytics -20,10,70
+
+   f(x) = x**2
+   g(x) = x**3
+   h(x) = 10*sqrt(abs(x))
+
+   plot f(x) w lp lw 1, g(x) w p lw 2, h(x) w l lw 3
+   #+end_src
+
+   #+RESULTS:
+   [[file:images/gnuplot02.png]]
+
+   #+tblname: xtics
+   | Date      | Distance |
+   |-----------+----------|
+   | 8/25/2014 | 3.2      |
+   | 8/29/2014 | 3.0      |
+   | 9/1/2014  | 2.4      |
+   | 9/2/2014  | 2.5      |
+   | 9/5/2014  | 2.3      |
+   | 9/5/2014  | 2.0      | 
+
+   #+BEGIN_SRC gnuplot :var data=xtics :export both :file images/gnuplot03.png
+   reset
+   
+   set title "Running Stats"
+
+   set xlabel "Date"
+   set xtics rotate by -45
+
+   set yrange [1:5]
+   set ylabel "Distance (mi)"
+
+   plot data u 2:xticlabels(1) w lp lw 2 notitle
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/gnuplot03.png]]
+
+   #+tblname: basic-plot
+   |   x |         y1 |         y2 |
+   |-----+------------+------------|
+   | 0.1 |      0.425 |      0.375 |
+   | 0.2 |     0.3125 |     0.3375 |
+   | 0.3 | 0.24999993 | 0.28333338 |
+   | 0.4 |      0.275 |    0.28125 |
+   | 0.5 |       0.26 |       0.27 |
+   | 0.6 | 0.25833338 | 0.24999993 |
+   | 0.7 | 0.24642845 | 0.23928553 |
+   | 0.8 |    0.23125 |     0.2375 |
+   | 0.9 | 0.23333323 |  0.2333332 |
+   |   1 |     0.2225 |       0.22 | 
+
+   #+BEGIN_SRC gnuplot :var data=basic-plot :exports both :file images/gnuplot04.png
+   set title "Putting it All Together"
+
+   set xlabel "X"
+   set xrange [0:1]
+   set tics 0,0.1,1
+
+   set ylabel "Y"
+   set yrange [0.2:0.5]
+   set ytics 0.2,0.05,0.5
+
+   plot data u 1:2 w p lw 2 title 'x vs. y1', \
+        data u 1:3 w lp lw 1 title 'x vs. y2'
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/gnuplot04.png]]
+
+   #+BEGIN_SRC gnuplot :exports both :file images/gnuplot05_3d.png
+   set title "Interlocking Tori - PM3D surface with depth sorting and transparency"
+
+   unset border
+   unset key
+   set object 1 rect from screen 0, 0, 0 to screen 1, 1, 0 behind 
+   set object 1 rect fc  rgb "gray"  fillstyle solid 1.0  border -1
+   set view 64, 345, 1.24375, 0.995902
+   set isosamples 50, 20
+   unset xtics
+   unset ytics
+   unset ztics
+   set parametric
+   set dummy u,v
+   set urange [ -pi : pi ]
+   set vrange [ -pi : pi ]
+
+   set palette rgbformulae 8, 9, 7
+   set style fill  transparent solid 0.30 border
+   set pm3d depthorder border linecolor rgb "#a0a0f0"  linewidth 0.5
+
+   splot cos(u)+.5*cos(u)*cos(v),sin(u)+.5*sin(u)*cos(v),.5*sin(v) with pm3d, \
+         1+cos(u)+.5*cos(u)*cos(v),.5*sin(v),sin(u)+.5*sin(u)*cos(v) with pm3d
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/gnuplot05_3d.png]]
+
+   #+PLOT: title:"example table" ind:1 type:2d with:lines
+#+tblname: data-plot
+| independent var | first dependent var | second dependent var |
+|-----------------+---------------------+----------------------|
+|             0.1 |               0.425 |                0.375 |
+|             0.2 |              0.3125 |               0.3375 |
+|             0.3 |          0.24999993 |           0.28333338 |
+|             0.4 |               0.275 |              0.28125 |
+|             0.5 |                0.26 |                 0.27 |
+|             0.6 |          0.25833338 |           0.24999993 |
+|             0.7 |          0.24642845 |           0.23928553 |
+|             0.8 |             0.23125 |               0.2375 |
+|             0.9 |          0.23333323 |            0.2333332 |
+|               1 |              0.2225 |                 0.22 |
+|             1.1 |          0.20909075 |           0.22272708 |
+|             1.2 |          0.19999998 |           0.21458333 |
+|             1.3 |          0.19615368 |           0.21730748 |
+|             1.4 |          0.18571433 |           0.21071435 |
+|             1.5 |          0.19000008 |            0.2150001 |
+|             1.6 |           0.1828125 |            0.2046875 |
+|             1.7 |          0.18088253 |            0.1985296 |
+|             1.8 |          0.17916675 |           0.18888898 |
+|             1.9 |          0.19342103 |           0.21315783 |
+|               2 |                0.19 |              0.21625 |
+|             2.1 |          0.18214268 |           0.20714265 |
+|             2.2 |          0.17727275 |            0.2022727 |
+|             2.3 |           0.1739131 |            0.1989131 |
+|             2.4 |          0.16770833 |            0.1916667 |
+|             2.5 |               0.164 |                0.188 |
+|             2.6 |          0.15769238 |           0.18076923 |
+|             2.7 |           0.1592591 |            0.1888887 |
+|             2.8 |           0.1598214 |           0.18928565 |
+|             2.9 |          0.15603453 |            0.1844828 |
+
+#+begin_src gnuplot :var data=data-plot :exports both :file images/gnuplot07.png
+reset
+set title "example table"
+set xlabel "X"
+set ylabel "Y"
+
+plot data u 1:2 w l lw 1 title 'first dependent var', \
+     data u 1:3 w l lw 1 title 'second dependent var'
+#+end_src
+
+#+RESULTS:
+[[file:images/gnuplot07.png]]
+
+     #+tblname: liucc
+     | Sede      | Max cites | H-index |
+     |-----------+-----------+---------|
+     | Chile     |    257.72 |   21.39 |
+     | Leeds     |    165.77 |   19.68 |
+     | Sao Paolo |     71.00 |   11.50 |
+     | Stockholm |    134.19 |   14.33 |
+     | Morelia   |    257.56 |   17.67 |
+#+BEGIN_SRC gnuplot :var data=liucc :exports both :file images/gnuplot08.png
+reset
+set title "Citas"
+set xtics rotate by -45
+plot data u 3:xticlabels(1) w l lw 1
+#+END_SRC
+
+#+RESULTS:
+[[file:images/gnuplot08.png]]
+
+* org table
+  | airmass | zenith_seeing | delivered_seeing |
+  |---------+---------------+------------------|
+  |     1.3 |          0.95 |        1.1119612 |
+  |     1.3 |           1.0 |        1.1704854 |
+  |     1.3 |           1.1 |        1.2875340 |
+  |     1.3 |           1.2 |        1.4045825 |
+  |     1.3 |          1.25 |        1.4631068 |
+  |     1.3 |           1.3 |        1.5216311 |
+  |     1.3 |           1.5 |        1.7557281 |
+  |     1.3 |           1.8 |        2.1068738 |
+  |     1.2 |           1.8 |        2.0080811 |
+  |     1.3 |           2.0 |        2.3409709 |
+  #+TBLFM: $3=$2*($1**0.6)
+* bash
+  #+name: directories
+  #+BEGIN_SRC sh :exports both :results replace
+  du -sh * |grep -v total
+  #+END_SRC
+
+  #+RESULTS: directories
+  | 12K  | #iGTD.html#               |
+  | 8.0K | Rplots.pdf                |
+  | 1.0K | aaa.dot                   |
+  | 12K  | aaa.png                   |
+  | 8.0K | basic-function.png        |
+  | 8.0K | basic-plot.png            |
+  | 8.0K | broken-axis.png           |
+  | 2.7M | clusterlab                |
+  | 8.0K | data-plot.svg             |
+  | 4.0K | delsee-r.png              |
+  | 8.0K | diff-scales.png           |
+  | 1.0K | graphivz.dot              |
+  | 32K  | graphivz.png              |
+  | 428K | haproxy_configuration.txt |
+  | 32K  | iGTD.aux                  |
+  | 252K | iGTD.html                 |
+  | 84K  | iGTD.log                  |
+  | 184K | iGTD.org                  |
+  | 12K  | iGTD.out                  |
+  | 840K | iGTD.pdf                  |
+  | 328K | iGTD.synctex.gz           |
+  | 128K | iGTD.tex                  |
+  | 12K  | iGTD.toc                  |
+  | 810K | images                    |
+  | 31K  | ltxpng                    |
+  | 8.0K | multi-axes.png            |
+  | 8.0K | named-xtics.png           |
+  | 64K  | org-babel-gnuplot.html    |
+  | 32K  | org-babel-gnuplot.org     |
+  | 1.0K | test.dot                  |
+  | 28K  | test.png                  |
+  | 4.0K | test.txt                  |
+  | 8.0K | uneven-named-xtics.png    |
+  | 1.0K | xxx.dot                   |
+  | 16K  | xxx.png                   |
+
+  #+BEGIN_SRC sh :exports both :results output
+  echo $PWD
+  echo $HOSTNAME
+  #+END_SRC
+
+  #+RESULTS:
+** simple indexing
+   #+tblname: list-o-numbers
+   | 1 | 2 | 3 |
+   | 4 | 5 | 6 |
+   | 7 | 8 | 9 |
+
+   #+BEGIN_SRC sh :var column=list-o-numbers[,0]
+   echo $column
+   #+END_SRC
+
+   #+RESULTS:
+    
+* R
+  #+BEGIN_SRC R
+  sqrt(42)
+  #+END_SRC
+
+  #+RESULTS:
+  : 6.48074069840786
+
+  #+BEGIN_SRC R :results graphics :file images/R001.png
+  set.seed(121343)
+  u = rnorm(100) 
+  hist(u)
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/R001.png]]
+
+** Using an org-mode table as an R data frame
+   #+tblname: delsee
+   | airmass | zenith_seeing | delivered_seeing |
+   |---------+---------------+------------------|
+   |     1.3 |          0.95 |        1.1119612 |
+   |     1.3 |           1.0 |        1.1704854 |
+   |     1.3 |           1.1 |        1.2875340 |
+   |     1.3 |           1.2 |        1.4045825 |
+   #+TBLFM: $3=$2*($1**0.6)
+
+   #+BEGIN_SRC R :results output :var delsee=delsee
+   summary(delsee)
+   #+END_SRC
+
+   #+RESULTS:
+   :     airmass    zenith_seeing    delivered_seeing
+   :  Min.   :1.3   Min.   :0.9500   Min.   :1.112   
+   :  1st Qu.:1.3   1st Qu.:0.9875   1st Qu.:1.156   
+   :  Median :1.3   Median :1.0500   Median :1.229   
+   :  Mean   :1.3   Mean   :1.0625   Mean   :1.244   
+   :  3rd Qu.:1.3   3rd Qu.:1.1250   3rd Qu.:1.317   
+   :  Max.   :1.3   Max.   :1.2000   Max.   :1.405   
+
+   #+begin_src R :exports both :results output graphics :var delsee=delsee :file images/delsee-r.png :width 400 :height 300
+   library(ggplot2)
+   p <- ggplot(delsee, aes(zenith_seeing, delivered_seeing))
+   p <- p + geom_point()
+   p
+   #+end_src
+
+   #+RESULTS:
+   [[file:images/delsee-r.png]]
+
+   #+begin_src R :results output org
+   library(ascii)
+   options(asciiType="org")
+   ascii(summary(table(1:4, 1:4)))
+   #+end_src
+
+   #+RESULTS:
+   #+BEGIN_SRC org
+   - Number of cases in table: 4 
+   - Number of factors: 2 
+   - Test for independence of all factors:
+     - Chisq = 12, df = 9, p-value = 0.2133
+     - Chi-squared approximation may be incorrect
+   #+END_SRC
+
+* Python
+** 基本使用
+#+BEGIN_SRC python :results output :session
+import os
+import sys
+print "Hello Python!"
+print "This is Emacs Babel Env"
+print os.name
+print sys.platform
+#+END_SRC
+
+#+RESULTS:
+: Hello Python!
+: This is Emacs Babel Env
+: posix
+: linux2
+
+输出：
+#+BEGIN_EXAMPLE
+: 
+: >>> Hello Python!
+: This is Emacs Babel Env
+: nt
+: win32
+#+END_EXAMPLE
+
+* Perl
+  #+BEGIN_SRC perl :results output :session
+  print "Hello Perl\n";
+  print "Current Process is: $$\n";
+  #+END_SRC
+
+  #+RESULTS:
+  : Hello Perl
+  : Current Process is: 6760
+
+  输出：
+  #+BEGIN_EXAMPLE
+  : Hello Perl
+  : Current Process is: 1272
+  #+END_EXAMPLE
+
+* calc
+** 解一元n次方程
+   #+BEGIN_SRC calc :exprot both
+   fsolve(x*2+x=4,x)
+   #+END_SRC
+	
+   结果：
+   #+BEGIN_EXAMPLE
+   : x = 1.33333333333
+   #+END_EXAMPLE
+** 解二元一次方程
+   #+BEGIN_SRC calc :export both
+   fsolve([x + y = a, x - y = b], [x,y])
+   #+END_SRC
+
+   结果：
+   #+BEGIN_EXAMPLE
+   : [x = a + (b - a) / 2, y = (a - b) / 2]
+   #+END_EXAMPLE
+
+   #+BEGIN_SRC calc :export both
+   fsolve([3x + 5y = 10, 7x - 10y = -7], [x,y])
+   #+END_SRC
+
+   结果：
+   #+BEGIN_EXAMPLE
+   : [x = 0.99999999999, y = 1.4]
+   #+END_EXAMPLE
+    
+* sql
+  #+name: my-query01
+  #+BEGIN_SRC sql :engine mysql :cmdline "-h localhost -u root -p 111111"
+  show databases;
+  sql-zailaigenp
+  #+END_SRC
+   
+  #+RESULTS: my-query01
+  | Database           |
+  |--------------------|
+  | information_schema |
+  | bigdata_test       |
+  | mysql              |
+  | performance_schema |
+  | sbtest             |
+  | test               |
+
+  #+name: my-query02
+  #+BEGIN_SRC sql :engine mysql :cmdline "-h localhost -u root"
+  use db_wlgl;
+  show tables;
+  desc tb_admin;
+  #+END_SRC
+   
+  #+RESULTS: my-query02
+  | Tables_in_db_wlgl |
+  |-------------------|
+  | tb_admin          |
+  | tb_car            |
+  | tb_car_log        |
+  | tb_customer       |
+  | tb_shopping       |
+
+  #+name: my-query03
+  #+BEGIN_SRC sql :engine mysql :cmdline "-h localhost -u root"
+  use db_wlgl;
+  select * from tb_admin;
+  #+END_SRC
+
+  #+RESULTS: my-query03
+  | id | admin_user | admin_pass                       |
+  |----+------------+----------------------------------|
+  |  1 | admin      | 698d51a19d8a121ce581499d7b701668 |
+
+  #+BEGIN_SRC sql :engine mysql :cmdline "-h 139.196.57.190 -u zatp -p zibang123"
+  show databases;
+  #+END_SRC
+
+  #+RESULTS:
+
+* VRRP
+  #+BEGIN_SRC ditaa :file images/vrrp_01.png 
+           +-----------+      +-----------+
+           |   Rtr1    |      |   Rtr2    |
+           |(MR VRID=1)|      |(BR VRID=1)|
+           |           |      |           |
+   VRID=1  +-----------+      +-----------+
+   IP A ---------->*            *<--------- IP B
+                   |            |
+                   |            |
+ ------------------+------------+-----+--------+--------+--------+--
+                                      ^        ^        ^        ^
+                                      |        |        |        |
+                                    (IP A)   (IP A)   (IP A)   (IP A)
+                                      |        |        |        |
+                                   +--+--+  +--+--+  +--+--+  +--+--+
+                                   |  H1 |  |  H2 |  |  H3 |  |  H4 |
+                                   +-----+  +-----+  +--+--+  +--+--+
+    Legend:
+             ---+---+---+--  =  Ethernet, Token Ring, or FDDI
+                          H  =  Host computer
+                         MR  =  Master Router
+                         BR  =  Backup Router
+                          *  =  IP Address
+                       (IP)  =  default router for hosts
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:images/vrrp_01.png]]
+   
+* Misc
+** Memcached
+   #+BEGIN_SRC plantuml :file images/memcached_process.png
+   hide footbox
+   title Tomcat之MSM共享session
+   actor User
+   participant Tomcat1
+   participant Tomcat2
+   participant Memcached
+     
+   User -> Tomcat1: 1. 第一次请求，无JSESSIONID
+   activate Tomcat1
+   User <- Tomcat1: 2. 响应请求，JSESSIONID=385D543DF1BBBB7F65748F778C8E3CC6
+   deactivate Tomcat1
+   Tomcat1 -> Memcached: 3. 响应完第一次请求，将JSESSIONID存储到Memcached中
+   activate Memcached
+   User -> Tomcat1: 4. 第二次请求，Tomcat1正常响应
+   deactivate Memcached
+   activate Tomcat1
+   Tomcat1 -> Tomcat1: 5. 从本地读取Session
+   User <- Tomcat1: 6. 响应
+   deactivate Tomcat1
+   Tomcat1 -> Memcached: 7. 如果Session有修改，将Session写回Memcached
+   activate Memcached
+   User -> Tomcat2: 8. 第三次请求，Tomcat1故障，请求被转发至Tomcat2
+   deactivate Memcached
+   activate Tomcat2
+   Tomcat2 -> Memcached: 9. Tomcat2本地无对应Session，从Memcached获取
+   deactivate Tomcat2
+   activate Memcached
+   Tomcat2 <- Memcached: 10. 返回对应Session
+   deactivate Memcached
+   activate Tomcat2
+   Tomcat2 -> Tomcat2: 11. 修改JSESSIONID
+   User <- Tomcat2: 12. 响应请求，JSESSIONID重置，后续请求转至Tomcat2
+   deactivate Tomcat2
+   Tomcat2 -> Memcached: 13. 将Session写至Memcached
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:images/memcached_process.png]]
+
+   

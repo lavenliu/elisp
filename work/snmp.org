@@ -1,0 +1,39 @@
+* snmp v1
+  三种community: 
+  read-only
+
+  read-write
+
+  trap：被控端主动通知监控端，
+* snmp v3
+  It adds support for strong authentication and private communication between
+  managed
+* MIBs
+  1. The Structure of Mnanagment Information (SMI) defines how
+     management information is grouped and named; allowed operations;
+     permitted data types; and the syntax for specifying MIBs.
+  2. The Management Information Base (MIB) can be thought of as a
+     database of managed objects that the agent tracks.
+  3. An agent may implement many MIBs, but all agents implement a
+     particular MIB called MIB-II.
+* The Concept of Network Management
+  1. Fault Mangement
+	 #+BEGIN_EXAMPLE
+	 To detect, log, and notify users of systems or networks of problems
+	 #+END_EXAMPLE
+  2. Configuration Mangement
+	 #+BEGIN_EXAMPLE
+	 1. To monitor network and system configuration information
+	 2. Such as the number of hard disks
+	 #+END_EXAMPLE
+  3. Accounting Management
+	 #+BEGIN_EXAMPLE
+	 To ensure that computing and network resources are used fairly by
+	 all groups or individuals who access them
+	 #+END_EXAMPLE
+  4. Performance Management
+	 #+BEGIN_EXAMPLE
+	 To measure and report on various aspects of network or system
+	 performance
+	 #+END_EXAMPLE
+  5. Security Management

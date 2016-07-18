@@ -1,0 +1,2605 @@
+#+TITLE: Docker
+#+AUTHOR: LavenLiu
+#+DATE: 2010-08-20
+#+EMAIL: ldczz2008@163.com 
+
+#+STARTUP: OVERVIEW
+#+TAGS: OFFICE(o) HOME(h) PROJECT(p) CHANGE(c) REPORT(r) MYSELF(m) 
+#+TAGS: PROBLEM(P) INTERRUPTTED(i) RESEARCH(R)
+#+SEQ_TODO: TODO(t)  STARTED(s) WAITING(W) | DONE(d) CANCELLED(C) DEFERRED(f)
+#+COLUMNS: %40ITEM(Details) %TAGS(Context) %7TODO(To Do) %5Effort(Time){:} %6CLOCKSUM{Total}
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,11pt]
+#+LaTeX_HEADER: \usepackage[top=2.1cm,bottom=2.1cm,left=2.1cm,right=2.1cm]{geometry}
+#+LaTeX_HEADER: \setmainfont[Mapping=tex-text]{Times New Roman}
+#+LaTeX_HEADER: \setsansfont[Mapping=tex-text]{Tahoma}
+#+LaTeX_HEADER: \setmonofont{Courier New}
+#+LaTeX_HEADER: \setCJKmainfont[BoldFont={Adobe Heiti Std},ItalicFont={Adobe Kaiti Std}]{Adobe Song Std}
+#+LaTeX_HEADER: \setCJKsansfont{Adobe Heiti Std}
+#+LaTeX_HEADER: \setCJKmonofont{Adobe Fangsong Std}
+#+LaTeX_HEADER: \punctstyle{hangmobanjiao}
+#+LaTeX_HEADER: \usepackage{color,graphicx}
+#+LaTeX_HEADER: \usepackage[table]{xcolor}
+#+LaTeX_HEADER: \usepackage{colortbl}
+#+LaTeX_HEADER: \usepackage{listings}
+#+LaTeX_HEADER: \usepackage[bf,small,indentafter,pagestyles]{titlesec}
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="css/style2.css" />
+
+#+OPTIONS: ^:nil
+#+OPTIONS: tex:t
+
+* 什么是容器
+  一种虚拟化的方案
+
+  操作系统级别的虚拟化
+
+  只能运行相同或相似内核的操作系统
+
+  依赖于Linux内核特性：Namespace和Cgroups（Control Group）
+** 什么是Namespace
+   命名空间
+
+   很多编程语言都包含命名空间的概念。
+
+   编程语言：命名空间包含了一种封装的概念->代码隔离
+   
+   操作系统：命名空间提供的是系统资源的隔离，系统资源包括进程、网络、文件系统等。
+             实际上Linux内核实现命名空间的主要目的之一就是实现轻量级虚拟化服务，
+			 也就是我们说的容器。在同一个命名空间下的进程可以感知彼此的变化，
+			 而对其他命名空间中的进程一无所知，这样就可以让容器中的进程产生一种错觉，
+			 放佛它自己置身于一个独立的系统环境中，以此达到隔离和独立的目的。
+
+   Docker使用了5中命名空间：
+   1. PID（Process ID）进程隔离
+   2. NET（Network）管理网络接口
+   3. IPC（InterProcess Communication）管理跨进程通信的访问
+   4. MNT（Mount）管理挂载点
+   5. UTS（Unix Timesharing System）隔离内核和版本标识
+
+   这些隔离的资源是如何被管理起来的呢？这就依赖Control Groups来控制。
+** 什么是Cgroups
+   Control Groups控制组
+
+   来源于Google
+
+   Linux Kernel 2.6.24 @ 2007
+
+   Cgroups就是为了实现容器技术而生的。
+
+   Cgroups提供了哪些功能：
+   1. 资源限制 - 设定资源上限
+   2. 优先级设定 - 设置哪些进程组使用更大的CPU或磁盘IO资源
+   3. 资源计量 - 可以计算进程组使用了多少系统资源
+   4. 资源控制 - 可以将进程组挂起和恢复
+** Docker容器的能力
+   基于命名空间和cgroups，Docker可以做到哪些呢？
+   1. 文件系统隔离：每个容器都有自己的root文件系统
+   2. 进程隔离：每个容器都运行在自己的进程环境中
+   3. 网络隔离：容器间的虚拟网络接口和IP地址都是分开的
+   4. 资源隔离和分组：使用cgroups将CPU和内存之类的资源独立分陪给每个Docker容器
+* 关于Docker
+  Docker是一个开源项目，诞生于2013年初，最初是dotCloud公司内部的一个业
+  余项目。它基于Google公司推出的Go语言实现。Docker项目的目标是实现轻量
+  级的操作系统虚拟化解决方案。Docker的基础是Linux容器(LXC)等技术，在
+  LXC的基础上Docker进行了进一步的封装，让用户不需要去关心容器的管理，
+  使得操作更为简便。用户操作Docker的容器就像操作一个快速轻量级的虚拟机
+  一样简单。
+* Docker与传统虚拟机建构对比
+  传统虚拟化解决方案属于深度硬件虚拟化，虚拟化的水平比较高，用户进程
+  都是在KVM等虚拟机容器中翻译运行，操作系统调用的是由hypervisor所提供
+  的虚拟化硬件，实际上是提供一个虚拟硬件环境给操作系统调用适合的驱动
+  程序，虚拟机所服务的对象实际上是操作系统而不是应用本身。Docker容器
+  运行于操作系统之上，每一个容器包括应用本身以及运行应用所需要的运行
+  时环境，硬件资源通过操作系统kernel进行共享，运行时以在用户空间内的
+  独立进程存在，不依赖特定的基础架构，容器类虚拟化服务的对象是应用，
+  而不是操作系统。
+
+ [[file:images/docker_vs_virtualization.jpg][Docker与传统虚拟机建构对比]]
+* 应用容器虚拟化定位
+  虚拟化的演进实际上可以理解为现代计算机分层体系的细化和解耦，前一阶
+  段的虚拟化浪潮实际在硬件和操作系统中间增加了hypervior层，实现了硬件
+  和操作系统的解耦，Docker等新兴容器类虚拟化的实现实际上是在应用和操
+  作系统中间又增加了一层，完成操作系统和硬件的解耦，至此，操作系统已
+  经看成南向接硬件，北向接应用容器的中间层。
+
+  [[file:images/docker.jpg][应用容器虚拟化定位]]
+* Docker有哪些优势
+  1. 更快速的交付和部署
+	 #+BEGIN_EXAMPLE
+	 对开发和运维(devop)人员来说，最希望的就是一次创建或配置，可以
+	 在任意地方正常运行。开发者可以使用一个标准的镜像来构建一套开发容
+	 器，开发完成之后，运维人员可以直接使用这个容器来部署代码。
+	 Docker 可以快速创建容器，快速迭代应用程序，并让整个过程全程可见，
+	 使团队中的其他成员更容易理解应用程序是如何创建和工作的。 Docker
+	 容器很轻很快！容器的启动时间是秒级的，大量地节约开发、测试、部署
+	 的时间。
+	 #+END_EXAMPLE
+  2. 更高效的虚拟化
+	 #+BEGIN_EXAMPLE
+	 Docker容器的运行不需要额外的hypervisor 支持，它是内核级的虚拟化，
+	 因此可以实现更高的性能和效率。
+	 #+END_EXAMPLE
+  3. 更轻松的迁移和扩展
+	 #+BEGIN_EXAMPLE
+	 Docker容器几乎可以在任意的平台上运行，包括物理机、虚拟机、公有云、
+	 私有云、个人电脑、服务器等。这种兼容性可以让用户把一个应用程序从
+	 一个平台直接迁移到另外一个。
+	 #+END_EXAMPLE
+  4. 更简单的管理
+	 #+BEGIN_EXAMPLE
+	 使用 Docker，只需要小小的修改，就可以替代以往大量的更新工作。所
+	 有的修改都以增量的方式被分发和更新，从而实现自动化并且高效的管理。
+	 #+END_EXAMPLE
+* Docker资料
+  [[https://csphere.cn/training][希云视频]]
+
+  https://csphere.cn/training
+* 使用场景
+  1. 面向产品
+  2. 面向开发
+  3. 面向测试
+  4. 面向运维
+  5. 面向自动化
+  6. 面向微服务
+  7. 面向大规模的分布式架构(微信红包)
+
+  Docker使用场景：
+  1. 使用Docker容器开发、测试、部署服务
+  2. 创建隔离的运行环境
+  3. 搭建测试环境
+  4. 构建多用户的平台即服务（PaaS）基础设施
+  5. 提供软件即服务（SaaS）应用程序
+  6. 高性能、超大规模的宿主机部署
+* Docker组成
+  Docker是C/S架构的程序。Docker客户端向Docker服务端发送请求，守护进程
+  处理完成所有工作并返回结果。
+  
+  本地/远程
+
+** Docker客户端
+   用来与Docker守护进程进行交互
+** Docker守护进程
+   Docker daemon的主要组成部分，接收用户通过Docker Client发送的请求，
+   并按照相应的路由规则实现路由分发。
+** Docker镜像
+   容器的基石
+
+   Docker镜像运行之后变成容器。
+
+   层叠的只读文件系统，最低端是一个引导文件系统bootfs，第二层是rootfs
+   文件系统，rootfs是只读文件系统。
+
+   联合加载（union mount）
+** Docker容器
+   容器通过镜像启动
+
+   容器是启动和执行阶段
+
+   写时复制（copy on write）
+
+   当容器启动时，Docker会在该镜像的最顶层加载一个读写文件系统，也就是
+   一个可写的层。Docker中运行的程序就是在这个层上运行。当Docker启动第
+   一个容器时，初始的读写层是空的，当文件系统发生变化时，这些变化都会
+   应用到镜像最上面的读写层。比如，要修改一个文件，首先这个文件从该层
+   下面的只读层复制到该读写层，该文件的只读版本依然存在。但是已经被读
+   写层中的该文件副本所隐藏。这就是Docker中的一个重要的技术，写时复制
+   （Copy On Write）。每个只读镜像层都是只读的，并且以后永远不会变化。
+   当创建一个新容器时，Docker会构建出一个镜像栈，在栈的最顶层添加读写
+   层。这个读写层加上下面的镜像层以及一些配置数据就构成了一个容器。
+** Docker仓库
+   Docker仓库用保存用户的镜像，仓库分为私有和公有仓库。
+
+   Registry是Docker镜像的中央存储仓库（pull/push）。
+
+   http://www.docker.com/tryit/
+* 安装Docker
+  测试环境为：
+  | 主机名               |         IP地址 | 备注 |
+  |----------------------+----------------+------|
+  | kvm01.lavenliu.com   | 192.168.20.133 |      |
+  | rsync01.lavenliu.com | 192.168.20.160 |      |
+  
+  Docker现在最新的版本为1.7.1
+  #+BEGIN_SRC sh
+  yum install -y docker-io
+  service docker start
+  #+END_SRC
+
+  Docker支持的Ubuntu版本：
+  #+BEGIN_EXAMPLE
+  Ubuntu Trusty 14.04 (LTS) (64-bit)
+  Ubuntu Precise 12.04 (LTS) (64-bit)
+  Ubuntu Raring 13.04 and Saucy 13.10 (64-bit)
+  #+END_EXAMPLE
+
+  安装前检查：
+  1. 内核版本检查
+	 #+BEGIN_SRC sh
+uname -a
+	 #+END_SRC
+  2. 检查Device Mapper
+	 #+BEGIN_SRC sh
+ls -l /sys/class/misc/device-mapper
+	 #+END_SRC
+
+  Ubuntu的安装方式为：
+  #+BEGIN_SRC sh
+sudo apt-get install docker.io
+source /etc/bash_completion.d/docker.io
+sudo docker.io version
+  #+END_SRC
+
+  Ubuntu安装Docker维护的版本：
+  1. 检查APT的HTTPS支持 查看/usr/lib/apt/methods/https文件是否存在
+	 #+BEGIN_SRC sh
+# 如果不存在，运行安装命令
+sudo apt-get update
+sudo apt-get install -y apt-transport-https
+	 #+END_SRC
+  2. 添加Docker的APT仓库
+	 #+BEGIN_SRC sh
+echo deb https://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+	 #+END_SRC
+  3. 添加仓库的Key
+	 #+BEGIN_SRC sh
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+	 #+END_SRC
+  4. 安装
+	 #+BEGIN_SRC sh
+sudo apt-get update
+sudo apt-get install -y lxc-docker
+	 #+END_SRC
+
+	 可以使用简易的安装方式，
+	 1. sudo apt-get install -y curl
+	 2. curl -sSL https://get.docker.com/ubuntu/ |sudo sh
+* 镜像管理
+  Docker Hub官方地址：https://registry.hub.docker.com
+
+  1. 搜索镜像
+	 #+BEGIN_SRC sh
+docker search centos
+# --automated=false only show automated builds
+# --no-trunc=false Don't truncate output
+# -s, --stars=0 Only displays with at least x stars
+# 最多返回25个结果
+	 #+END_SRC
+  2. 下载镜像
+	 #+BEGIN_SRC sh
+docker pull centos
+# docker pull [OPTIONS] NAME [:TAG]
+# -a, --all-tags=false Download all tagged images in the repository
+# docker pull ubuntu:14.04
+# 有时，这样拉取镜像的速度比较慢，我们可以使用--registry-mirror选项
+# 使用--registry-mirror选项，需要做如下两步修改：
+#     1. 修改： /etc/default/docker (Ubuntu的配置文件路径)
+#     2. 添加： DOCKER_OPTS="--registry-mirror=http://MIRROR-ADDR"
+#     https://www.daocloud.io 注册账户
+# ps -ef |grep docker
+	 #+END_SRC
+  3. 推送镜像
+	 #+BEGIN_SRC sh
+docker push 
+# 只会提交修改的部分
+	 #+END_SRC
+  4. 查看系统镜像
+	 #+BEGIN_SRC sh
+docker images
+	 #+END_SRC
+  5. 删除镜像
+	 #+BEGIN_SRC sh
+docker rmi
+	 #+END_SRC
+* 容器管理
+  1. 启动容器
+	 #+BEGIN_SRC sh
+docker run centos /bin/echo "Hello, Laven"
+	 #+END_SRC
+  
+	 #+BEGIN_SRC sh
+docker run --name mydocker -it centos /bin/bash 
+[root@6e54528742f2 /]# exit
+[root@kvm01 ~]# docker ps -a
+CONTAINER ID        IMAGE               COMMAND                CREATED             STATUS                      PORTS               NAMES
+9d502169535e        centos              "/bin/bash"            14 seconds ago      Exited (0) 10 seconds ago                       mydocker            
+812059eaac0e        centos              "/bin/echo 'Hello, L   7 minutes ago       Exited (0) 7 minutes ago                        berserk_brown
+# -i --interactive=true|false 默认是false
+# -t --tty=true|false 默认是false
+# --name=自定义名称
+	 #+END_SRC
+  2. 停止容器
+	 #+BEGIN_SRC sh
+docker stop <container_id>
+	 #+END_SRC
+  3. 重新启动已停止的容器
+	 #+BEGIN_SRC sh
+docker start [-i] <container_name>
+docker start -i mydocker
+[root@9d502169535e /]# exit
+exit
+	 #+END_SRC
+  4. 查看容器
+	 #+BEGIN_SRC sh
+docker ps
+	 #+END_SRC
+  5. 进入容器
+	 #+BEGIN_SRC sh
+docker exec | docker attach <container_id> or <container_name>
+	 #+END_SRC
+	 
+	 #+BEGIN_EXAMPLE
+	 使用exec或attach方式进入容器时，有时会进不去，导致虚拟机重启。
+	 #+END_EXAMPLE
+	 
+	 还可以使用nsenter命令进入容器，在进入容器之前，需要知道容器的PID。
+	 
+	 安装nsenter工具：
+	 #+BEGIN_SRC sh
+	 yum install -y util-linux-ng
+	 #+END_SRC
+	 
+	 获得容器的PID：
+	 #+BEGIN_SRC sh
+	 docker inspect --format "{{.State.Pid}}" <container_name> | <container_id>
+	 2330
+	 #+END_SRC
+	 
+	 进入容器(推荐的进入容器的方法)：
+	 #+BEGIN_SRC sh
+	 nsenter --target <container_pid> --mount --uts --ipc --net --pid
+	 nsenter --target 2330 --mount --uts --ipc --net --pid
+	 #+END_SRC
+	 
+	 #+BEGIN_EXAMPLE
+	 使用nsenter方式进入容器，退出容器，并不会影响容器的运行。
+	 #+END_EXAMPLE
+
+	 可以写一个脚本进入容器：
+	 #+BEGIN_SRC sh
+	 cat my.sh
+	 #!/bin/bash
+	 CONTAINER_NAME=$1
+	 CONTAINER_PID=$(docker inspect --format "{{.State.Pid}}" ${CONTAINER_NAME})
+	 nsenter --target ${CONTAINER_PID} --mount --uts --ipc --net --pid
+
+	 # 如何使用该脚本？
+	 ./my.sh <container_name>
+	 #+END_SRC
+  6. 删除容器
+	 #+BEGIN_SRC sh
+	 docker rm <container_id> or <container_name>
+	 #+END_SRC
+** 守护式容器
+   1. 能够长期运行
+   2. 没有交互式会话
+   3. 适合运行应用程序和服务
+
+   以守护形式运行容器：
+   #+BEGIN_SRC sh
+docker run -i -t IMAGE /bin/bash
+# 使用组合键"Ctrl-P Ctrl-Q"退出交互式容器
+# 使用attach命令再次进入容器
+docker attach <container_id>
+   #+END_SRC
+
+   使用run命令启动守护式容器：
+   #+BEGIN_SRC sh
+docker run -d IMAGE [COMMAND] [ARG...]
+   #+END_SRC
+
+   查看容器日志：
+   #+BEGIN_SRC sh
+docker logs [-f] [-t] [--tail] <container_name>
+# -f --follows=true|false 默认为false，一直跟踪容器的变化
+# -t --timestamps=true|false 默认为false
+# --tail="all"  
+   #+END_SRC
+
+   查看容器内进程：
+   #+BEGIN_SRC sh
+docker top <container_name>
+   #+END_SRC
+
+   在运行中的容器内启动新进程：
+   #+BEGIN_SRC sh
+docker exec [-d] [-i] [-t] <container_name> [COMMAND] [ARG...]
+   #+END_SRC
+
+   停止守护式容器：
+   #+BEGIN_SRC sh
+docker stop <container_name>
+docker kill <container_name>
+   #+END_SRC
+* Docker客户端和守护进程
+** Docker的CS模式
+   RESTful风格API
+
+   STDIN、STDOUT、STDERR
+
+   unix:///var/run/docker.sock
+   #+BEGIN_SRC sh
+nc -U /var/run/docker.sock
+GET /info HTTP/1.1
+[root@kvm01 ~]# nc -U /var/run/docker.sock 
+GET /info HTTP/1.1
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Mon, 16 May 2016 13:08:13 GMT
+Content-Length: 1615
+
+{"ID":"3UEU:PIHA:PAH3:GRTB:IINI:JQTO:WGPB:3PQK:V25G:BKEP:NZZC:55SH",
+"Containers":2,"Images":45,"Driver":"devicemapper",
+"DriverStatus":[["Pool Name","docker-8:2-660094-pool"],
+["Pool Blocksize","65.54 kB"],["Backing Filesystem","extfs"],
+["Data file","/dev/loop0"],["Metadata file","/dev/loop1"],
+["Data Space Used","1.513 GB"],["Data Space Total","107.4 GB"],
+["Data Space Available","7.933 GB"],["Metadata Space Used","2.683 MB"],
+["Metadata Space Total","2.147 GB"],["Metadata Space Available","2.145 GB"],
+["Udev Sync Supported","true"],["Deferred Removal Enabled","false"],
+["Data loop file","/var/lib/docker/devicemapper/devicemapper/data"],
+["Metadata loop file","/var/lib/docker/devicemapper/devicemapper/metadata"],
+["Library Version","1.02.95-RHEL6 (2015-09-08)"]],
+"MemoryLimit":true,"SwapLimit":true,"CpuCfsPeriod":true,"CpuCfsQuota":true,
+"IPv4Forwarding":true,"Debug":false,"NFd":13,"OomKillDisable":true,
+"NGoroutines":16,"SystemTime":"2016-05-16T21:08:13.537201357+08:00",
+"ExecutionDriver":"native-0.2","LoggingDriver":"json-file",
+"NEventsListener":0,"KernelVersion":"2.6.32-431.el6.x86_64",
+"OperatingSystem":"\u003cunknown\u003e",
+"IndexServerAddress":"https://index.docker.io/v1/",
+"RegistryConfig":{"InsecureRegistryCIDRs":["127.0.0.0/8"],
+"IndexConfigs":{"docker.io":{"Name":"docker.io","Mirrors":null,
+"Secure":true,"Official":true}}},
+"InitSha1":"5ebdf15aa01ed2e6fed430918bcec40ed2e72afe",
+"InitPath":"/usr/libexec/docker/dockerinit","NCPU":2,
+"MemTotal":1952313344,"DockerRootDir":"/var/lib/docker","HttpProxy":"",
+"HttpsProxy":"","NoProxy":"","Name":"kvm01.lavenliu.com","Labels":null,
+"ExperimentalBuild":false}
+   #+END_SRC
+
+   tcp://ip:port
+
+   fd:
+** Docker守护进程的配置和操作
+   #+BEGIN_SRC sh
+/etc/init.d/docker start
+/etc/init.d/docker stop
+/etc/init.d/docker restart
+   #+END_SRC
+
+   #+BEGIN_SRC sh
+docker -d [OPTIONS]
+## 运行相关的：
+# -D, --debug=false
+# -e, --exec-driver="native"
+# -g, --graph="/var/lib/docker"
+# --icc=true
+# -l, --log-devel="info"
+# --label=[]
+# -p,--pidfile="/var/run/docker.pid"
+#
+## Docker服务器连接相关：
+# -G, --group="docker"
+# -H, --host=[]
+# --tls=false
+# --tlscacert="/home/lavenliu/.docker/ca.perm"
+# --tlscert="/home/lavenliu/.docker/cert.pem"
+# --tlskey="/home/lavenliu/.docker/key.pem"
+# --tlsverify=false
+#
+## RemoteAPI相关：
+# --api-enable-cors=false
+#
+## 储存相关：
+# -s, --storage-driver=""
+# --selinux-enabled=false
+# --storage-opt=[]
+#
+## Registry相关：
+# --insecure-registry=[]
+# --registry-mirror=[]
+#
+## 网络设置相关：
+# -b, --bridge=""
+# --bip=""
+# --fix-cidr=""
+# --fixed-cidr-v6=""
+# --dns=[]
+# --dns-search=[]
+# --ip=0.0.0.0
+# --ip-forward=true
+# --ip-masq=true
+# --iptables=true
+# --ipv6=false
+# --mtu=0
+   #+END_SRC
+
+   Docker启动配置文件为/etc/default/docker，我们可以设置docker运行时的
+   各种配置，
+** Docker的远程访问
+*** 环境准备
+	接下来演示Docker客户端与远程Docker守护进程进行访问。需要做如下环境准备：
+	1. 安装两台Docker服务器
+	2. 修改Docker守护进程启动选项，添加label选项以区别服务器
+	3. 保证Client API与Server API版本一致
+
+	在启动之前使用"docker version"查看并做对比。
+
+	然后修改Docker的配置文件/etc/sysconfig/docker（Ubuntu为
+	/etc/default/docker），做如下修改：
+	#+BEGIN_SRC sh
+# 在20.133机器上做如下修改
+other_args="--label=[name=docker_container01]"
+# 在20.160机器上做如下修改
+other_args="--label=[name=docker_container02]"
+	#+END_SRC
+
+	修改完毕，重新启动Docker守护进程，
+	#+BEGIN_SRC sh
+/etc/init.d/docker restart
+	#+END_SRC
+	重启完毕，使用docker info命令查看是否修改成功，
+	#+BEGIN_SRC sh
+[root@kvm01 ~]# docker info
+Containers: 3
+Images: 45
+Storage Driver: devicemapper
+ Pool Name: docker-8:2-660094-pool
+ Pool Blocksize: 65.54 kB
+ Backing Filesystem: extfs
+ Data file: /dev/loop0
+ Metadata file: /dev/loop1
+ Data Space Used: 1.708 GB
+ Data Space Total: 107.4 GB
+ Data Space Available: 3.061 GB
+ Metadata Space Used: 2.855 MB
+ Metadata Space Total: 2.147 GB
+ Metadata Space Available: 2.145 GB
+ Udev Sync Supported: true
+ Deferred Removal Enabled: false
+ Data loop file: /var/lib/docker/devicemapper/devicemapper/data
+ Metadata loop file: /var/lib/docker/devicemapper/devicemapper/metadata
+ Library Version: 1.02.95-RHEL6 (2015-09-08)
+Execution Driver: native-0.2
+Logging Driver: json-file
+Kernel Version: 2.6.32-431.el6.x86_64
+Operating System: <unknown>
+CPUs: 2
+Total Memory: 1.818 GiB
+Name: kvm01.lavenliu.com
+ID: 3UEU:PIHA:PAH3:GRTB:IINI:JQTO:WGPB:3PQK:V25G:BKEP:NZZC:55SH
+Labels:
+ [name=docker_container01]
+	#+END_SRC
+*** 修改服务器端配置
+	修改Docker守护进程启动选项，
+	#+BEGIN_SRC sh
+-H tcp://host:port
+   unix:///path/to/socket,
+   fd://* or fd://socketfd
+	#+END_SRC
+
+	守护进程默认配置：
+	#+BEGIN_SRC sh
+-H unix:///var/run/docker.sock
+	#+END_SRC
+
+	接下来配置使用tcp的方式，
+	#+BEGIN_SRC sh
+
+	#+END_SRC
+
+	在另一台机器上进行远程的访问，
+	#+BEGIN_SRC sh
+curl http://192.168.20.133:2375/info
+	#+END_SRC
+*** 修改Docker客户端
+	或者使用Docker客户端命令行指定-H选项
+	#+BEGIN_SRC sh
+docker -H tcp://192.168.20.133:2375 info	
+	#+END_SRC
+
+	这样每次手工指定，显得十分麻烦，可以通过环境变量来简化此操作，
+	#+BEGIN_SRC sh
+export DOCKER_HOST="tcp://192.168.20.133:2375"
+docker info
+# 当需要连接本机时，只需要把DOCKER_HOST环境变量置为空即可
+export DOCKER_HOST=""
+docker info # 应该会出错
+# 修改/etc/sysconfig/docker配置文件，内容如下：
+other_args="--label=[name=docker_container01] -H tcp://192.168.20.133:2375 -H unix:///var/run/docker.sock"
+# 修改完毕，重启docker守护进程
+	#+END_SRC
+
+* 网络访问
+  如果要通过代理上网，可以把代理服务器告诉Docker，用如下命令，
+  #+BEGIN_SRC sh
+HTTP_PROXY=http://aaa.bbb.ccc.ddd:port docker -d &
+  #+END_SRC
+  
+   1. 随机映射
+	  #+BEGIN_SRC sh
+	  docker run -P
+# -P 将对容器暴露的所有端口进行映射
+	  #+END_SRC
+
+	  如何使用？
+	  #+BEGIN_EXAMPLE
+	  docker run -d -P --name mynginx1 nginx
+      docker ps -l
+      CONTAINER ID        IMAGE               COMMAND                CREATED             STATUS              PORTS                                           NAMES
+      5f87de63d8ab        nginx               "nginx -g 'daemon of   5 seconds ago       Up 3 seconds        0.0.0.0:32769->80/tcp, 0.0.0.0:32768->443/tcp   mynginx1
+	  #+END_EXAMPLE
+	  
+	  可以发现容器里的80端口已经映射到了宿主机的32769端口，443端口已经
+      映射到了宿主机的32768端口。可以使用“docker port”命令进行查看
+      Docker容器的端口映射情况。
+
+	  当我们停止容器，并下次启动时，Docker容器会使用新的IP地址及端口映射。
+	  
+	  可以在浏览器里访问Nginx了，"http://192.168.20.137:32769"。(注意：192.168.20.137为宿主机IP)
+   2. 指定映射
+	  #+BEGIN_SRC sh、
+      # 尽量使用-p选项
+	  -p hostPort:containerPort
+      -p ip:hostPort:containerPort
+      -p ip::containerPort
+      -p hostPort:containerPort
+	  #+END_SRC
+	  
+	  如何使用呢？
+	  #+BEGIN_SRC sh
+docker run -d -p 91:80 --name mynginx2 nginx
+docker ps -l
+CONTAINER ID		IMAGE				COMMAND				   CREATED			   STATUS			   PORTS						 NAMES
+ba02e1e6340a		nginx				"nginx -g 'daemon of   4 seconds ago	   Up 2 seconds		   443/tcp, 0.0.0.0:91->80/tcp	 mynginx2
+	  #+END_SRC
+
+	  可以发现mynginx2容器的80端口已经映射到了宿主机的91端口了。可以通
+      过浏览器访问，以进行验证。
+	  
+   这些是通过iptables来实现的。
+   #+BEGIN_EXAMPLE
+   iptables -t nat -nvL
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    5   260 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0           ADDRTYPE match dst-type LOCAL 
+
+Chain POSTROUTING (policy ACCEPT 1 packets, 52 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    1    84 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
+    0     0 MASQUERADE  tcp  --  *      *       172.17.0.3           172.17.0.3          tcp dpt:443 
+    0     0 MASQUERADE  tcp  --  *      *       172.17.0.3           172.17.0.3          tcp dpt:80 
+    0     0 MASQUERADE  tcp  --  *      *       172.17.0.4           172.17.0.4          tcp dpt:80 
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8         ADDRTYPE match dst-type LOCAL 
+
+Chain DOCKER (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0           tcp dpt:32768 to:172.17.0.3:443 
+    1    52 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0           tcp dpt:32769 to:172.17.0.3:80 
+    1    52 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0           tcp dpt:91 to:172.17.0.4:80 
+   #+END_EXAMPLE
+** 一个实例：在容器中部署静态网站
+   接下来在Docker中部署Nginx，部署流程为：
+   1. 创建映射80端口的交互式容器
+   2. 安装Nginx
+   3. 安装文本编辑器Vim
+   4. 创建静态页面
+   5. 修改N个in小配置文件
+   6. 运行Nginx
+   7. 验证网站访问
+
+   首先启动一个端口映射的容器，并命名为mynginx，
+   #+BEGIN_SRC sh
+# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+jenkins             latest              6d8e61ca6e69        7 days ago          710.1 MB
+centos              latest              eeb3a076a0be        6 weeks ago         196.7 MB
+# docker run -p 80 --name mynginx -it centos /bin/bash
+   #+END_SRC
+
+   进入容器后，进行Nginx的安装，
+   #+BEGIN_SRC sh
+[root@18c71747cf43 /]# yum install -y wget pcre-devel openssl-devel gcc make
+[root@18c71747cf43 /]# wget http://nginx.org/download/nginx-1.9.1.tar.gz
+[root@18c71747cf43 /]# tar -xf nginx-1.9.1.tar.gz
+[root@18c71747cf43 /]# cd nginx-1.9.1
+[root@18c71747cf43 /]# useradd -M -s /sbin/nologin nginx
+[root@18c71747cf43 /]# ./configure --user=nginx --group=nginx
+[root@18c71747cf43 /]# make && make install
+   #+END_SRC
+* Docker容器网络连接
+** Docker容器的网络基础
+   在Docker宿主机上使用ifconfig可以看到系统里有一个docker0的网络接口。
+
+   docker0是Linux下的虚拟网桥
+
+   OSI七层模型中的网桥，位于数据链路层。
+
+   Linux虚拟网桥的特点：
+   1. 可以设置IP地址；
+   2. 相当于拥有一个隐藏的虚拟网卡；
+
+   docker0的地址划分：
+   1. IP：172.17.x.y 子网掩码：255.255.0.0
+   2. MAC：02:42:ac:11:00:00到02:42:ac:11:ff:ff
+   3. 总共提供了65534（65536-1-1）个地址
+*** 自定义虚拟网桥
+	1. 添加虚拟网桥
+	   #+BEGIN_SRC sh
+brctl addbr br0
+ifconfig br0 192.168.20.xx netmask 255.255.255.0 up
+	   #+END_SRC
+	2. 更改docker守护进程的启动配置
+	   #+BEGIN_SRC sh
+/etc/default/docker中添加DOCKER_OPS值
+-b=br0
+	   #+END_SRC
+** Docker容器的互联
+*** 允许所有容器互联
+	默认允许所有的容器进行互联。
+	
+	环境准备，
+	#+BEGIN_SRC sh
+vim Dockerfile
+FROM ubuntu:14.04
+RUN apt-get -qq -y update
+RUN apt-get install -y ping
+RUN apt-get install -y nginx
+RUN apt-get install -y curl
+EXPOSE 80
+CMD /bin/bash
+	#+END_SRC
+
+	构建镜像，
+	#+BEGIN_SRC sh
+docker build -t lavenliu/cct .
+	#+END_SRC
+
+	启动容器，
+	#+BEGIN_SRC sh
+docker run -it --name cct1 lavenliu/cct
+ifconfig
+# 172.17.0.5
+# 进入容器后，启动Nginx
+# 然后，按组合键C-p C-q退出容器
+	#+END_SRC
+
+	接着再次启动一个容器cct2，
+	#+BEGIN_SRC sh
+docker run -it --name cct2 lavenliu/cct
+# 查看容器的IP地址
+ifconfig
+# 172.17.0.6
+ping 172.17.0.5
+# 默认情况下，在同一宿主机下，Docker容器之间是互通的。
+	#+END_SRC
+
+	当重启docker守护进程时，其IP地址会发生变化。这里可以把cct1容器进行重启验证，
+	#+BEGIN_SRC sh
+docker restart cct1
+docker attach cct1
+ifconfig
+	#+END_SRC
+
+	可以使用--link选项指定容器运行时的名字或别名，这样就可以使用容器的
+	名字而非IP进行通信了，类似于域名与IP的关系。避免了因IP地址变化而带
+	来的影响。
+	#+BEGIN_SRC sh
+--link
+docker run --link=[CONTAINER_NAME]:[ALIAS] [IMAGE] [COMMAND]
+	#+END_SRC
+
+	启动一个名为cct3的容器，并把cct3容器链接至cct1容器，
+	#+BEGIN_SRC sh
+docker run -it --name cct3 --link=cct1:webtest lavenliu/cct
+# 进入容器，ping webtest
+ping webtest
+# 使用env查看其环境变量
+# 查看容器的/etc/hosts文件
+	#+END_SRC
+
+	接下来重启Docker守护进程，验证，
+	#+BEGIN_SRC sh
+restart docker
+docker ps
+docker restart cct1 cct2 cct3
+docker attach cct3
+# 进入容器，
+ping webtest
+cat /etc/hosts
+# 发现docker会自动修改容器的IP地址
+	#+END_SRC
+*** 拒绝容器间互联
+	Docker守护进程的启动选项，
+	#+BEGIN_SRC sh
+--icc=false
+	#+END_SRC
+*** 允许特定容器间的连接
+	Docker守护进程的启动选项，
+    #+BEGIN_SRC sh
+--icc=false --iptables=true
+--link
+	#+END_SRC
+	重启Docker服务，再次验证上述流程。
+	#+BEGIN_SRC sh
+docker run -it --name cct4 --link=cct1:webtest lavenliu/cct
+# 进入容器，验证是否可以访问cct1的Nginx服务
+# 如果不行，请试着清空iptables规则
+# 然后重启docker守护进程
+# 重启cct1等容器，并再次验证
+	#+END_SRC
+** Docker容器与外部网络的连接
+   ip_forward iptables 允许端口映射访问 限制IP访问容器
+*** ip_forward
+	#+BEGIN_SRC sh
+--ip-forward=true（默认的选项）
+systl net.ipv4.conf.all.forwarding
+	#+END_SRC
+*** iptables
+	#+BEGIN_SRC sh
+docker port cct4
+	#+END_SRC
+	可以修改iptables规则来限制或允许网络对容器的访问，
+	#+BEGIN_SRC sh
+iptables -I DOCKER -s 192.168.19.xxx -d 172.17.0.yyy -p TCP --dport 80 -j DROP
+	#+END_SRC
+** Docker容器的跨主机连接
+   实验环境为两台主机Host1、Host2
+*** 使用网桥实现跨主机容器连接
+	Ubuntu网桥配置，
+	#+BEGIN_SRC sh
+/etc/network/interfaces
+auto br0
+iface br0 inet static
+address 192.168.20.10
+netmask 255.255.255.0
+gateway 192.168.20.1
+bridge_ports eth0
+	#+END_SRC
+
+	Docker端的设置，
+	#+BEGIN_SRC sh
+配置文件/etc/default/docker
+# -b=br0
+# --fixed-cidr限制IP地址分配范围
+# DOCKER_OPTS="  -b=br0 --fixed-cidr='192.168.20.128/26'"
+IP地址划分：
+Host1：192.168.20.64/26
+  地址范围：192.168.20.110-192.168.20.120
+Host2：192.168.20.128/26
+  地址范围：192.168.20.210-192.168.20.220
+	#+END_SRC
+
+	有点：
+	1. 配置简单，不依赖第三方软件
+
+    缺点：
+	1. 与主机在同网段，需要小心划分IP地址
+	2. 需要有网段控制权，在生产环境中不易实现
+	3. 不容易管理
+	4. 兼容性不佳
+*** 使用Open vSwitch实现跨主机容器连接
+	什么是GRE隧道？
+	#+BEGIN_EXAMPLE
+隧道技术（Tunneling）是一种通过使用互联网络的基础设施在网络之间传递数据的方式。
+使用隧道传递的数据（或负载）可以是不同协议的数据帧或包。隧道协议将其他协议的数据帧或包
+重新封装，然后通过隧道发送。新的帧头提供路由信息，以便通过互联网传递被封装的负载数据。
+	#+END_EXAMPLE
+
+	演示环境：使用双网卡
+    | 主机名                | IP地址                       |
+    |-----------------------+------------------------------|
+    | minion01.lavenliu.com | eth0: 192.168.20.135(内网)   |
+    |                       | eth1:                        |
+    | minion02.lavenliu.com | eth0: 192.168.20.136（内网） |
+    |                       | eth1:                        |
+
+	安装软件，
+	#+BEGIN_SRC sh
+apt-get install openvswitch-switch
+apt-get install bridge-utils
+	#+END_SRC
+
+	操作步骤，
+	1. 建立ovs网桥
+	2. 添加GRE连接
+	3. 配置Docker容器虚拟网桥
+	4. 为虚拟网桥添加ovs接口
+	5. 添加不同Docker容器网段路由
+
+    开始操作，
+	#+BEGIN_SRC sh
+# 在minion01上操作
+sudo ovs-vsctl show
+sudo ovs-vsctl add-br obr0
+sudo ovs-vsctl add-port obr0 gre0
+sudo ovs-vsctl interface gre0 type=gre options:remote_ip=192.168.20.136
+sudo ovs-vsctl show
+# 创建br0网桥
+sudo brctl addbr br0
+sudo ifconfig br0 192.168.20.100 netmask 255.255.255.0
+sudo brctl addif br0 obr0
+sudo brctl show
+# sudo vi /etc/default/docker
+-b=br0
+# 建立Docker容器
+docker run -it ubuntu /bin/bash
+ping 192.168.20.135
+	#+END_SRC
+
+	在minion02上做同样的操作，
+	#+BEGIN_SRC sh
+docker run -it ubuntu /bin/bash
+ifconfig
+# 在minion01上的容器进行ping操作
+# 应该是ping不通的
+sudo ip route add 192.168.2.0/24 via 192.168.20.135 dev eth0
+	#+END_SRC
+*** 使用weave实现跨主机容器连接
+	weave是什么？
+	#+BEGIN_EXAMPLE
+	语义：编织
+	建立一个虚拟的网络，用于将运行在不同主机的Docker容器连接起来。
+	#+END_EXAMPLE
+
+	实验环境：
+	#+BEGIN_EXAMPLE
+	两台ubuntu14.04虚拟机
+	双网卡：Host-Only & NAT
+	IP地址：Host1：192.168.20.135
+           Host2：192.168.20.136
+	#+END_EXAMPLE
+
+	操作步骤，
+	1. 安装weave
+	2. 启动weave
+	3. 连接不同主机
+	4. 通过weave启动容器
+	 
+    开始操作，
+	#+BEGIN_SRC sh
+sudo wget -O /usr/bin/weave https://raw.githubusercontent.com/zettio/weave/master/weave
+sudo chmod +x /usr/bin/weave
+weave launch
+# 会下载并运行一个weave的容器，
+docker ps
+	#+END_SRC
+
+	在minion02上做同样的操作，
+	#+BEGIN_SRC sh
+weave launch 192.168.20.135
+# 在minion02上创建一个容器
+c2=$(weave run 192.168.1.2/24 -it ubuntu /bin/bash)
+# echo ${c2}
+# 进入容器
+docker attach $c2
+# ifconfig
+# 应该多了一个ethwe的网络接口
+	#+END_SRC
+
+	回到minion01，启动一个与minion02上相同网段的容器，
+	#+BEGIN_SRC sh
+weave run 192.168.1.10/24 -it --name liu01 ubuntu /bin/bash
+docker attach liu01
+# ifconfig
+ping 192.168.1.2
+	#+END_SRC
+* 数据管理
+** 数据卷
+   #+BEGIN_EXAMPLE
+   -v /data
+   -v src:dst
+   #+END_EXAMPLE
+
+   #+BEGIN_EXAMPLE
+   docker run -it --name volume-test1 -h nginx -v /data centos
+   # 在volume-test1容器里执行
+   ls /data
+   # 启动一个容器，并在volume-test1容器里创建一个data的数据卷
+   # 这个data数据卷的放到了宿主机的哪个目录下呢？
+   docker inspect -f {{.Volumes}} volume-test1
+   map[/data:/var/lib/docker/volumes/8c0c7567f25b73d14962e68bdce711b3c8ffae28345bfcf2c78a913f99df7250/_data]
+   cd /var/lib/docker/volumes/8c0c7567f25b73d14962e68bdce711b3c8ffae28345bfcf2c78a913f99df7250/_data
+   touch hehe
+   # 在volume-test1容器里执行
+   ls /data
+   hehe
+   #+END_EXAMPLE
+
+   如何使用呢？
+   #+BEGIN_EXAMPLE
+   docker run -it --name volume-test2 -h nginx -v /opt:/opt centos
+   [root@nginx /]# ls /opt/
+   rh
+
+   # 还可以指定读写权限
+   docker run -it --name volume-test2 -h nginx -v /opt:/opt:ro centos
+   # 这样在volume-test2容器里，对/opt目录里的文件只能读写操作
+   #+END_EXAMPLE
+** 数据卷容器
+   一个容器挂载数据卷，供其他容器使用。
+   #+BEGIN_EXAMPLE
+   --volumes-from 
+   #+END_EXAMPLE
+
+   如何使用呢？
+   #+BEGIN_SRC sh
+   docker run -it --name volume-test3 -h nginx --volumes-from volume-test1 centos
+   docker run -it --name volume-test4 -h nginx --volumes-from volume-test2 centos
+   [root@nginx /]# ls /data
+   hehe
+   #+END_SRC
+
+* 镜像构建
+  为什么要构建镜像：
+  1. 保存对容器的修改，并再次使用
+  2. 自定义镜像的能力
+  3. 以软件的形式打包并分发服务及其运行环境
+
+  Docker提供两种方式的镜像构建：
+  #+BEGIN_SRC sh
+# 通过容器构建
+docker commit
+# 通过Dockerfile文件构建
+docker build
+  #+END_SRC
+** 手动构建
+   #+BEGIN_SRC sh
+   docker run --name ngixn-manual -it centos
+
+   # 然后在nginx-manual容器里进行操作
+   yum install wget gcc gcc-c++ make openssl-devel
+   # 然后下载pcre www.pcre.org
+   wget http://nginx.org/download/nginx-1.9.3.tar.gz
+
+   # 解压两个压缩包
+   # 创建www用户
+   useradd -s /sbin/nologin -M www
+   # 编译安装pcre
+   # 编译安装nginx
+   ./configure --prefix=/usr/local/nginx --user=www --group=www \
+   --with-http_ssl_module --with-http_stub_status_module \
+   --with-pcre=/usr/local/src/pcre-8.37
+   make && make install 
+
+   # 修改nginx配置文件，让其运行在前台
+   deamon off;
+
+   # 保存我们的构建
+   退出我们的容器，然后提交
+   docker commit -m "my nginx" <container_id> lavenliu/my-nginx:v1
+# docker commit [OPTIONS] <container_id> [REPOSITORY[:TAG]]
+# -a, --author="" Author, e.g., "Laven Liu lavenliu@gmail.com"
+# -m, --message="" Commit message
+# -p, --pause=true Pause container during commit
+
+   # 这时，已经保存完毕，可以使用images命令进行查看
+   docker images
+
+   # 运行刚刚构建的容器
+   docker run -d -p 92:80 lavenliu/my-nginx:v1 /usr/local/nginx/sbin/nginx
+   #+END_SRC
+** Dockerfile
+   Dockerfile指令：
+   
+   #+BEGIN_EXAMPLE
+   FROM       - 从哪个基础镜像来，必须是已经存在的镜像 # FROM <image> # FROM <image>:<tag>
+              - 在Dockerfile中第一条非注释的指令
+   MAINTAINER - 指定镜像的维护者信息
+   RUN        - 指定当前镜像中运行的命令。每一个RUN指令都会在当前镜像的上层创建一个新的镜像来运行指定的命令。
+              - 运行的命令有两种形式：
+              -   shell模式：(使用/bin/sh -c command的形式执行命令)
+              -     RUN <command>
+              -   exec模式：
+              -     RUN [ "executable", "param1", "param2" ] 
+   ADD        - 把文件或目录复制到使用Dockerfile构建的镜像中，可以是本地地址或远程URL地址
+              - 如果是本地地址，必须是构建目录的相对地址；
+              - 不推荐使用远程URL地址，建议使用curl或wget来获取目标文件
+              - ADD <src>...<dest>
+              - ADD ["<src>"..."<dest>"] # 适用于文件路径中有空格的情况
+   COPY       - 把文件或目录复制到使用Dockerfile构建的镜像中，可以是本地地址或远程URL地址
+              - COPY <src>...<dest>
+              - COPY [ "<src>" ... "<dest>" ] # 适用于文件路径中有空格的情况
+   WORKDIR    - 设置当前工作目录，通常是绝对路径。为构建过程的指令指定工作目录
+   ENV        - 设置构建镜像过程中或容器运行过程中的环境变量
+              - ENV <key> <value>
+              - ENV <key>=<value> ...
+   VOLUME     - 给我一个存放行李的地方(目录挂载)
+   EXPOSE     - 运行该镜像的容器所使用的端口，可以在镜像中使用多个端口
+              - 指令形式： EXPOSE <port> [<port>...]
+   RUN        - 奔跑吧，兄弟！(进程要一直运行下去)
+   CMD        - 容器运行时执行的命令。如果使用docker run运行容器，则CMD指令会被覆盖
+   # Comment 以#开头的是注释
+   INSTRUCTION argument # 大写的指令名及参数
+   ENTRYPOINT - 与CMD相似，不会被docker run中的启动命令覆盖
+              - 指令格式：
+              - exec模式：
+              -   ENTRYPOINT [ "executable", "param1", "param2" ]
+              - shell模式：
+              -   ENTRYPOINT command param1 param2
+              - 如果想被docker run中的启动指令覆盖，则在命令行使用--entrypoint
+   USER       - 使用什么用户运行容器，默认是root用户
+              - 指令形式：
+              -   USER daemon
+              -   USER nginx
+              -   USER user       USER uid
+              -   USER user:group USER uid:gid
+              -   USER user:gid   USER uid:group
+   ONBUILD    - 镜像触发器
+              - ONBUILD [INSTRUCTION]
+              - 当一个镜像被其他镜像作为基础镜像时执行
+              - 会在构建过程中插入指令
+   #+END_EXAMPLE
+
+   RUN与CMD指令的区别：
+   #+BEGIN_SRC sh
+# RUN - 在镜像构建过程中使用的指令
+# CMD - 在构建完毕镜像时运行的指令
+   #+END_SRC
+
+   ADD与COPY指令的区别：
+   #+BEGIN_SRC sh
+# ADD 包含类似tar的解药功能
+# 如果单纯复制文件，Docker推荐使用COPY
+   #+END_SRC
+
+   + 基础镜像信息
+   + 维护者信息
+   + 镜像操作指令
+   + 容器启动时执行指令
+
+   把手动构建的过程以dockerfile的形式完成
+   #+BEGIN_SRC sh
+   mkdir /opt/docker-file
+   cd /opt/docker-file
+   mkdir nginx
+   
+   # 开始编写Dockerfile(D大写)
+   vim Dockerfile
+   # This is My First Dockerfile
+   # Version 1.0
+   # Author: Laven Liu
+   
+   # Base images
+   FROM centos
+
+   # Maintainer
+   MAINTAINER Laven Liu ldczz2008@163.com
+
+   # ADD something
+   ADD pcre-8.37.tar.gz /usr/local/src
+   ADD nginx-1.9.3.tar.gz /usr/local/src
+
+   # RUN
+   RUN yum install -y wget gcc gcc-c++ make openssl-devel
+   RUN useradd -s /sbin/nologin -M www
+
+   # WORKDIR
+   WORKDIR /usr/local/src/nginx-1.9.3
+   RUN ./configure --prefix=/usr/local/nginx --user=www --group=www \
+   --with-http_ssl_module --with-http_stub_status_module \
+   --with-pcre=/usr/local/src/pcre-8.37 && make && make install
+
+   RUN echo "daemon off;" >> /usr/local/nginx/conf/nginx.conf
+
+   ENV PATH /usr/local/nginx/sbin:$PATH
+   EXPOSE 80
+
+   CMD ["nginx"]
+   #+END_SRC
+
+   写完Dockerfile之后，接下来构建吧，
+   #+BEGIN_SRC sh
+docker build -t nginx-file:v1 /opt/docker-file/nginx/
+Sending build context to Docker daemon 2.911 MB
+Sending build context to Docker daemon 
+Step 0 : FROM centos
+---> 60e65a8e4030 # 构建过程中的中间层镜像
+Step 1 : MAINTAINER Laven Liu ldczz2008@163.com
+---> Using cache
+---> fbf34c390c83
+Step 2 : ADD pcre-8.37.tar.gz /usr/local/src
+---> Using cache
+---> 63ac4aa417db
+Step 3 : ADD nginx-1.9.3.tar.gz /usr/local/src
+---> Using cache
+---> 05476b332e87
+Step 4 : RUN yum install -y wget gcc gcc-c++ make openssl-devel
+---> Using cache
+---> 7f4d5f321428
+Step 5 : RUN useradd -s /sbin/nologin -M www
+---> Using cache
+---> f9a693a3e7fd
+Step 6 : WORKDIR /usr/local/src/nginx-1.9.3
+---> Using cache
+---> 617c6b034154
+Step 7 : RUN ./configure --prefix=/usr/local/nginx --user=www --group=www --with-http_ssl_module --with-http_stub_status_module --with-pcre=/usr/local/src/pcre-8.37 && make && make install
+---> Using cache
+---> 201bca281805
+Step 8 : RUN echo "daemon off;" >> /usr/local/nginx/conf/nginx.conf
+---> Running in 022c95591b02
+---> 68b71b95df3d
+Removing intermediate container 022c95591b02
+Step 9 : ENV PATH /usr/local/nginx/sbin:$PATH
+---> Running in 18219622bd39
+---> 063f64d65eb8
+Removing intermediate container 18219622bd39
+Step 10 : EXPOSE 80
+---> Running in a374dbe409a8
+---> 977aad86f2e0
+Removing intermediate container a374dbe409a8
+Step 11 : CMD nginx
+---> Running in 745c8dde90ae
+---> 7f455fd5d009
+Removing intermediate container 745c8dde90ae
+Successfully built 7f455fd5d009
+   #+END_SRC
+
+   dockerfile的每一步都有一个ID，说明每一个步骤都是一层。每执行完一步，
+   就会返回一个ID。
+
+   构建成功，查看images，
+   #+BEGIN_SRC sh
+docker images
+REPOSITORY			TAG					IMAGE ID			CREATED				 VIRTUAL SIZE
+nginx-file			v1					7f455fd5d009		About a minute ago	 371.8 MB
+nginx				latest				6bd8695f794a		8 days ago			 133.8 MB
+centos				latest				60e65a8e4030		3 weeks ago			 196.6 MB
+   #+END_SRC
+
+   运行刚刚构建的镜像，
+   #+BEGIN_SRC sh
+docker run -p 80 -d --name nginx-file:v1 nginx -g "daemon off;"
+   #+END_SRC
+
+   ONBUILD指令实例：
+   #+BEGIN_SRC sh
+# Dockerfile为
+FROM ubuntu
+MAINTAINER lavenliu "lavenliu@gmail.com"
+RUN apt-get update
+RUN apt-get install -y nginx
+ONBUILD COPY index.html /usr/share/nginx/html/
+EXPOSE 80
+ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]
+   #+END_SRC
+* Docker核心原理
+** 资源隔离和限制
+   使用LXC容器技术实现资源隔离。
+
+   Kernel里的namespace，namespace分为以下几种：
+   1. pid
+   2. net
+   3. ipc
+   4. mnt
+   5. uts
+   6. user
+
+   资源限制使用cgroup实现。
+   1. CPU
+   2. Memory
+
+   接下来让Docker实现CPU及内存的资源限制
+   #+BEGIN_SRC sh
+   # 在容器里进行安装stress压力测试工具
+   yum install -y stress
+   #+END_SRC
+
+   #+BEGIN_SRC sh
+   [root@docker01 stress]# docker build -t stress .
+   Sending build context to Docker daemon 4.096 kB
+   Sending build context to Docker daemon 
+   Step 0 : FROM centos
+	---> 60e65a8e4030
+   Step 1 : ADD epel-6.repo /etc/yum.repos.d/
+	---> 8d9a8d4069a9
+   Removing intermediate container df5f1d6ddf51
+   Step 2 : RUN yum -y install stress && yum clean all
+	---> Running in 97f156d76faa
+   Cleaning up list of fastest mirrors
+	---> 8636df972b73
+   Removing intermediate container 97f156d76faa
+   Step 3 : ENTRYPOINT stress
+	---> Running in 580ade364b1d
+	---> 9a3ced8dc785
+   Removing intermediate container 580ade364b1d
+   Successfully built 9a3ced8dc785
+   [root@docker01 stress]# docker images
+   REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+   stress              latest              9a3ced8dc785        7 seconds ago       213.9 MB
+   nginx-file          v1                  7f455fd5d009        12 hours ago        371.8 MB
+   registry            latest              a46cbd345905        8 days ago          422.8 MB
+   nginx               latest              6bd8695f794a        9 days ago          133.8 MB
+   centos              latest              60e65a8e4030        3 weeks ago         196.6 MB
+   #+END_SRC
+
+   上面的步骤，已经构建了一个stess的镜像，接下来启动该镜像，
+   #+BEGIN_SRC sh
+   docker run -it --rm stress --cpu 1
+   # --rm意思是，容器退出运行就删除
+   
+   # 在开启一个容器，
+   docker run -it --rm -c 512 stress --cpu 1
+   # 然后，在开启一个终端，使用top命令进行观察
+
+   # docker run -it --rm --cpuset=0 stress --cpu 1
+   #+END_SRC
+
+   内存资源的限制：
+   #+BEGIN_SRC sh
+   docker run -it --rm -m 128m stress --vm 1 --vm-bytes 128m --vm-hang 0
+   #+END_SRC
+** 网络和Registry
+   Docker默认使用bridge模式。
+
+   宿主机里会有一个docker0的网桥。
+   #+BEGIN_SRC sh
+   ifconfig docker0
+   docker0   Link encap:Ethernet  HWaddr D6:BC:94:C4:99:4C  
+			 inet addr:172.17.42.1  Bcast:0.0.0.0  Mask:255.255.0.0
+			 inet6 addr: fe80::d4bc:94ff:fec4:994c/64 Scope:Link
+			 UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+			 RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+			 TX packets:6 errors:0 dropped:0 overruns:0 carrier:0
+			 collisions:0 txqueuelen:0 
+			 RX bytes:0 (0.0 b)  TX bytes:468 (468.0 b)
+   #+END_SRC
+
+   HOST网络模式
+
+   其他网络模式
+
+   Docker-compose
+
+   Registry(docker私有仓库，默认使用5000端口)
+   #+BEGIN_EXAMPLE
+   docker run -d -p 5001:5000 registry
+   docker ps -l
+   CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                     PORTS               NAMES
+   63d91182ea16        registry            "docker-registry"   12 seconds ago      Exited (3) 5 seconds ago                       elegant_turing      
+
+   [root@docker01 ~]# docker images
+   REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+   stress              latest              9a3ced8dc785        39 minutes ago      213.9 MB
+   nginx-file          v1                  7f455fd5d009        12 hours ago        371.8 MB
+   registry            latest              a46cbd345905        8 days ago          422.8 MB
+   nginx               latest              6bd8695f794a        9 days ago          133.8 MB
+   centos              latest              60e65a8e4030        3 weeks ago         196.6 MB
+   [root@docker01 ~]# docker tag nginx-file:v1 192.168.20.137:5001/test/nginx-file:v2
+   [root@docker01 ~]# docker images
+   REPOSITORY                            TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+   stress                                latest              9a3ced8dc785        39 minutes ago      213.9 MB
+   192.168.20.137:5001/test/nginx-file   v2                  7f455fd5d009        12 hours ago        371.8 MB
+   nginx-file                            v1                  7f455fd5d009        12 hours ago        371.8 MB
+   registry                              latest              a46cbd345905        8 days ago          422.8 MB
+   nginx                                 latest              6bd8695f794a        9 days ago          133.8 MB
+   centos                                latest              60e65a8e4030        3 weeks ago         196.6 MB
+   # 在192.168.20.137上的5001端口，设置了nginx-file:v2的一个镜像。
+   docker push 192.168.20.137:5001/test/nginx-file:v2
+   # 在192.168.20.130上把它pull下来
+   docker pull 
+   #+END_EXAMPLE
+* Docker之Dashboard
+  shipyard
+* 遇到的问题
+  1. DeviceMapper问题
+	 #+BEGIN_EXAMPLE
+	 在CentOS6.5 64位系统上遇到的问题。
+	 /usr/bin/docker: relocation error: /usr/bin/docker: 
+	 symbol dm_task_get_info_with_deferred_remove, 
+	 version Base not defined in file libdevmapper.so.1.02 
+	 with link time reference
+
+	 升级devicemapper
+	 yum upgrade device-mapper-libs
+	 #+END_EXAMPLE
+
+	 尽量在Ubuntu上适用Docker。
+* 希云Docker视频
+** 入门实战及Dockerfile
+   首先到oschina进行代码的克隆，
+  #+BEGIN_SRC sh
+cd /home/lavenliu
+git clone https://git.oschina.net/lavenliu/docker-training.git
+  #+END_SRC
+*** 构建基础镜像 - CentOS7
+  #+BEGIN_SRC sh
+cd docker-training/centos7
+vim Dockerfile
+#
+# MAINTAINER       Laven Liu <ldczz2008@163.com>
+# DOCKER-VERSION   1.6.2
+# 
+# Docking CentOS7: Dockerfile for building CentOS images
+#
+FROM       centos:centos7.1.1503
+MAINTAINER LavenLiu <ldczz2008@163.com>
+
+ENV TZ "Asia/Shanghai"
+ENV TERM xterm
+
+ADD aliyun-mirror.repo /etc/yum.repos.d/CentOS-Base.repo
+ADD aliyun-epel.repo /etc/yum.repos.d/epel.repo
+
+RUN yum install -y curl wget tar bzip2 unzip vim-inhanced passwd sudo yum-utils hostname net-tools rsync man && \
+yum install -y gcc gcc-c++ git make automake cmake patch logrotate python-devel libpng-devel libjpeg-devel && \
+yum install -y --enablerepo=epel pwgen python-pip && \
+yum clean all
+
+RUN pip install supervisor
+ADD supervisord.conf /etc/supervisord.conf
+
+RUN mkdir -p /etc/supervisor.conf.d && \
+mkdir -p /var/log/supervisor
+
+EXPOSE 22
+
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]
+  #+END_SRC
+
+  开始构建，
+  #+BEGIN_SRC sh
+# 一般的构建语法
+docker build -t registry_url/namespache/lavenliu/centos:7.1 Dockerfile
+docker build -t lavenliu/centos:7.1 .
+  #+END_SRC
+
+  构建完毕，可以通过docker images进行查看，
+  #+BEGIN_SRC sh
+docker images
+  #+END_SRC
+
+  镜像有了之后，可以运行该镜像使之成为一个容器，这里使用
+  lavenliu/centos:7.1这个镜像创建名为base的容器，
+  #+BEGIN_SRC sh
+docker run -d -p 2222:22 --name base lavenliu/centos:7.1 
+  #+END_SRC
+
+  查看刚创建的base容器，
+  #+BEGIN_SRC sh
+docker ps -a
+  #+END_SRC
+*** 构建中间件镜像 - PHP
+   从CentOS7这个基础镜像构建。
+
+   先看一下Dockerfile，
+   #+BEGIN_SRC sh
+cd docker-training/php-fpm
+vim Dockerfile
+#
+# MAINTAINER        LavenLiu <ldczz2008@163.com>
+# DOCKER-VERSION    1.6.2
+#
+# Dockerizing php-fpm: Dockerfile for building php-fpm images
+#
+FROM       lavenliu/centos:7.1
+MAINTAINER Lavenliu <ldczz2008@163.com>
+
+# Set environment variable
+ENV	APP_DIR /app
+
+RUN     yum -y swap -- remove fakesystemd -- install systemd systemd-libs && \
+        yum -y install nginx php-cli php-mysql php-pear php-ldap php-mbstring php-soap php-dom php-gd php-xmlrpc php-fpm php-mcrypt && \ 
+	yum clean all
+
+ADD nginx_nginx.conf /etc/nginx/nginx.conf
+ADD	nginx_default.conf /etc/nginx/conf.d/default.conf
+
+ADD	php_www.conf /etc/php-fpm.d/www.conf
+RUN	sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /etc/php.ini
+
+RUN	mkdir -p /app && echo "<?php phpinfo(); ?>" > ${APP_DIR}/info.php
+
+EXPOSE	80 443
+
+ADD	supervisor_nginx.conf /etc/supervisor.conf.d/nginx.conf
+ADD	supervisor_php-fpm.conf /etc/supervisor.conf.d/php-fpm.conf
+
+ONBUILD ADD . /app
+ONBUILD RUN chown -R nginx:nginx /app
+   #+END_SRC
+
+   开始构建，
+   #+BEGIN_SRC sh
+docker build -t lavenliu/php-fpm:5.4 .
+   #+END_SRC
+
+   查看是否已构建镜像，
+   #+BEGIN_SRC sh
+docker ps -a
+   #+END_SRC
+
+   验证是否提供PHP的解析，
+   #+BEGIN_SRC sh
+docker run -d -p 8080:80 --name website lavenliu/php-fpm:5.4
+docker ps -a
+# 查看宿主机的IP地址，
+# 在浏览器的URL框中输入“http://<host_ip>:8080/info.php”
+   #+END_SRC
+
+   进入php-fpm容器，
+   #+BEGIN_SRC sh
+docker exec -it website /bin/bash
+supervisorctl
+exit
+exit
+docker ps -a
+   #+END_SRC
+*** 构建中间件镜像 - MySQL
+	使用CentOS7的基础镜像，
+
+	先看Dockerfile文件，
+    #+BEGIN_SRC sh
+#
+# MAINTAINER        LavenLiu <ldczz2008@163.com>
+# DOCKER-VERSION    1.6.2
+#
+# Dockerizing Mariadb: Dockerfile for building Mariadb images
+#
+FROM lavenliu/centos:7.1
+MAINTAINER LavenLiu <ldczz2008@163.com>
+
+ENV DATA_DIR /var/lib/mysql
+
+# Install Mariadb
+RUN yum install -y mariadb mariadb-server && \
+    yum clean all
+
+ADD mysqld_charset.cnf /etc/my.cnf.d/
+
+COPY scripts /scripts
+RUN chmod +x /scripts/start
+
+EXPOSE 3306
+
+VOLUME ["/var/lib/mysql"]
+
+ENTRYPOINT ["/scripts/start"]
+   #+END_SRC
+
+	这里使用VOLUME，就是当该容器销毁时，MySQL的数据不会一起被删除。
+
+   #+BEGIN_SRC sh
+docker build -t lavenliu/mysql:5.5 .
+docker images
+   #+END_SRC
+
+	启动镜像，使之成为容器，
+   #+BEGIN_SRC sh
+docker run -d -p 3306:3306 --name dbserver lavenliu/mysql:5.5
+docker ps -a
+# 如果要进入dbserver
+docker exec -it dbserver /bin/bash
+mysql
+show databases;
+exit
+exit
+   #+END_SRC
+
+	由于，我们的dbserver使用了volume，而刚刚的启动命令并没有指定volume，
+	所以，接下来把dbserver给删除掉，然后重新指定命令行选项，
+   #+BEGIN_SRC sh
+# 由于容器正在运行，所以不能直接删除之，或可以强制删除
+docker rm -f dbserver
+   #+END_SRC
+
+   接下来指定volume选项，
+   #+BEGIN_SRC sh
+docker run -d -p 3306:3306 -v host_dir:container_dir
+docker run -d --name dbserver -p 3306:3306 -v /var/lib/docker/vfs/dir/mydata:/var/lib/mysql lavenliu/mysql:5.5
+docker ps -a
+docker exec -it dbserver /bin/bash
+mysql
+> show databases;
+> create database my_test_db;
+> show databases;
+> exit;
+exit
+   #+END_SRC
+
+   查看宿主机的/var/lib/docker/vfs/dir/mydata目录是否有dbserver容器的数据，
+   #+BEGIN_SRC sh
+ls /var/lib/docker/vfs/dir/mydata
+   #+END_SRC
+
+   接下来把dbserver容器给删除，验证MySQL数据库文件是否也会被删除，
+   #+BEGIN_SRC sh
+docker rm -f dbserver
+# 再次查看宿主机的目录，
+ls /var/lib/docker/vfs/dir/mydata
+   #+END_SRC
+
+   接下来创建一个新的容器，接着使用dbserver容器的MySQL数据，
+   #+BEGIN_SRC sh
+docker run -d -p 3306:3306 --name newdbserver -v /var/lib/docker/vfs/dir/mydata:/var/lib/mysql lavenliu/mysql:5.5
+docker ps -a
+   #+END_SRC
+
+   接下来验证dbserver容器的数据库文件，被挂载到newdbserver容器下，是否可用，
+   #+BEGIN_SRC sh
+docker exec -it newdbserver /bin/bash
+mysql
+> show databases;
+...
+   #+END_SRC
+*** 构建应用镜像 - WordPress
+	应用容器基于PHP镜像，先看Dockerfile，
+    #+BEGIN_SRC sh
+cd wordpress
+vim Dockerfile
+from lavenliu/php-fpm:5.4
+
+add init.sh /init.sh
+
+entrypoint ["/init.sh", "/usr/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]
+   #+END_SRC
+   
+   开始构建，
+   #+BEGIN_SRC sh
+docker build -t lavenliu/wordpress:4.2 ./docker-training/wordpress
+docker images
+   #+END_SRC
+
+   运行镜像，
+   #+BEGIN_SRC sh
+docker run -d -p 80:80 --name wordpress -e WORDPRESS_DB_HOST=<host_internal_ip> -e WORDPRESS_DB_USER=admin -e WORDPRESS_DB_PASSWORD=admin lavenliu/wordpress:4.2
+# -e 传入环境变量给容器
+docker ps -a
+   #+END_SRC
+
+   接下来就可以在浏览器的URL地址栏里输入“http://<host_ip>”即可安装WordPress了。
+*** 一些命令介绍
+**** ENTRYPOINT
+	 An ENTRYPOINT allows you to configure a container that will run as an executable.
+	 运行一个Docker容器就像运行一个程序一样。只有最后一条ENTRYPOINT生效。
+	 #+BEGIN_SRC sh
+# exec形式的ENTRYPOINT，推荐使用此方式，启动之后，PID号为1
+ENTRYPOINT ["executable", "param1", "param2"]
+# shell形式的ENTRYPOINT，启动之后，PID为shell命令的PID
+ENTRYPOINT command param1 param2
+# 一个例子
+docker run -it --entrypoint=xxx
+# 将会覆盖Dockerfile ENTRYPOINT []
+	 #+END_SRC
+**** CMD
+	 #+BEGIN_SRC sh
+# exec形式的CMD，推荐使用此方式
+# 运行一个可执行的文件并提供参数
+CMD ["executable", "param1", "param2"]
+#
+# 第二种用法，为ENTRYPOINT指定参数
+# CMD ["param1", "param2"]
+# 
+# shell形式的CMD
+# CMD command param1 param2
+# 是以"/bin/sh -c"的方法执行的命令
+# 
+# 例子：
+CMD ["/bin/echo", "this is the test CMD"]
+docker run -it --rm lavenliu/cmd:0.1 /bin/bash
+	 #+END_SRC
+**** CMD与ENTRYPOINT的区别
+	 CMD可以被/bin/bash覆盖
+
+	 ENTRYPOINT不可以被/bin/bash覆盖，如果要覆盖Dockerfile里的ENTRYPOINT，可以在命令行指定，
+	 #+BEGIN_SRC sh
+docker run -it --entrypoint=/bin/bash lavenliu/ent:0.1
+	 #+END_SRC
+*** 总结
+	可以把Dockerfile放到git上，使用自动化工具进行自动化构建。
+** Docker实战之Registry以及持续集成
+   构建企业内部的Registry，
+   #+BEGIN_SRC sh
+docker run -d -p 5000:5000 --name registry registry:0.9.1
+   #+END_SRC
+*** Docker Registry的组成
+	Docker镜像的命名规则
+
+	registry_url/namespace/container_name:container_version
+
+	<host_ip>:5000/lavenliu/registry01:0.1
+
+	docker tag 打标签
+
+	#+BEGIN_SRC sh
+docer tag lavenliu/lavenliu:0.11.2 192.168.20.160:5000/lavenliu/lavenliu:0.11.2
+docker images
+	#+END_SRC
+
+	现在把本地镜像推送到Registry上，
+	#+BEGIN_SRC sh
+docker push 192.168.20.160:5000/lavenliu/lavenliu:0.11.2
+	#+END_SRC
+
+	克隆实验代码，
+	#+BEGIN_SRC sh
+git clone https://git.oschina.net/dockerf/second.git
+cd second
+cat docker-compose.yml
+mysql:
+   image: lavenliu/mysql:5.5
+   ports:
+     - "3306:3306"
+   volumes:
+     - /var/lib/docker/vfs/dir/dataxc:/var/lib/mysql
+   hostname: mydb.lavenliu.com
+
+tomcat:
+   image: csphere/tomcat:7.0.55
+   ports:
+      - "8080:8080"
+   links:
+      - mysql:db
+   environment:
+      - TOMCAT_USER=admin
+      - TOMCAT_PASS=admin
+   hostname: tomcat.lavenliu.com
+	#+END_SRC
+
+	启动这两个容器，
+	#+BEGIN_SRC sh
+docker-compose up -d
+Creating xxx_yyy_1 ...
+Creating xxx_yyy_1 ...
+	#+END_SRC
+
+	停止这两个容器，
+	#+BEGIN_SRC sh
+docker-compose stop
+docker-compose ps
+	#+END_SRC
+
+	删除这两个容器，
+	#+BEGIN_SRC sh
+docker-compose rm
+docker-compose ps
+docker ps -a
+	#+END_SRC
+*** 持续集成 - Jenkins
+	先手工跑通，在自动化。
+**** 手工的方式
+	#+BEGIN_SRC sh
+mkdir ~/maven-tar
+cp /apache-maven-3.3.3-bin.tar.gz ~/maven-tar
+docker run -d -p 8080:8080 --name jenkins \
+-v /usr/bin/docker:/usr/bin/docker \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v /root/maven-tar:/root \
+lavenliu/jenkins:1.609
+	#+END_SRC
+
+	验证jenkins容器里能否执行docker命令呢？
+	#+BEGIN_SRC sh
+docker exec -it jenkins /bin/bash
+ls /root
+docker ps -a # 完全具备了宿主机的功能
+	#+END_SRC
+
+	接着在浏览器的URL地址框里输入“http://192.168.20.160:8080”
+
+	使用Jenkins专用数据库，允许用户注册。
+
+	注册用户admin或其他用户。
+
+	新建一个任务，build-nginx
+
+	构建一个自由风格的软件项目， OK
+
+	源码管理使用git，htts://git.oschina.net/dockerf/build-nginx.git
+
+	增加"构建"步骤，Execute shell，
+	#+BEGIN_SRC sh
+docker build -t lavenliu/php-fpm:5.4 $WORKSPACE/php-fpm
+	#+END_SRC
+
+	保存。
+
+	回到首页，点击“立即构建”。
+
+	构建完毕，到宿主机上查看是否有镜像构建完成，
+	#+BEGIN_SRC sh
+docker images
+	#+END_SRC
+
+	接下来演示Maven的构建，这里将使用触发自动构建，
+	#+BEGIN_SRC sh
+cd second/maven
+docker build -t lavenliu/maven:3.3.3 .
+	#+END_SRC
+
+	Docker镜像一般建议做三层，基础层、中间件层、应用层。
+
+	使用Jenkins进行镜像的构建，然后上传至Registry。
+
+	#+BEGIN_SRC sh
+docker create --name maven lavenliu/maven:3.3.3
+docker ps -a
+	#+END_SRC
+
+	#+BEGIN_SRC sh
+cd ../hello
+docker cp maven:/hello/target/hello.war .
+ls
+docker build -t lavenliu/hello:1.0 .
+	#+END_SRC
+
+	构建db容器，
+	#+BEGIN_SRC sh
+docker run -d -p 3306:3306 --name mysql lavenliu/mysql:5.5
+docker run -d -p 80:8080 --name hello lavenliu/hello:1.0
+docker ps -a
+	#+END_SRC
+
+	使用浏览器打开URL：“http://192.168.20.160”
+
+**** 使用Jenkins自动化构建
+	 在Jenkins里进行新建项目。
+
+	 关键的是“构建触发器”，触发远程构建，身份验证令牌“java-token”。
+	 接下来设置WEB-HOOK，Jenkins有提示的。
+
+	 在oschina上设置，在Oschina上叫做PUSH钩子，在Github上叫做WEB-HOOK，
+	 #+BEGIN_SRC sh
+http://xxx.yyy.zzz.www:8080/job/java-app/build?token=java-token
+	 #+END_SRC
+
+	 用户名及API-TOKEN在Jenkins里面都会有的，比如我的用户名为lavenliu，token为fsafdsjfj4u1u4，则
+	 完整的钩子地址为：
+	 #+BEGIN_SRC sh
+http://lavenliu:fsafdsjfj4u1u4@xxx.yyy.zzz.www:8080/job/java-app/build?token=java-token
+	 #+END_SRC
+
+	 增加“构建”，Execute shell
+	 #+BEGIN_SRC sh
+# 查看宿主机的内网IP地址
+REGISTRY_URL=192.168.20.160:5000
+cp /root/maven/apache-maven-3.3.3-bin.tar.gz $WORKSPACE/maven
+docker build -t lavenliu/maven:3.3.3 $WORKSPACE/maven
+if docker ps -a |grep -i maven ; then
+    docker rm -f maven
+fi
+docker create --name maven lavenliu/maven:3.3.3
+docker cp maven:/hello/target/hello.war $WORKSPACE/hello
+docker build -t $REGISTRY_URL/lavenliu/hello:1.0 $WORKSPACE/hello
+docker push $REGISTRY_URL/lavenliu/hello:1.0
+if docker ps -a |grep -i hello ; then
+    docker rm -f hello
+fi
+docker run -d -p 80:8080 --name hello $REGISTRY_URL/lavenliu/hello:1.0
+	 #+END_SRC
+
+	 Jenkins设置完毕，接下来修改一下hello项目的源代码，验证是否进行自动构建，
+	 #+BEGIN_SRC sh
+vi maven/hello/src/main/webapp/index.jsp
+在<body>标签下添加一行，
+<h1>We are family</h1>
+	 #+END_SRC
+
+	 代码修改完毕，使用git add添加改变的文件，
+	 #+BEGIN_SRC sh
+cd ~/second
+git config --global user.email "ldczz2008@163.com"
+git add .
+git commit -m "add the front-end index.jsp file"
+git push
+	 #+END_SRC
+
+	 这时，到Jenkins界面，验证是否会自动进行构建。
+** Docker实战之监控报警和日志管理
+   本节课程目标：
+   1. 手把手教你如何搭建监控报警系统及日志管理系统
+   2. 运行一个应用，模拟业务并发访问，生成压力和日志
+   3. 学习如何设置监控指标和报警策略
+   4. 学习如何设置、来收集该应用生成的日志，并图表化展现
+
+   常用邮箱SMTP，
+   1. 网易
+	  #+BEGIN_SRC sh
+smtp.163.com 25
+smtp.126.com 25
+	  #+END_SRC
+   2. QQ
+	  #+BEGIN_SRC sh
+smtp.exmail.qq.com 587/465(SSL)
+smtp.qq.com 25
+	  #+END_SRC
+   3. Gmail
+	  #+BEGIN_SRC sh
+smtp.gmail.com 587(SSL)
+	  #+END_SRC
+   4. Sina
+	  #+BEGIN_SRC sh
+smtp.sina.com.cn 25
+	  #+END_SRC
+   5. SOHU
+	  #+BEGIN_SRC sh
+smtp.sohu.com 25
+	  #+END_SRC
+   6. 139
+	  #+BEGIN_SRC sh
+smtp.139.com 25
+	  #+END_SRC
+
+   监控的参考条件：
+   1. 部署/升级是否容易
+   2. 监控数据是否正确
+   3. 监控报警是否及时
+   4. 是否主要监控Docker主机/容器
+*** 安装cSphere
+	到官网查看文档进行安装，一键安装。
+	#+BEGIN_SRC sh
+# 首先安装controller
+curl ....
+docker ps -a
+# 打开浏览器<host_ip>:1016
+# 
+# 接下来安装agent
+# 同安装controller步骤相同
+	#+END_SRC
+
+	登录controller界面，设置邮箱及报警。
+
+	设置告警策略，内存，CPU。
+	
+	接下来创建WordPress应用来模拟业务，另外，推荐容器的日志挂载到宿主机的目录，
+	#+BEGIN_SRC sh
+docker run -d -p 3306:3306 --name mysql lavenliu/mysql:5.5
+docker run -d -p 80:80 --name wordpress \
+-e WORDPRESS_DB_HOST=<host_internal_ip> \
+-e WORDPRESS_DB_USER=admin \
+-e WORDPRESS_DB_PASSWORD=admin \
+-v /data/logs:/var/log/nginx \
+lavenliu/wordpress:4.2
+	#+END_SRC
+
+	运行之后，到WEB界面进行设置，绑定告警策略。
+
+	接着在宿主机使用ab工具模拟并发访问，验证是否会发送报警邮件，
+	#+BEGIN_SRC sh
+ab -n 1000 -c 10 http://<host_internal_ip>/
+	#+END_SRC
+*** 日志管理
+	1. 日志存放
+	2. 日子收集
+	3. 日志图表展现
+
+    方案：
+    | LogStash           | 管理日志和事件       |
+    |--------------------+----------------------|
+    | ElasticSearch      | 分布式的搜索分析系统 |
+    | Kibana             | 可视化日志和数据系统 |
+    | LogStash-forwarder | 转发日志->Logstash   | 
+
+	参考 https://github.com/spujadas/elk-docker
+
+	#+BEGIN_SRC sh
+docker run -d \
+--name elk \
+-p 9200:9200 \
+-p 5601:5601 \
+-p 5000:5000 \
+-e ES_MIN_MEM=64m \
+-e ES_MAX_MEM=512m \
+lavenliu/elk:1.6.0
+	#+END_SRC
+
+	进入容器，生成日志，
+	#+BEGIN_SRC sh
+docker exec elk /bin/bash
+/opt/logstash/bin/logstash -e 'input { stdin { } } output { elasticsearch { host => localhost } }'
+	#+END_SRC
+
+	启动forward，
+	#+BEGIN_SRC sh
+docker run -d --name fwd --link 
+	#+END_SRC
+** Docker实战之网络管理
+   使用两台机器或虚拟机进行实验。
+
+   namespace 将容器的 隔离
+
+   容器的独立是有namespace进行隔离的。
+
+   NameSpace组件：
+   PID 将不同的容器进程通过PID进行隔离
+
+   IPC 容器之间的IPC资源相互不可见
+
+   MNT 类似于chroot，将进程放到一个目录下运行
+
+   UTS 可以让Docker容器拥有独立的hostname及domainname
+
+   User 将容器的uid或gid映射到宿主机的某个uid或gid
+
+   net 可以让容器拥有独立的网络栈，达到网络的隔离
+
+   HostNameSpace： 宿主机的namespace
+
+   宿主机为每个容器创建namespace。
+
+   Docker默认使用的网络模式？
+
+   #+BEGIN_SRC sh
+# 在Ubuntu上进行实验
+start docker
+docker --version
+   #+END_SRC
+*** Docker网络模式
+**** NAT（Network Address Translation）
+	 主要使用了iptables的nat表。
+
+	 #+BEGIN_SRC sh
+docker ps -a
+iptables -t nat -L -n
+	 #+END_SRC
+
+	 Nat网络特点：
+	 1. 优点
+		1. 网络资源隔离
+		2. 无需手动配置
+		3. 可访问外网
+	 2. 缺点
+		1. 外界无法直接访问容器IP
+		2. 低性能
+		3. 端口管理麻烦
+
+     外界访问容器： DNAT
+
+	 容器访问外界： SNAT
+
+	 #+BEGIN_SRC sh
+docker run -it --name lavenliu-nat busybox sh
+# 进入容器后
+ifconfig
+route -n
+ping -c4 www.baidu.com
+# 退出容器
+C-p q
+# 查看宿主机是否生成iptables规则
+iptables -t nat -L -n
+# 由于没有使用端口映射，所以nat表中的DOCKER链是空的
+# 接下来创建一个新的容器
+docker run -it -p 2222:22 --name lavenliu-nat2 busybox sh
+C-p q
+# 再次查看iptables规则
+iptables -t nat -L -n
+	 #+END_SRC
+**** Host
+	 共享宿主机网络
+
+	 Host网络特点：
+	 1. 优点
+		1. 共享宿主机网络
+		2. 网络性能无衰减
+		3. 排查网络故障简单
+	 2. 缺点
+		1. 网络环境无隔离
+		2. 网络资源无法统计
+		3. 端口不易管理
+
+     具体演示，
+	 #+BEGIN_SRC sh
+docker run -it --name lavenliu-host --net=host busybox sh
+# 进入了容器
+ifconfig
+# 此时容器拥有与宿主机相同的网络接口及IP地址
+# 退出容器
+C-p q
+	 #+END_SRC
+**** other container
+	 应用场景： 容器之间网络访问频繁的场景。
+
+	 Container网络特点：
+	 1. 与主机网络空间隔离
+	 2. 容器间共享网络空间
+	 3. 适合容器间网络通信频繁的场景
+
+     具体演示，
+	 #+BEGIN_SRC sh
+# 创建容器A
+docker run -it --name lavenliu busybox sh
+# 进入容器
+ifconfig
+C-p q
+# 回车
+# 接下来创建容器B
+docker run -it --name lavenliu-container --net=container:lavenliu busybox sh
+# 进入了容器，查看该容器的网络接口情况
+ifconfig
+# 两个容器的IP地址及MAC地址应该是一样的
+C-p q
+	 #+END_SRC
+**** none
+	 Docker容器无网络配置，可自行配置。适合开发环境。
+
+	 具体演示，
+	 #+BEGIN_SRC sh
+docker run -it --name lavenliu-none --net=none bushbox sh
+# 进入了容器，接下来查看网络接口情况
+ifconfig
+# 此时应该只有一个lo接口
+# 退出容器
+C-p q
+	 #+END_SRC
+**** overlay
+	 一次性删除多个容器，
+	 #+BEGIN_SRC sh
+docker rm -f $(docker ps -a -q)
+docker ps -a
+	 #+END_SRC
+
+	 overlay网络特点：
+	 1. 跨主机通信
+	 2. 无需做端口管理
+	 3. 无需担心IP冲突
+
+     具体演示，需要在两台机器上进行操作，
+	 #+BEGIN_SRC sh
+ps -aux |grep docker
+cat config1.sh
+#!/bin/bash
+
+[ -d /data ] || mkdir /data
+consul agent -server -bootstrap -data-dir /data/consul -bind=0.0.0.0 >/var/log/consul.log 2>&1 &
+echo 'DOCKER_OPTS="--kv-store=consul:localhost:8500 --label=com.docker.network.driver.overlay.bind_interface=eth0 --default-network=overlay:multihost"' > /etc/default/docker
+
+restart docker
+	 #+END_SRC
+
+	 在第一台机器上运行config1.sh脚本，
+	 #+BEGIN_SRC sh
+sh config1.sh
+consul members
+docker ps -a
+ifconfig # 获得内网IP地址
+	 #+END_SRC
+
+	 在另一台机器上执行，
+	 #+BEGIN_SRC sh
+ps -aux |grep docker
+start docker
+cat config2.sh
+#!/bin/bash
+
+[ -d /data ] || mkdir /data
+
+consul agent -data-dir /data/consul -bind 0.0.0.0 >/var/log/consul.log 2>&1 &
+
+sleep 2
+
+consul join $IP
+
+cat <<-EOS >/etc/default/docker
+DOCKER_OPTS="--kv-store=consul:localhost:8500 --label=com.docker.network.driver.overlay.bind_interface=eth0 --label=com.docker.network.driver.overlay.neighbor_ip=$IP --default-network=overlay:multihost"
+EOS
+
+restart docker
+	 #+END_SRC
+
+	 接下来在第二台机器上运行config2.sh脚本，
+	 #+BEGIN_SRC sh
+# IP为第一台主机的IP地址
+IP=<host_internal_ip>
+sh config2.sh
+	 #+END_SRC
+
+	 查看consul集群，
+	 #+BEGIN_SRC sh
+# 在任意一台机器上执行
+consul members
+	 #+END_SRC
+
+	 以上的基础环境准备完毕，接着在第一台机器上创建容器，
+	 #+BEGIN_SRC sh
+docker run -it --name test1 busybox sh
+# 进入容器后，查看其IP地址
+ifconfig
+	 #+END_SRC
+
+	 在第二台机器上创建容器，
+	 #+BEGIN_SRC sh
+docker run -it --name test2 busybox sh
+# 进入容器后，查看其IP地址
+# 接着测试两个容器是否可以跨主机通信
+ping -c2 <test1_container_ip>
+cat /etc/hosts
+C-p q
+	 #+END_SRC
+
+	 docker 1.8之后的版本的命令，
+	 #+BEGIN_SRC sh
+docker network ls
+docker service ls
+	 #+END_SRC
+
+	 可以验证这两个容器是否可以访问外网，
+	 #+BEGIN_SRC sh
+ping www.baidu.com
+	 #+END_SRC
+
+	 应该是不能访问互联网的，接下来给test1容器附近一块bridge网卡
+	 #+BEGIN_SRC sh
+docker service publish test-bridge.bridge
+docker service attach test1 test-bridge.bridge
+	 #+END_SRC
+
+	 接下来进入test1容器，
+	 #+BEGIN_SRC sh
+docker exec -it test1 sh
+# 查看其网卡信息
+ifconfig
+# 查看路由表
+# 验证test1与test2的通信是否正常
+ping test2
+# 此时验证test1是否可以访问外网
+ping www.baidu.com
+	 #+END_SRC
+** Docker实战之持续部署以及弹性伸缩
+*** Docker compose
+	1. 服务编排工具
+    2. 结合Swarm，分布式部署应用
+    3. 动态改变应用，扩展
+    4. 重要文件docker-compose.yml
+**** Demo之场景1
+	1. 产品代码release，已触发自动构建镜像流程
+	2. 镜像构建成功，镜像测试已通过
+	3. 测试人员得到通知，可以进行测试
+	4. 测试人员执行“docker-compose up -d”一键部署好测试环境
+	5. 测试已通过，标记镜像状态为可发布
+
+    #+BEGIN_SRC sh
+cat push.sh
+#!/bin/bash
+
+set -e
+
+IP=`ifconfig eth0 |grep inet |awk '{ print $2 }' |tr -d "addr:"`
+
+docker tag lavenliu/hello:1.0 $IP/lavenliu/hello:1.0
+docker tag lavenliu/hello:2.0 $IP/lavenliu/hello:2.0
+echo "---> docker images tag Rename the complete."
+
+echo "---> Starting uploading images to the $IP registry server"
+
+docker push $IP/lavenliu/hello:1.0
+docker push $IP/lavenliu/hello:2.0
+
+echo "---> Image upload to complete."
+    #+END_SRC
+
+	docker-compose.yml内容，
+	#+BEGIN_SRC sh
+db:
+  container_name: my-db-container
+  image: lavenliu/mysql:5.5
+  ports:
+    - "3306:3306"
+  volumes:
+    - /root/my-db:/var/lib/mysql
+web:
+  container_name: my-web-container
+  image: lavenliu/hello:2.0
+  ports:
+    - "80:8080"
+  environment:
+    - DB_HOST=172.17.42.1
+	#+END_SRC
+
+	执行命令，一键发布应用，
+	#+BEGIN_SRC sh
+docker-compose up -d
+docker-compose ps
+	#+END_SRC
+**** Demo之场景2
+	1. 应用1.0版本已发布
+	2. 基于1.0版本，现在有新功能添加，2.0需发布
+	3. 测试流程都已完成，需要再次发布
+
+    通过Docker compose动态更新应用，
+	#+BEGIN_SRC sh
+# 少许修改上面的docker-compose.yml文件，把1.0改为2.0即可
+web:
+  container_name: my-web-container
+  image: lavenliu/hello:2.0
+	#+END_SRC
+
+	这时执行，
+	#+BEGIN_SRC sh
+docker-compose up -d
+	#+END_SRC
+*** Swarm
+	Docker-native clustering system
+
+	1. docker主机（容器）集群管理
+	2. 兼容Docker API
+	3. 部署，应用较容易
+
+    Swarm服务发现：
+	1. Hosted discovery service(DockerHub)
+	   #+BEGIN_SRC sh
+swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
+	   #+END_SRC
+	2. Key/Value(K/V)发现，（Etcd、consul、ZooKeeper）
+	   #+BEGIN_SRC sh
+swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<path>
+	   #+END_SRC
+	3. Static IP
+	   #+BEGIN_SRC sh
+swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
+	   #+END_SRC
+	4. Static file
+	   #+BEGIN_SRC sh
+swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
+	   #+END_SRC
+	5. Swarm filter
+	6. Swarm strategy
+**** Swarm scheduler
+***** Filter
+	  1. Constraint （约束）
+	  2. Affinity （亲和性）
+	  3. Port （端口）
+	  4. Dependency （依赖）
+	  5. Health (健康)
+***** Weigh
+	  1. Spread （最少）
+	  2. Binpack （最多）
+	  3. Random （随机）
+**** 创建Swarm集群
+	 1. 创建集群token（discovery server）
+	 2. 创建Swarm master节点
+		#+BEGIN_SRC sh
+docker run -d -p 2376:2375 swarm manage token://<cluster-id>
+		#+END_SRC
+	 3. 加入Swarm集群（swarm node）
+		#+BEGIN_SRC sh
+docker run -d swarm join --add<node_ip>:<port> token://<cluster-id>
+		#+END_SRC
+
+     具体演示，
+	 #+BEGIN_SRC sh
+# 在一台机器上执行
+docker create lavenliu/mysql:5.5
+# 上面的命令会生成一串ID，也就是token，比如是<xxx_token>
+# 要有swarm镜像
+# 修改第一台机器docker的配置文件，添加--label参数
+docker run -d -p 2376:2375 swarm manage token://<xxx_token>
+# 上面的命令执行成功，会有一串ID产生，
+	 #+END_SRC
+
+	 连接到另一台机器，
+	 #+BEGIN_SRC sh
+# 修改docker的配置文件，添加--label，以区别两个机器
+docker run -d swarm join --add=<this_internal_ip>:2375 token://<xxx_token>
+	 #+END_SRC
+
+	 接下来进行查看集群状态，
+	 #+BEGIN_SRC sh
+# 在master节点执行，也就是第一台机器
+docker -H <this_internal_ip>:2376 info
+	 #+END_SRC
+
+	 接着在swarm master上再启动一个node容器，
+	 #+BEGIN_SRC sh
+docker run -d swarm join --add=<this_internal_ip>:2375 token://<xxx_token>
+	 #+END_SRC
+
+	 这时，再次查看集群的状态，
+	 #+BEGIN_SRC sh
+docker -H <this_internal_ip>:2376 info
+docker -H <this_internal_ip>:2376 images
+	 #+END_SRC
+
+	 #+BEGIN_SRC sh
+# 在swarm管理节点上进行操作，是在另一台机器上创建的，只是在第一台机器上操作而已
+docker -H <this_internal_ip>:2376 run -it --name busybox -e constraint:lable_name==docker2 busybox
+#
+# 接下来在另一台机器查看，busybox容器是否运行了
+docker ps -a
+#
+# 在swarm管理节点进行操作，在本地进行容器的创建
+docker -H <this_internal_ip>:2376 run -it --name busybox -e constraint:lable_name==docker1 busybox
+	 #+END_SRC
+** Docker实战之存储管理
+   Docker支持的graphdriver
+   1. aufs（Ubuntu）
+   2. btrfs（CoreOS）
+   3. devicemapper（RedHat、CentOS）
+   4. overlayfs（CoreOS）
+
+   graph： 镜像的保管者
+   json -> 镜像信息
+   layersize -> 
+
+   没有Copy on Write会发生什么？
+   1. Docker容器无法启动
+   2. Docker容器占用大量磁盘空间
+*** AUFS
+	Another Union File System
+
+	联合文件系统UnionFS
+
+	挂载点 /var/lib/docker/aufs/mnt/$CONTAINER_ID
+
+	将不同的目录挂载到同一虚拟文件系统下，实现了layer概念，没有加入Linux内核
+
+	read-only read-write whiteout-able
+
+	read-write是在read-only层的增量，不会对read-only层的更改。
+
+	#+BEGIN_SRC sh
+start docker
+docker info
+# 在Ubuntu机器上进行操作
+cd /var/lib/docker/aufs
+ls
+diff layers mnt
+ls -lahs diff | xargs ls 
+	#+END_SRC
+
+	把多个目录挂载到同一个目录下，
+	#+BEGIN_SRC sh
+cd /root
+ls 
+aufs/  dir1/ dir2/
+cat dir1/file1
+this is dir1
+cat dir2/file2
+this is dir2
+mount -t aufs -o br=/root/dir1=ro:/root/dir2=rw none /root/aufs
+# 验证权限
+cd /root/aufs
+ls
+file1 file2
+echo "write to file1" >> file1
+# 应该有错误提示
+# 接下来验证file2是否是读写
+echo "write to file2" >> file2
+cat file1
+cat file2
+	#+END_SRC
+
+	还有一种情况，当dir1目录及dir2目录有相同的文件的时候，然后被挂载到
+	同一个目录下回怎样呢？会显示是谁的内容呢？接下来我们把dir1下的file1重命名为
+	file2，然后卸载/root/aufs目录，
+	#+BEGIN_SRC sh
+cd /root/dir1
+mv file1 file2
+cd ..
+umount /root/aufs
+mount -t aufs -o br=/root/dir1=ro:/root/dir2=rw none /root/aufs
+cd aufs
+ls
+file2
+cat file2
+# 应该显示的是dir1目录中的file1的原始内容
+this is dir1
+	#+END_SRC
+
+	我们的base镜像是什么，
+	#+BEGIN_SRC sh
+cd /var/lib/docker
+# 维护镜像关系的目录在graph目录下
+tree graph
+cd graph/xxx_id
+ls
+cat json | python -mjson.tool
+	#+END_SRC
+*** DeviceMapper
+	逻辑设备到物理设备的映射框架机制
+#+BEGIN_SRC sh
+	snapshots（i.e. copy-on-write）
+
+	Container
+       |
+	   v
+    data 100GB   metadata 2GB    - 空间限制
+	    \          /
+		 \        /
+		   /dev/loop
+#+END_SRC
+
+	在/etc/default/docker或/etc/sysconfig/docker配置文件中，修改使用
+	devicemapper存储，
+	#+BEGIN_SRC sh
+restart docker
+docker pull busybox
+docker images
+cd /var/lib/docker/devicemapper/devicemapper
+ls -alhs
+docker run -it --name test busybox sh
+# 进入容器后，生成一个文件
+dd if=/dev/zero of=a.dat bs=2M count=100
+ls -lh a.dat
+# 退出当前容器
+C-p q
+ls -alhs
+# 删除test容器，验证是否释放存储空间
+docker rm -f test
+ls -alhs
+	#+END_SRC
+*** Overlayfs
+	挂载点： /var/lib/docker/overlay/$CONTAINER_ID/
+
+	非常像AUFS，差别：
+	1. 只有两层
+	2. 它允许页面缓存共享（data below）
+	3. 内核版本3.18+
+
+    修改/etc/default/docker或/etc/sysconfig/docker配置文件，修改存储驱
+    动为overlay，
+	#+BEGIN_SRC sh
+# 修改完毕，重启docker守护进程
+restart docker
+docker info
+	#+END_SRC
+
+	overlay的三层：
+	lower层（只读） upper层（读写） merged（最终叠加后的文件系统）
+
+	#+BEGIN_SRC sh
+grep overlayfs /proc/filesystems
+modprobe overlayfs
+modinfo overlayfs
+# 挂载overlay文件系统
+cd /root
+mkdir lower upper merged
+mount -t overlay overlay -o lowerdir=/root/lower,upperdir=/root/upper /root/merged
+	#+END_SRC
+*** volume
+	docker宿主机目录映射docker容器目录
+
+	将容器以及容器产生的数据分离开来
+	#+BEGIN_SRC sh
+Dockerfile: VOLUME $CON_PATH
+docker run -v $HOST_PATH:$CON_PATH
+	#+END_SRC
+	
+	数据保存: -v
+
+	容器间共享数据： --volumes-from
+
+	#+BEGIN_SRC sh
+docker run -d --name my-container -v /data/mysql:/var/lib/mysql \
+lavenliu/mysql:5.5
+ls /data/mysql
+	#+END_SRC
+	
+	接下来进入容器，并创建数据库，然后把容器删除，
+	#+BEGIN_SRC sh
+docker exec -it my-container sh
+mysql
+show databases;
+create database mydb;
+exit
+C-p q
+ls /data/mysql
+# 删除容器
+docker rm -f my-container
+# 再次创建容器
+docker run -d --name my-container2 -v /data/mysql:/var/lib/mysql \
+lavenliu/mysql:5.5
+# 进入容器后，进入MySQL中，验证是否有mydb的库
+mysql
+show databases;
+	#+END_SRC
+
+	--volumes-from的演示，实现容器间的文件共享，
+	#+BEGIN_SRC sh
+dockr run -it --name data -v /root/dir1:/root busybox sh
+# 进入容器后，查看其/root目录是否有file1文件
+ls /root
+# 退出容器
+C-p q
+	#+END_SRC
+
+	#+BEGIN_SRC sh
+docker run -it --name data2 --volumes-from data busybox sh
+# 查看data2容器的/root目录是否有file1文件
+ls /root
+	#+END_SRC
